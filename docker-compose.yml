@@ -1,0 +1,112 @@
+services:
+  ###################################################################
+  # PHP-FPMコンテナ (Laravel)
+  ###################################################################
+  laravel:
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: moku-moku-match-laravel
+    # ローカルの ./src フォルダをコンテナの /var/www/html/src にマウント
+    volumes:
+      - ./src:/var/www/html/src
+    networks:
+      - moku-moku-match-networks
+    platform: linux/arm64
+    # コンテナ内の作業ディレクトリを /var/www/html/src に設定（
+    working_dir: /var/www/html/src
+    ports:
+      - 6001:6001 #Webソケットように外部公開
+
+  ###################################################################
+  # React(Node.js)コンテナ
+  ###################################################################
+  react:
+    build:
+      context: .
+      dockerfile: ./docker/react/Dockerfile
+    container_name: moku-moku-match-react
+    volumes:
+      - ./src/frontend:/var/www/html/src/frontend
+      - react-node-modules:/var/www/html/src/frontend/node_modules
+    # ホストの5173 → コンテナの5173
+    ports:
+      - "5173:5173"
+    networks:
+      - moku-moku-match-networks
+    # 初回起動でNode_modulesが無い場合など、entrypointやcommandを調整可能
+    # 例: command: ["/bin/sh", "-c", "npm install && npm run dev"]
+    platform: linux/amd64  # or linux/arm64
+
+  ###################################################################
+  # Nginxコンテナ
+  ###################################################################
+  nginx:
+    image: nginx:stable-alpine
+    container_name: moku-moku-match-nginx
+    # ホストの80番をNginxコンテナの80番にマッピング
+    ports:
+      - "8080:80"
+    volumes:
+      # LaravelソースをNginxにもマウント
+      - ./src:/var/www/html/src
+      # Nginxの設定ファイルをマウント
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - laravel
+      - react
+    networks:
+      - moku-moku-match-networks
+    
+  ###################################################################
+  # MySQLコンテナ
+  ###################################################################
+  db:
+    build:
+      context: .
+      dockerfile: ./docker/mysql/Dockerfile
+    container_name: moku-moku-match-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - moku-moku-match-networks
+    platform: linux/arm64
+
+  ###################################################################
+  # phpMyAdminコンテナ
+  ###################################################################
+  mysql-admin:
+    image: phpmyadmin:latest
+    container_name: moku-moku-match-phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8888:80"
+    depends_on:
+      - db
+    networks:
+      - moku-moku-match-networks
+      
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: moku-moku-match-mailhog
+    ports:
+      - "1025:1025" # SMTP送信用
+      - "8025:8025" # MailHog管理画面
+    networks:
+      - moku-moku-match-networks
+
+networks:
+  moku-moku-match-networks:
+    external: true
+
+volumes:
+  mysql-data:
+  react-node-modules:
