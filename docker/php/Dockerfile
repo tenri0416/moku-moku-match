@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
   libzip-dev \
   cron \
   # Node.js と npm を追加
+  nodejs \
+  npm \
   && docker-php-ext-install pdo pdo_mysql zip bcmath pcntl
 
 # Composerのインストール

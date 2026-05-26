@@ -17,6 +17,25 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_USER = 1;
+    public const ROLE_ADMIN = 2;
+
+    public const STATUS_ACTIVE = 1;
+    public const STATUS_SUSPENDED = 2;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'status',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -29,4 +48,45 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function profile()
+{
+    return $this->hasOne(Profile::class);
+}
+
+public function workPosts()
+{
+    return $this->hasMany(WorkPost::class);
+}
+
+public function applications()
+{
+    return $this->hasMany(Application::class);
+}
+
+public function sentMessages()
+{
+    return $this->hasMany(Message::class, 'sender_id');
+}
+public function receivedMessages()
+{
+    return $this->hasMany(Message::class, 'receiver_id');
+}
+
+public function blocks()
+{
+    return $this->hasMany(Block::class, 'blocker_id');
+}
+
+public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+
 }

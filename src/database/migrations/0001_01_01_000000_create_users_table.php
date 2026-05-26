@@ -17,6 +17,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->unsignedTinyInteger('role')->default(1)->after('password')->comment('権限 1:一般ユーザー 2:管理者');
+            $table->unsignedTinyInteger('status')->default(1)->after('role')->comment('利用状態 1:有効 2:停止');
+
+            $table->index('role');
+            $table->index('status');
             $table->rememberToken();
             $table->timestamps();
         });
