@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@yield('description', 'MokuMoku Matchは、フルリモートで働くITエンジニアや学習者が、一緒に黙々作業・勉強・情報交換できる相手を探すためのサービスです。')">
     <title>@yield('title', 'MokuMoku Match')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

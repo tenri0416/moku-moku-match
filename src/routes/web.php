@@ -93,4 +93,10 @@ Route::prefix('admin')
         Route::patch('/reports/{report}/close', [AdminReportController::class, 'close'])->name('reports.close');
     });
 
+
+
+    // 記事
+    Route::view('/remote-work-loneliness', 'articles.remote-work-loneliness')
+    ->name('articles.remote-work-loneliness');
+
     require __DIR__.'/auth.php';
