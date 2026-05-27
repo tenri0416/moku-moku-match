@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -20,6 +21,7 @@ class ProfileController extends Controller
         //     'user' => $request->user(),
         // ]);
 
+        Log::info('ユーザープロフィールの編集画面にアクセスされました。', ['user_id' => auth()->id()]);
         $profile = auth()->user()->profile;
 
         return view('profile.edit', compact('profile'));
@@ -39,7 +41,6 @@ class ProfileController extends Controller
         // $request->user()->save();
 
         // return Redirect::route('profile.edit')->with('status', 'profile-updated');
-
          auth()->user()->profile()->updateOrCreate(
             ['user_id' => auth()->id()],
             $request->validated()

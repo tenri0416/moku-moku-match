@@ -77,9 +77,9 @@ Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.
 Route::prefix('admin')
     ->name('admin.')
     // ->middleware(['auth', 'admin'])
-    ->middleware('admin')
+    ->middleware('auth:admin')
     ->group(function () {
-        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');

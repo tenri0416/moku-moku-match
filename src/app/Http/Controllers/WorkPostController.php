@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Http\Requests\WorkPostStoreRequest;
 use App\Http\Requests\WorkPostUpdateRequest;
 use App\Models\WorkPost;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 
 class WorkPostController extends Controller
@@ -58,6 +62,7 @@ class WorkPostController extends Controller
 
      public function show(WorkPost $workPost)
     {
+        Log::info('募集の詳細画面にアクセスされました。', ['work_post_id' => $workPost->id, 'user_id' => auth()->id()]);
         abort_if($workPost->status === WorkPost::STATUS_PRIVATE, 404);
 
         $workPost->load('user.profile');

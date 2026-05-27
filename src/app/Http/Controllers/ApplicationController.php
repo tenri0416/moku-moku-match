@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\Block;
 use App\Models\WorkPost;
 
+
 class ApplicationController extends Controller
 {
     public function index(WorkPost $workPost)
