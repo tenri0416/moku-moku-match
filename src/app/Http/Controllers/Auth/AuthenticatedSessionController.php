@@ -8,6 +8,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+
 
 class AuthenticatedSessionController extends Controller
 {
@@ -16,6 +18,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
+        Log::info('ログインしてページにアクセス');
         return view('auth.login');
     }
 
@@ -24,11 +27,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        Log::info('ログイン処理開始', ['email' => $request->email]);
         $request->authenticate();
 
         $request->session()->regenerate();
+        Log::info('User logged in', ['user_id' => Auth::id()]);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('mypage', absolute: false));
     }
 
     /**

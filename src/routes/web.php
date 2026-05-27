@@ -17,6 +17,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWorkPostController;
+use App\Http\Controllers\AdminAuthController;
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -70,10 +71,13 @@ Route::middleware('auth')->group(function () {
 });
 
 
+Route::get('/admin/login', [AdminAuthController::class, 'index'])->name('admin.login');
+Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.store');
+
 Route::prefix('admin')
     ->name('admin.')
     // ->middleware(['auth', 'admin'])
-    // ->middleware()
+    ->middleware('admin')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 

@@ -17,7 +17,9 @@ class AdminMiddleware
     {
          if (! $request->user() || ! $request->user()->isAdmin()) {
             // dd('AdminMiddleware: Access denied. User is not an admin.');
-            abort(403);
+            // ログイン画面にリダイレクト
+            return redirect()->route('admin.login')->with('error', '管理者のみアクセスできます。');
+            
         }
         return $next($request);
     }

@@ -3,231 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', '管理画面') - MokuMoku Match</title>
+    <title>管理者ログイン - MokuMoku Match</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-<div class="min-h-screen lg:flex">
-    {{-- PC Sidebar --}}
-    <aside class="hidden w-72 shrink-0 border-r border-slate-200 bg-white lg:block">
-        <div class="sticky top-0 flex h-screen flex-col">
-            {{-- Logo --}}
-            <div class="border-b border-slate-200 px-6 py-5">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-base font-black text-white shadow-sm">
-                        A
-                    </span>
-
-                    <span>
-                        <span class="block text-lg font-black tracking-tight text-slate-900">
-                            Admin
-                        </span>
-                        <span class="block text-xs font-semibold text-slate-500">
-                            MokuMoku Match 管理画面
-                        </span>
-                    </span>
-                </a>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+<div class="flex min-h-screen">
+    {{-- Left Area --}}
+    <section class="hidden w-1/2 items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-12 lg:flex">
+        <div class="max-w-lg">
+            <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-600 text-2xl font-black text-white shadow-lg shadow-indigo-900/40">
+                A
             </div>
 
-            {{-- Navigation --}}
-            <nav class="flex-1 space-y-1 px-4 py-5">
-                <a
-                    href="{{ route('admin.dashboard') }}"
-                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
-                        {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>ダッシュボード</span>
-                    <span class="text-slate-400">›</span>
-                </a>
+            <p class="mt-8 text-sm font-bold tracking-wide text-indigo-300">
+                ADMIN LOGIN
+            </p>
 
-                <a
-                    href="{{ route('admin.users.index') }}"
-                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
-                        {{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>ユーザー管理</span>
-                    <span class="text-slate-400">›</span>
-                </a>
+            <h1 class="mt-4 text-4xl font-black leading-tight tracking-tight text-white">
+                MokuMoku Match<br>
+                管理画面
+            </h1>
 
-                <a
-                    href="{{ route('admin.work-posts.index') }}"
-                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
-                        {{ request()->routeIs('admin.work-posts.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>募集管理</span>
-                    <span class="text-slate-400">›</span>
-                </a>
+            <p class="mt-6 leading-8 text-slate-300">
+                ユーザー、募集投稿、通報内容を管理するための管理者専用ログインページです。
+                一般ユーザーのログインは通常ログインページを利用してください。
+            </p>
 
-                <a
-                    href="{{ route('admin.reports.index') }}"
-                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
-                        {{ request()->routeIs('admin.reports.*') ? 'bg-rose-50 text-rose-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                >
-                    <span>通報管理</span>
-                    <span class="text-slate-400">›</span>
-                </a>
-            </nav>
+            <div class="mt-8 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl bg-white/10 p-5 ring-1 ring-white/10">
+                    <div class="text-2xl">👤</div>
+                    <p class="mt-3 text-sm font-bold text-white">
+                        ユーザー管理
+                    </p>
+                </div>
 
-            {{-- Bottom --}}
-            <div class="border-t border-slate-200 p-4">
-                <a
-                    href="{{ route('home') }}"
-                    class="flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                    サイトへ戻る
-                </a>
+                <div class="rounded-2xl bg-white/10 p-5 ring-1 ring-white/10">
+                    <div class="text-2xl">📝</div>
+                    <p class="mt-3 text-sm font-bold text-white">
+                        募集管理
+                    </p>
+                </div>
 
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                    @csrf
-
-                    <button
-                        type="submit"
-                        class="flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                    >
-                        ログアウト
-                    </button>
-                </form>
+                <div class="rounded-2xl bg-white/10 p-5 ring-1 ring-white/10">
+                    <div class="text-2xl">⚠️</div>
+                    <p class="mt-3 text-sm font-bold text-white">
+                        通報管理
+                    </p>
+                </div>
             </div>
         </div>
-    </aside>
+    </section>
 
-    {{-- Main --}}
-    <div class="min-w-0 flex-1">
-        {{-- Mobile Header --}}
-        <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur lg:hidden">
-            <div class="flex items-center justify-between px-4 py-3">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-sm font-black text-white shadow-sm">
+    {{-- Login Area --}}
+    <section class="flex w-full items-center justify-center px-4 py-12 sm:px-6 lg:w-1/2 lg:px-8">
+        <div class="w-full max-w-md">
+            <div class="rounded-3xl bg-white p-6 text-slate-900 shadow-2xl shadow-slate-950/40 ring-1 ring-slate-800/10 sm:p-8">
+                <div class="mb-8 text-center">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-xl font-black text-white shadow-sm">
                         A
-                    </span>
-
-                    <span>
-                        <span class="block text-base font-black text-slate-900">
-                            Admin
-                        </span>
-                        <span class="block text-xs font-semibold text-slate-500">
-                            管理画面
-                        </span>
-                    </span>
-                </a>
-
-                <details class="relative">
-                    <summary class="cursor-pointer list-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        メニュー
-                    </summary>
-
-                    <div class="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                        <div class="border-b border-slate-100 px-4 py-3">
-                            <p class="text-sm font-bold text-slate-900">
-                                管理メニュー
-                            </p>
-                            <p class="mt-1 text-xs text-slate-500">
-                                MokuMoku Match
-                            </p>
-                        </div>
-
-                        <div class="p-2">
-                            <a
-                                href="{{ route('admin.dashboard') }}"
-                                class="block rounded-xl px-4 py-3 text-sm font-bold
-                                    {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                            >
-                                ダッシュボード
-                            </a>
-
-                            <a
-                                href="{{ route('admin.users.index') }}"
-                                class="block rounded-xl px-4 py-3 text-sm font-bold
-                                    {{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                            >
-                                ユーザー管理
-                            </a>
-
-                            <a
-                                href="{{ route('admin.work-posts.index') }}"
-                                class="block rounded-xl px-4 py-3 text-sm font-bold
-                                    {{ request()->routeIs('admin.work-posts.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                            >
-                                募集管理
-                            </a>
-
-                            <a
-                                href="{{ route('admin.reports.index') }}"
-                                class="block rounded-xl px-4 py-3 text-sm font-bold
-                                    {{ request()->routeIs('admin.reports.*') ? 'bg-rose-50 text-rose-700' : 'text-slate-700 hover:bg-slate-100' }}"
-                            >
-                                通報管理
-                            </a>
-
-                            <div class="my-2 border-t border-slate-100"></div>
-
-                            <a
-                                href="{{ route('home') }}"
-                                class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                            >
-                                サイトへ戻る
-                            </a>
-
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-
-                                <button
-                                    type="submit"
-                                    class="block w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-100"
-                                >
-                                    ログアウト
-                                </button>
-                            </form>
-                        </div>
                     </div>
-                </details>
-            </div>
-        </header>
 
-        {{-- Desktop Top Header --}}
-        <header class="hidden border-b border-slate-200 bg-white lg:block">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-8 py-4">
-                <div>
-                    <p class="text-sm font-bold text-slate-500">
-                        管理画面
-                    </p>
-                    <p class="mt-1 text-lg font-black text-slate-900">
-                        @yield('title', '管理画面')
+                    <h2 class="mt-5 text-2xl font-black text-slate-900">
+                        管理者ログイン
+                    </h2>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        管理者アカウントのメールアドレスとパスワードを入力してください。
                     </p>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <a
-                        href="{{ route('home') }}"
-                        class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                    >
-                        サイトへ戻る
-                    </a>
+                {{-- Session Status --}}
+                @if (session('status'))
+                    <div class="mb-6 rounded-xl bg-emerald-50 p-4">
+                        <p class="text-sm font-semibold text-emerald-700">
+                            {{ session('status') }}
+                        </p>
+                    </div>
+                @endif
 
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
+                {{-- Error Summary --}}
+                @if ($errors->any())
+                    <div class="mb-6 rounded-xl bg-rose-50 p-4">
+                        <p class="text-sm font-semibold text-rose-700">
+                            入力内容を確認してください。
+                        </p>
+                    </div>
+                @endif
 
-                        <button
-                            type="submit"
-                            class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+                <form method="POST" action="{{ route('admin.login.store') }}" class="space-y-5">
+                    @csrf
+
+                    {{-- Email --}}
+                    <div>
+                        <label for="email" class="mb-2 block text-sm font-bold text-slate-700">
+                            メールアドレス
+                        </label>
+
+                        <input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value="{{ old('email') }}"
+                            required
+                            autofocus
+                            autocomplete="username"
+                            placeholder="admin@example.com"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
-                            ログアウト
-                        </button>
-                    </form>
+
+                        @error('email')
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Password --}}
+                    <div>
+                        <label for="password" class="mb-2 block text-sm font-bold text-slate-700">
+                            パスワード
+                        </label>
+
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="パスワードを入力"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        >
+
+                        @error('password')
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Remember --}}
+                    <label for="remember_me" class="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                        <input
+                            id="remember_me"
+                            type="checkbox"
+                            name="remember"
+                            class="rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                        >
+                        <span>ログイン状態を保持する</span>
+                    </label>
+
+                    {{-- Submit --}}
+                    <button
+                        type="submit"
+                        class="flex w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800"
+                    >
+                        管理画面にログイン
+                    </button>
+                </form>
+
+                <div class="mt-6 border-t border-slate-200 pt-6 text-center">
+                    <a
+                        href="{{ route('login') }}"
+                        class="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                    >
+                        一般ユーザー用ログインへ戻る
+                    </a>
                 </div>
             </div>
-        </header>
 
-        {{-- Content --}}
-        <main>
-            <div class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-                @include('components.flash-message')
-            </div>
-
-            @yield('content')
-        </main>
-    </div>
+            <p class="mt-6 text-center text-xs leading-6 text-slate-400">
+                このページは管理者専用です。権限のないユーザーはログインできません。
+            </p>
+        </div>
+    </section>
 </div>
 </body>
 </html>
