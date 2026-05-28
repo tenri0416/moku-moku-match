@@ -104,3 +104,15 @@ Route::prefix('admin')
     ->name('articles.remote-work-loneliness');
 
     require __DIR__.'/auth.php';
+
+
+Route::get('/sitemap.xml', function () {
+    $workPosts = \App\Models\WorkPost::query()
+        ->where('status', '!=', \App\Models\WorkPost::STATUS_PRIVATE)
+        ->latest('updated_at')
+        ->get();
+
+    return response()
+        ->view('sitemap', compact('workPosts'))
+        ->header('Content-Type', 'application/xml');
+})->name('sitemap');

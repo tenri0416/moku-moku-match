@@ -1,2 +1,11 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard
+Disallow: /mypage
+Disallow: /profile
+Disallow: /messages
+
+Sitemap: https://mokumokumatch.top/sitemap.xml

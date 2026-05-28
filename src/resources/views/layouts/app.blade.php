@@ -2,12 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="@yield('description', 'MokuMoku Matchは、フルリモートで働くITエンジニアや学習者が、一緒に黙々作業・勉強・情報交換できる相手を探すためのサービスです。')">
-    <title>@yield('title', 'MokuMoku Match')</title>
+    <title>@yield('title', 'MokuMokuMatch | 一緒に作業できる仲間を探せるマッチングサービス')</title>
+
+    <meta name="description" content="@yield('description', 'MokuMokuMatchは、フリーランスやリモートワーカーが一緒に黙々作業できる仲間を探せるマッチングサービスです。オンライン・オフラインで作業仲間を募集できます。')">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<meta property="og:site_name" content="MokuMokuMatch">
+<meta property="og:type" content="@yield('og_type', 'website')">
+<meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
+<meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('description', '一緒に黙々作業できる仲間を探せるマッチングサービスです。')))">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:image" content="{{ asset('images/ogp.png') }}">
 
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
+<meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('description', '一緒に黙々作業できる仲間を探せるマッチングサービスです。')))">
+<meta name="twitter:image" content="{{ asset('images/ogp.png') }}">
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
