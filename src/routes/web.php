@@ -118,9 +118,25 @@ Route::prefix('admin')
 
 
 Route::prefix('site')->group(function () {
-    // 記事
+    // 既存記事
     Route::view('/remote-work-loneliness', 'articles.remote-work-loneliness')
-    ->name('articles.remote-work-loneliness');
+        ->name('articles.remote-work-loneliness');
+
+    // 追加記事
+    Route::view('/freelance-loneliness', 'articles.freelance-loneliness')
+        ->name('articles.freelance-loneliness');
+
+    Route::view('/online-mokumoku', 'articles.online-mokumoku')
+        ->name('articles.online-mokumoku');
+
+    Route::view('/study-partner-online', 'articles.study-partner-online')
+        ->name('articles.study-partner-online');
+
+    Route::view('/work-alone-routine', 'articles.work-alone-routine')
+        ->name('articles.work-alone-routine');
+
+    Route::view('/remote-work-friends', 'articles.remote-work-friends')
+        ->name('articles.remote-work-friends');
 });
 
 

@@ -6,6 +6,7 @@
 
     <meta name="description" content="@yield('description', 'MokuMokuMatchは、フリーランスやリモートワーカーが一緒に黙々作業できる仲間を探せるマッチングサービスです。オンライン・オフラインで作業仲間を募集できます。')">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <meta property="og:site_name" content="MokuMokuMatch">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
@@ -17,20 +18,23 @@
     <meta name="twitter:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
     <meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('description', '一緒に黙々作業できる仲間を探せるマッチングサービスです。')))">
     <meta name="twitter:image" content="{{ asset('images/ogp.png') }}">
+
     <meta name="google-site-verification" content="yDJmA1X0ZuNmPo5_GDEOTF1UZDA5K1MHTx9W84-AMqc" />
+
+    @if (config('services.ga4.measurement_id') && app()->environment('production'))
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4.measurement_id') }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', '{{ config('services.ga4.measurement_id') }}');
+        </script>
+    @endif
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-@if (config('services.ga4.measurement_id') && app()->environment('production'))
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4.measurement_id') }}"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', '{{ config('services.ga4.measurement_id') }}');
-    </script>
-@endif
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
