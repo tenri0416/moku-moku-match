@@ -67,6 +67,14 @@
                     <span>通報管理</span>
                     <span class="text-slate-400">›</span>
                 </a>
+                <a
+                    href="{{ route('admin.database.index') }}"
+                     class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+                        {{ request()->routeIs('admin.database.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+                    >
+                    <span>DBテーブルを見る</span>
+                    <span class="text-slate-400">›</span>
+                </a>
             </nav>
 
             {{-- Bottom --}}
@@ -78,7 +86,7 @@
                     サイトへ戻る
                 </a>
 
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                <form method="POST" action="{{ route('admin.logout') }}" class="mt-3">
                     @csrf
 
                     <button
@@ -169,7 +177,7 @@
                                 サイトへ戻る
                             </a>
 
-                            <form method="POST" action="{{ route('logout') }}">
+                            <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf
 
                                 <button
@@ -205,7 +213,7 @@
                         サイトへ戻る
                     </a>
 
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
 
                         <button

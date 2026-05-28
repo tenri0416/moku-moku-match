@@ -18,6 +18,9 @@ use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWorkPostController;
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminDatabaseController;
+
+
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -73,6 +76,13 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/admin/login', [AdminAuthController::class, 'index'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.store');
+Route::get('/admin/login/verify', [AdminAuthController::class, 'showVerify'])
+    ->name('admin.login.verify');
+
+Route::post('/admin/login/verify', [AdminAuthController::class, 'verify'])
+    ->name('admin.login.verify.store');
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
+    ->name('admin.logout');
 
 Route::prefix('admin')
     ->name('admin.')
@@ -95,7 +105,16 @@ Route::prefix('admin')
         Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
         Route::patch('/reports/{report}/in-progress', [AdminReportController::class, 'inProgress'])->name('reports.in-progress');
         Route::patch('/reports/{report}/close', [AdminReportController::class, 'close'])->name('reports.close');
+
+        Route::get('/database', [AdminDatabaseController::class, 'index'])
+            ->name('database.index');
+
+        Route::get('/database/{table}', [AdminDatabaseController::class, 'show'])
+            ->name('database.show');
+
     });
+
+    
 
 
 Route::prefix('site')->group(function () {
