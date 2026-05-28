@@ -17,7 +17,7 @@ use App\Http\Controllers\WorkPostController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\AdminLogController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -266,6 +266,13 @@ Route::prefix('admin')
         Route::get('/database/{table}', [AdminDatabaseController::class, 'show'])
             ->where('table', '[A-Za-z0-9_]+')
             ->name('database.show');
+
+        Route::get('/logs', [AdminLogController::class, 'index'])
+            ->name('logs.index');
+
+        Route::get('/logs/{file}', [AdminLogController::class, 'show'])
+            ->where('file', 'laravel(\-\d{4}\-\d{2}\-\d{2})?\.log')
+            ->name('logs.show');
     });
 
 /*
@@ -320,4 +327,4 @@ Route::get('/sitemap.xml', function () {
 | auth.php 側で同じルートがある場合は重複に注意。
 */
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -75,6 +75,14 @@
                     <span>DBテーブルを見る</span>
                     <span class="text-slate-400">›</span>
                 </a>
+                <a
+                    href="{{ route('admin.logs.index') }}"
+                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+                    {{ request()->routeIs('admin.logs.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+                >
+                   <span>Laravelログ</span>
+                    <span class="text-slate-400">›</span>
+                </a>
             </nav>
 
             {{-- Bottom --}}
@@ -166,6 +174,20 @@
                                     {{ request()->routeIs('admin.reports.*') ? 'bg-rose-50 text-rose-700' : 'text-slate-700 hover:bg-slate-100' }}"
                             >
                                 通報管理
+                            </a>
+                             <a
+                                href="{{ route('admin.database.index') }}"
+                                class="block rounded-xl px-4 py-3 text-sm font-bold
+                                    {{ request()->routeIs('admin.database.*') ? 'bg-rose-50 text-rose-700' : 'text-slate-700 hover:bg-slate-100' }}"
+                            >
+                                DBテーブルを見る
+                            </a>
+                             <a
+                                href="{{ route('admin.logs.index') }}"
+                                class="block rounded-xl px-4 py-3 text-sm font-bold
+                                    {{ request()->routeIs('admin.logs.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+                            >
+                                Laravelログ
                             </a>
 
                             <div class="my-2 border-t border-slate-100"></div>
