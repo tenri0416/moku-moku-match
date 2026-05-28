@@ -20,7 +20,17 @@
     <meta name="google-site-verification" content="yDJmA1X0ZuNmPo5_GDEOTF1UZDA5K1MHTx9W84-AMqc" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+@if (config('services.ga4.measurement_id') && app()->environment('production'))
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4.measurement_id') }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
+        gtag('config', '{{ config('services.ga4.measurement_id') }}');
+    </script>
+@endif
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
