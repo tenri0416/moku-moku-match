@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmailNotification;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -50,35 +52,35 @@ class User extends Authenticatable
     }
 
     public function profile()
-{
-    return $this->hasOne(Profile::class);
-}
+    {
+        return $this->hasOne(Profile::class);
+    }
 
-public function workPosts()
-{
-    return $this->hasMany(WorkPost::class);
-}
+    public function workPosts()
+    {
+        return $this->hasMany(WorkPost::class);
+    }
 
-public function applications()
-{
-    return $this->hasMany(Application::class);
-}
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 
-public function sentMessages()
-{
-    return $this->hasMany(Message::class, 'sender_id');
-}
-public function receivedMessages()
-{
-    return $this->hasMany(Message::class, 'receiver_id');
-}
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
 
-public function blocks()
-{
-    return $this->hasMany(Block::class, 'blocker_id');
-}
+    public function blocks()
+    {
+        return $this->hasMany(Block::class, 'blocker_id');
+    }
 
-public function isAdmin(): bool
+    public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
     }
@@ -88,5 +90,11 @@ public function isAdmin(): bool
         return $this->status === self::STATUS_ACTIVE;
     }
 
-
+    /**
+     * メール認証通知を送信する
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
+    }
 }

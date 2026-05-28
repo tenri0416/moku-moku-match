@@ -43,11 +43,11 @@ class AdminAuthController extends Controller
         // 管理者が1人もいない、または複数いる場合はログインできないようにする
         if (Admin::count() !== 1) {
             Log::warning('管理者数が不正です', [
-            'admin_count' => Admin::count(),
-        ]);
+                'admin_count' => Admin::count(),
+            ]);
 
-    abort(403, '管理者設定が不正です。');
-}
+            abort(403, '管理者設定が不正です。');
+        }
 
         if (!$admin || !Hash::check($credentials['password'], $admin->password)) {
             Log::info('管理者ログイン失敗', [
@@ -184,7 +184,7 @@ class AdminAuthController extends Controller
         Log::info('管理者ログアウト', [
             'admin_id' => Auth::guard('admin')->id(),
         ]);
-        
+
         Auth::guard('admin')->logout();
 
         $request->session()->forget('admin_2fa_pending_id');
