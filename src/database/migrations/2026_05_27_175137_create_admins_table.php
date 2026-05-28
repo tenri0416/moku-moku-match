@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admins', function (Blueprint $table) {
-             $table->string('name')->comment('管理者名');
+            $table->id();
+            $table->string('name')->comment('管理者名');
             $table->string('email')->unique()->comment('メールアドレス');
             $table->timestamp('email_verified_at')->nullable()->comment('メール認証日時');
             $table->string('password')->comment('パスワード');

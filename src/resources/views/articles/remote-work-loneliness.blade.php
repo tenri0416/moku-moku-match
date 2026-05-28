@@ -3,286 +3,192 @@
 @section('title', 'フルリモートで孤独を感じる方へ｜一人で仕事が続かない時の対策')
 
 @section('content')
-<div class="min-h-screen bg-slate-50">
-    {{-- Hero --}}
-    <section class="bg-gradient-to-br from-indigo-600 via-blue-600 to-sky-500">
-        <div class="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="max-w-3xl">
-                <p class="inline-flex rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/30">
-                    フルリモート・在宅勤務の孤独感に悩む方へ
-                </p>
-
-                <h1 class="mt-6 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
-                    フルリモートで孤独を感じるのは、あなたの意志が弱いからではありません。
-                </h1>
-
-                <p class="mt-6 text-lg leading-8 text-blue-50">
-                    自宅で一人で働いていると、気分が落ち込んだり、仕事や勉強のモチベーションが続かなくなることがあります。
-                    それは決して珍しいことではありません。
-                </p>
-
-                <div class="mt-8 flex flex-wrap gap-4">
-                    @auth
-                        <a
-                            href="{{ route('work-posts.index') }}"
-                            class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 shadow-lg shadow-indigo-900/20 transition hover:bg-indigo-50"
-                        >
-                            作業仲間を探す
-                        </a>
-
-                        <a
-                            href="{{ route('work-posts.create') }}"
-                            class="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                        >
-                            募集を作成する
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('register') }}"
-                            class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 shadow-lg shadow-indigo-900/20 transition hover:bg-indigo-50"
-                        >
-                            無料で会員登録する
-                        </a>
-
-                        <a
-                            href="{{ route('work-posts.index') }}"
-                            class="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                        >
-                            募集を見る
-                        </a>
-                    @endauth
-                </div>
+<div class="min-h-screen bg-white">
+    <main class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+        {{-- Article Header --}}
+        <header class="border-b border-slate-200 pb-8">
+            <div class="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span class="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
+                    フルリモート
+                </span>
+                <span>在宅勤務</span>
+                <span>・</span>
+                <span>孤独対策</span>
             </div>
-        </div>
-    </section>
 
-    {{-- Article --}}
-    <main class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <div class="grid gap-8 lg:grid-cols-3">
-            {{-- Main Content --}}
-            <article class="space-y-8 lg:col-span-2">
-                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <h2 class="text-2xl font-black text-slate-900">
-                        フルリモートで孤独を感じる人は多い
-                    </h2>
+            <h1 class="mt-5 text-3xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">
+                フルリモートで孤独を感じるのは、あなたの意志が弱いからではありません
+            </h1>
 
-                    <div class="mt-5 space-y-4 leading-8 text-slate-700">
-                        <p>
-                            フルリモートは、通勤がなく、自分のペースで働ける便利な働き方です。
-                            しかし一方で、毎日自宅で一人で作業していると、人との会話が減り、孤独感を感じやすくなります。
-                        </p>
+            <p class="mt-5 text-lg leading-8 text-slate-600">
+                自宅で一人で働いていると、気分が落ち込んだり、仕事や勉強のモチベーションが続かなくなることがあります。
+                この記事では、フルリモートで孤独を感じやすい理由と、一人で抱え込まないための対策を紹介します。
+            </p>
 
-                        <p>
-                            特にITエンジニアやフリーランスの場合、チャットでのやり取りはあっても、
-                            「同じ空間で誰かと作業している感覚」が少なくなりがちです。
-                        </p>
+            <div class="mt-6 flex flex-wrap gap-3 text-sm text-slate-500">
+                <span>公開日：{{ now()->format('Y年n月j日') }}</span>
+                <span>・</span>
+                <span>読了目安：5分</span>
+            </div>
+        </header>
 
-                        <p>
-                            その結果、次のような悩みが出てくることがあります。
-                        </p>
+        {{-- Lead --}}
+        <section class="mt-8 rounded-xl border-l-4 border-indigo-500 bg-slate-50 p-5">
+            <p class="leading-8 text-slate-700">
+                フルリモートは自由な働き方ですが、同時に「誰にも見られていない」「会話が少ない」「生活と仕事の境目があいまいになる」
+                という悩みも起こりやすい働き方です。
+            </p>
+        </section>
 
-                        <ul class="space-y-3 rounded-2xl bg-slate-50 p-5">
-                            <li>・朝から仕事を始めるまでに時間がかかる</li>
-                            <li>・誰にも見られていないため、ついダラダラしてしまう</li>
-                            <li>・勉強を始めても長続きしない</li>
-                            <li>・気分が落ち込むと一気に作業が止まる</li>
-                            <li>・同じ働き方をしている人と話したくなる</li>
-                        </ul>
-                    </div>
-                </section>
+        {{-- Article Body --}}
+        <article class="prose prose-slate mt-10 max-w-none prose-h2:mt-12 prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-3 prose-h2:text-2xl prose-h2:font-bold prose-p:leading-8 prose-li:leading-8">
+            <h2>フルリモートで孤独を感じる人は多い</h2>
 
-                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <h2 class="text-2xl font-black text-slate-900">
-                        孤独感を減らすには「誰かと一緒に作業する時間」を作る
-                    </h2>
+            <p>
+                フルリモートは、通勤がなく、自分のペースで働ける便利な働き方です。
+                しかし一方で、毎日自宅で一人で作業していると、人との会話が減り、孤独感を感じやすくなります。
+            </p>
 
-                    <div class="mt-5 space-y-4 leading-8 text-slate-700">
-                        <p>
-                            孤独感を完全になくす必要はありません。
-                            大切なのは、一人で頑張り続ける状態を少しだけ変えることです。
-                        </p>
+            <p>
+                特にITエンジニアやフリーランスの場合、チャットでのやり取りはあっても、
+                「同じ空間で誰かと作業している感覚」が少なくなりがちです。
+            </p>
 
-                        <p>
-                            たとえば、誰かとオンラインでつないで、最初に「今日はこれをやります」と共有し、
-                            その後はお互いに黙々と作業するだけでも、集中しやすくなることがあります。
-                        </p>
+            <p>
+                その結果、仕事を始めるまでに時間がかかったり、集中が続かなかったり、
+                気分が落ち込んだときに作業が止まりやすくなることがあります。
+            </p>
 
-                        <p>
-                            これは一般的に「黙々会」と呼ばれることもあります。
-                            会話をたくさんする必要はありません。
-                            むしろ、作業中は話さず、最初と最後だけ軽く共有する形でも十分です。
-                        </p>
-                    </div>
-                </section>
+            <h2>一人で働くと、なぜだらけやすくなるのか</h2>
 
-                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <h2 class="text-2xl font-black text-slate-900">
-                        MokuMoku Matchでできること
-                    </h2>
+            <p>
+                一人で働いていると、良くも悪くも自分の行動を見ている人がいません。
+                そのため、少し休憩するつもりが長くなったり、スマートフォンを見続けてしまったりすることがあります。
+            </p>
 
-                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                        <div class="rounded-2xl bg-indigo-50 p-5">
-                            <div class="text-2xl">💻</div>
-                            <h3 class="mt-3 font-bold text-indigo-950">
-                                黙々作業の相手を探せる
-                            </h3>
-                            <p class="mt-2 text-sm leading-7 text-indigo-900">
-                                ZoomやGoogle Meetなどでつないで、一緒に作業する相手を探せます。
-                            </p>
-                        </div>
+            <p>
+                これは単純に「やる気がない」という話ではありません。
+                人は、周囲に人がいるだけで自然と行動を整えやすくなることがあります。
+            </p>
 
-                        <div class="rounded-2xl bg-sky-50 p-5">
-                            <div class="text-2xl">📚</div>
-                            <h3 class="mt-3 font-bold text-sky-950">
-                                勉強仲間を探せる
-                            </h3>
-                            <p class="mt-2 text-sm leading-7 text-sky-900">
-                                Laravel、React、AWSなど、同じ技術を学ぶ人とつながれます。
-                            </p>
-                        </div>
+            <blockquote>
+                <p>
+                    誰かに監視される必要はありません。  
+                    ただ、同じ時間に作業している人がいるだけで、仕事を始めるきっかけになることがあります。
+                </p>
+            </blockquote>
 
-                        <div class="rounded-2xl bg-emerald-50 p-5">
-                            <div class="text-2xl">🤝</div>
-                            <h3 class="mt-3 font-bold text-emerald-950">
-                                同じ働き方の人と出会える
-                            </h3>
-                            <p class="mt-2 text-sm leading-7 text-emerald-900">
-                                フリーランスやフルリモートの働き方について話せる相手を探せます。
-                            </p>
-                        </div>
+            <h2>よくある悩み</h2>
 
-                        <div class="rounded-2xl bg-amber-50 p-5">
-                            <div class="text-2xl">⏱️</div>
-                            <h3 class="mt-3 font-bold text-amber-950">
-                                作業習慣を作りやすい
-                            </h3>
-                            <p class="mt-2 text-sm leading-7 text-amber-900">
-                                決まった時間に誰かと作業することで、仕事や勉強を始めやすくなります。
-                            </p>
-                        </div>
-                    </div>
-                </section>
+            <p>
+                フルリモートで働く人には、次のような悩みが起こりやすいです。
+            </p>
 
-                <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <h2 class="text-2xl font-black text-slate-900">
-                        こんな使い方がおすすめです
-                    </h2>
+            <ul>
+                <li>朝から仕事を始めるまでに時間がかかる</li>
+                <li>誰にも見られていないため、ついダラダラしてしまう</li>
+                <li>勉強を始めても長続きしない</li>
+                <li>気分が落ち込むと一気に作業が止まる</li>
+                <li>同じ働き方をしている人と話したくなる</li>
+            </ul>
 
-                    <div class="mt-5 space-y-4 leading-8 text-slate-700">
-                        <p>
-                            MokuMoku Matchでは、以下のような募集を作成できます。
-                        </p>
+            <h2>孤独感を減らすには「誰かと一緒に作業する時間」を作る</h2>
 
-                        <div class="space-y-3">
-                            <div class="rounded-xl border border-slate-200 p-4">
-                                <p class="font-bold text-slate-900">
-                                    平日午前に一緒に黙々作業できる方募集
-                                </p>
-                                <p class="mt-2 text-sm text-slate-600">
-                                    朝の作業開始を習慣化したい方におすすめです。
-                                </p>
-                            </div>
+            <p>
+                孤独感を完全になくす必要はありません。
+                大切なのは、一人で頑張り続ける状態を少しだけ変えることです。
+            </p>
 
-                            <div class="rounded-xl border border-slate-200 p-4">
-                                <p class="font-bold text-slate-900">
-                                    Laravelの勉強を一緒に進める仲間募集
-                                </p>
-                                <p class="mt-2 text-sm text-slate-600">
-                                    同じ技術を勉強している人とつながりたい方におすすめです。
-                                </p>
-                            </div>
+            <p>
+                たとえば、誰かとオンラインでつないで、最初に「今日はこれをやります」と共有し、
+                その後はお互いに黙々と作業するだけでも、仕事を始めやすくなることがあります。
+            </p>
 
-                            <div class="rounded-xl border border-slate-200 p-4">
-                                <p class="font-bold text-slate-900">
-                                    フリーランス同士で作業・情報交換したい方募集
-                                </p>
-                                <p class="mt-2 text-sm text-slate-600">
-                                    案件や働き方について話せる相手がほしい方におすすめです。
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <p>
+                このような作業スタイルは「黙々会」と呼ばれることもあります。
+                会話をたくさんする必要はありません。
+                最初と最後だけ軽く共有し、作業中はそれぞれ集中する形でも十分です。
+            </p>
 
-                <section class="rounded-2xl bg-indigo-600 p-6 text-white shadow-sm sm:p-8">
-                    <h2 class="text-2xl font-black">
-                        一人で頑張り続けなくても大丈夫です
-                    </h2>
+            <h2>黙々会は、フルリモートと相性がよい</h2>
 
-                    <p class="mt-4 leading-8 text-indigo-50">
-                        フルリモートで孤独を感じるのは、自然なことです。
-                        気合いや根性だけで解決しようとせず、誰かと一緒に作業する環境を作ってみてください。
-                    </p>
+            <p>
+                黙々会は、フルリモートで働く人にとって取り入れやすい方法です。
+                オンラインでつなぐだけなので、場所を選ばずに始められます。
+            </p>
 
-                    <div class="mt-6 flex flex-wrap gap-3">
-                        @auth
-                            <a
-                                href="{{ route('work-posts.create') }}"
-                                class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50"
-                            >
-                                募集を作成する
-                            </a>
-                        @else
-                            <a
-                                href="{{ route('register') }}"
-                                class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50"
-                            >
-                                無料で会員登録する
-                            </a>
-                        @endauth
+            <p>
+                また、会話を目的にするのではなく「一緒に作業すること」を目的にできるため、
+                雑談が得意でない人でも参加しやすいのが特徴です。
+            </p>
 
-                        <a
-                            href="{{ route('work-posts.index') }}"
-                            class="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                        >
-                            募集を見る
-                        </a>
-                    </div>
-                </section>
-            </article>
+            <h2>MokuMoku Matchでできること</h2>
 
-            {{-- Sidebar --}}
-            <aside class="space-y-6">
-                <section class="sticky top-24 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h2 class="text-lg font-black text-slate-900">
-                        この記事の対象者
-                    </h2>
+            <p>
+                MokuMoku Matchは、フルリモートや在宅勤務で一人になりがちな人が、
+                作業仲間や勉強仲間を探すためのサービスです。
+            </p>
 
-                    <ul class="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                        <li>・フルリモートで孤独を感じている方</li>
-                        <li>・在宅勤務でモチベーションが上がらない方</li>
-                        <li>・一人だと勉強が続かない方</li>
-                        <li>・黙々会や作業仲間を探している方</li>
-                        <li>・フリーランスで人との接点が少ない方</li>
-                    </ul>
+            <p>
+                たとえば、次のような募集を作成できます。
+            </p>
 
-                    <div class="mt-6 border-t border-slate-200 pt-6">
-                        @auth
-                            <a
-                                href="{{ route('work-posts.create') }}"
-                                class="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-                            >
-                                募集を作成する
-                            </a>
-                        @else
-                            <a
-                                href="{{ route('register') }}"
-                                class="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-                            >
-                                無料で始める
-                            </a>
-                        @endauth
+            <ul>
+                <li>平日午前に一緒に黙々作業できる方募集</li>
+                <li>Laravelの勉強を一緒に進める仲間募集</li>
+                <li>フリーランス同士で作業・情報交換したい方募集</li>
+                <li>朝の作業習慣を作りたい方募集</li>
+            </ul>
 
-                        <a
-                            href="{{ route('work-posts.index') }}"
-                            class="mt-3 flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                        >
-                            募集を見る
-                        </a>
-                    </div>
-                </section>
-            </aside>
-        </div>
+            <p>
+                最初から深く交流する必要はありません。
+                まずは、同じ時間に作業する相手を見つけるだけでも十分です。
+            </p>
+
+            <h2>一人で頑張り続けなくても大丈夫です</h2>
+
+            <p>
+                フルリモートで孤独を感じるのは、自然なことです。
+                気合いや根性だけで解決しようとせず、誰かと一緒に作業する環境を作ってみてください。
+            </p>
+        </article>
+
+        {{-- CTA --}}
+        <section class="mt-12 rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            <h2 class="text-xl font-bold text-slate-950">
+                作業仲間を探してみませんか？
+            </h2>
+
+            <p class="mt-3 leading-8 text-slate-600">
+                MokuMoku Matchでは、フルリモート・在宅勤務・勉強中の方が、
+                一緒に作業できる相手を探せます。
+            </p>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+                @auth
+                    <a
+                        href="{{ route('work-posts.create') }}"
+                        class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
+                    >
+                        募集を作成する
+                    </a>
+                @else
+                    <a
+                        href="{{ route('register') }}"
+                        class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
+                    >
+                        無料で会員登録する
+                    </a>
+                @endauth
+
+                <a
+                    href="{{ route('work-posts.index') }}"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                >
+                    募集を見る
+                </a>
+            </div>
+        </section>
     </main>
 </div>
 @endsection

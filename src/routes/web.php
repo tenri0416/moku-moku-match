@@ -98,10 +98,12 @@ Route::prefix('admin')
     });
 
 
-
+Route::prefix('site')->group(function () {
     // 記事
     Route::view('/remote-work-loneliness', 'articles.remote-work-loneliness')
     ->name('articles.remote-work-loneliness');
+});
+
 
     require __DIR__.'/auth.php';
 

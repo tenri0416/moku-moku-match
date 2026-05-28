@@ -32,7 +32,15 @@ class AdminAuthController extends Controller
         if (Auth::guard('admin')->attempt($credentials)) {
             $request->session()->regenerate();
 
-            Log::info('管理者ログイン成功', ['email' => $request->input('email')]);
+            Log::info('管理者ログイン成功', [
+            'email' => $request->input('email'),
+            'admin_check' => Auth::guard('admin')->check(),
+            'admin_id' => Auth::guard('admin')->id(),
+            'web_check' => Auth::guard('web')->check(),
+            'web_id' => Auth::guard('web')->id(),
+            ]);
+
+
             return redirect()->route('admin.dashboard');
         }
 
