@@ -35,7 +35,7 @@ class WorkPostStoreRequest extends FormRequest
                 WorkPost::LOCATION_BOTH,
             ])],
             'meeting_tool' => ['nullable', 'string', 'max:100'],
-            'prefecture' => ['nullable', 'string', 'max:50'],
+            'prefecture_id' => ['nullable', 'integer', 'exists:prefectures,id'],
             'start_at' => ['nullable', 'date'],
             'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
             'time_zone' => ['nullable', Rule::in([

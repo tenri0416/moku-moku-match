@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
+use App\Models\Prefecture;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -17,14 +19,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        // return view('profile.edit', [
-        //     'user' => $request->user(),
-        // ]);
-
-        Log::info('ユーザープロフィールの編集画面にアクセスされました。', ['user_id' => auth()->id()]);
+        Log::info('ユーザープロフィールの編集画面にアクセスされました。', [
+            'user_id' => auth()->id(),
+        ]);
+    
         $profile = auth()->user()->profile;
-
-        return view('profile.edit', compact('profile'));
+        $prefectures = Prefecture::orderBy('id')->get();
+    
+        return view('profile.edit', compact('profile', 'prefectures'));
     }
 
     /**
@@ -32,18 +34,27 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        // $request->user()->fill($request->validated());
+        $validated = $request->validated();
 
-        // if ($request->user()->isDirty('email')) {
-        //     $request->user()->email_verified_at = null;
-        // }
+        $profile = auth()->user()->profile;
 
-        // $request->user()->save();
+        // プロフィール画像がアップロードされた場合
+        if ($request->hasFile('avatar')) {
+            // 既存画像がある場合は削除
+            if ($profile && $profile->avatar_path) {
+                Storage::disk('public')->delete($profile->avatar_path);
+            }
 
-        // return Redirect::route('profile.edit')->with('status', 'profile-updated');
-         auth()->user()->profile()->updateOrCreate(
+            // 新しい画像を保存
+            $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        // avatar は profiles テーブルに保存しないため除外
+        unset($validated['avatar']);
+
+        auth()->user()->profile()->updateOrCreate(
             ['user_id' => auth()->id()],
-            $request->validated()
+            $validated
         );
 
         return redirect()->route('mypage')->with('success', 'プロフィールを保存しました。');

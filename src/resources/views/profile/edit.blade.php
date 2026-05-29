@@ -28,7 +28,7 @@
 
         {{-- Form --}}
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-            <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PATCH')
 
@@ -38,19 +38,14 @@
                         表示名 <span class="text-rose-500">必須</span>
                     </label>
 
-                    <input
-                        type="text"
-                        id="display_name"
-                        name="display_name"
-                        value="{{ old('display_name', $profile->display_name ?? '') }}"
-                        placeholder="例：Laravelエンジニア"
-                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
+                    <input type="text" id="display_name" name="display_name"
+                        value="{{ old('display_name', $profile->display_name ?? '') }}" placeholder="例：Laravelエンジニア"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                     @error('display_name')
-                        <p class="mt-2 text-sm font-semibold text-rose-600">
-                            {{ $message }}
-                        </p>
+                    <p class="mt-2 text-sm font-semibold text-rose-600">
+                        {{ $message }}
+                    </p>
                     @enderror
                 </div>
 
@@ -61,43 +56,56 @@
                             職種
                         </label>
 
-                        <input
-                            type="text"
-                            id="job_type"
-                            name="job_type"
-                            value="{{ old('job_type', $profile->job_type ?? '') }}"
-                            placeholder="例：バックエンドエンジニア"
-                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
+                        <input type="text" id="job_type" name="job_type"
+                            value="{{ old('job_type', $profile->job_type ?? '') }}" placeholder="例：バックエンドエンジニア"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                         @error('job_type')
-                            <p class="mt-2 text-sm font-semibold text-rose-600">
-                                {{ $message }}
-                            </p>
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
                         @enderror
                     </div>
 
                     {{-- 都道府県 --}}
                     <div>
-                        <label for="prefecture" class="mb-2 block text-sm font-bold text-slate-700">
+                        <label for="prefecture_id" class="mb-2 block text-sm font-bold text-slate-700">
                             都道府県
                         </label>
 
-                        <input
-                            type="text"
-                            id="prefecture"
-                            name="prefecture"
-                            value="{{ old('prefecture', $profile->prefecture ?? '') }}"
-                            placeholder="例：奈良県"
-                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
+                        <select id="prefecture_id" name="prefecture_id"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">選択してください</option>
+                            @foreach ($prefectures as $prefecture)
+                            <option value="{{ $prefecture->id }}" @selected((string) old('prefecture_id', $profile?->
+                                prefecture_id ?? '') === (string) $prefecture->id)
+                                >
+                                {{ $prefecture->name }}
+                            </option>
+                            @endforeach
+                        </select>
 
-                        @error('prefecture')
-                            <p class="mt-2 text-sm font-semibold text-rose-600">
-                                {{ $message }}
-                            </p>
+                        @error('prefecture_id')
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
                         @enderror
                     </div>
+                </div>
+                {{-- プロフィール画像 --}}
+                <div>
+                    <label for="avatar" class="mb-2 block text-sm font-bold text-slate-700">
+                        プロフィール画像
+                    </label>
+                    <input type="file" name="avatar" id="avatar" accept="image/*">
+
+                    @error('avatar')
+                    <p class="text-red-500">{{ $message }}</p>
+                    @enderror
+                    @if ($profile?->avatar_path)
+                    <img src="{{ asset('storage/' . $profile->avatar_path) }}" alt="プロフィール画像"
+                        style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                    @endif
                 </div>
 
                 {{-- スキル --}}
@@ -106,22 +114,17 @@
                         スキル
                     </label>
 
-                    <textarea
-                        id="skills"
-                        name="skills"
-                        rows="4"
-                        placeholder="例：Laravel, React, AWS, MySQL"
-                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >{{ old('skills', $profile->skills ?? '') }}</textarea>
+                    <textarea id="skills" name="skills" rows="4" placeholder="例：Laravel, React, AWS, MySQL"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('skills', $profile->skills ?? '') }}</textarea>
 
                     <p class="mt-2 text-xs text-slate-500">
                         自分ができること、勉強中の技術、話せる分野などを入力してください。
                     </p>
 
                     @error('skills')
-                        <p class="mt-2 text-sm font-semibold text-rose-600">
-                            {{ $message }}
-                        </p>
+                    <p class="mt-2 text-sm font-semibold text-rose-600">
+                        {{ $message }}
+                    </p>
                     @enderror
                 </div>
 
@@ -131,78 +134,61 @@
                         自己紹介
                     </label>
 
-                    <textarea
-                        id="bio"
-                        name="bio"
-                        rows="6"
+                    <textarea id="bio" name="bio" rows="6"
                         placeholder="例：フルリモートでLaravelの開発をしています。平日の午前中に一緒に黙々作業できる方を探しています。"
-                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >{{ old('bio', $profile->bio ?? '') }}</textarea>
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('bio', $profile->bio ?? '') }}</textarea>
 
                     @error('bio')
-                        <p class="mt-2 text-sm font-semibold text-rose-600">
-                            {{ $message }}
-                        </p>
+                    <p class="mt-2 text-sm font-semibold text-rose-600">
+                        {{ $message }}
+                    </p>
                     @enderror
                 </div>
 
                 <div class="grid gap-6 md:grid-cols-2">
- {{-- 利用目的 --}}
-<div>
-    <label for="purpose" class="mb-2 block text-sm font-bold text-slate-700">
-        利用目的
-    </label>
+                    {{-- 利用目的 --}}
+                    <div>
+                        <label for="purpose" class="mb-2 block text-sm font-bold text-slate-700">
+                            利用目的
+                        </label>
 
-    <textarea
-        id="purpose"
-        name="purpose"
-        rows="4"
-        placeholder="例：黙々作業、勉強、情報交換、フリーランス仲間探しなど"
-        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-    >{{ old('purpose', $profile->purpose ?? '') }}</textarea>
+                        <textarea id="purpose" name="purpose" rows="4" placeholder="例：黙々作業、勉強、情報交換、フリーランス仲間探しなど"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('purpose', $profile->purpose ?? '') }}</textarea>
 
-    @error('purpose')
-        <p class="mt-2 text-sm font-semibold text-rose-600">
-            {{ $message }}
-        </p>
-    @enderror
-</div>
+                        @error('purpose')
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
+                        @enderror
+                    </div>
 
-{{-- 希望作業スタイル --}}
-<div>
-    <label for="work_style" class="mb-2 block text-sm font-bold text-slate-700">
-        希望作業スタイル
-    </label>
+                    {{-- 希望作業スタイル --}}
+                    <div>
+                        <label for="work_style" class="mb-2 block text-sm font-bold text-slate-700">
+                            希望作業スタイル
+                        </label>
 
-    <textarea
-        id="work_style"
-        name="work_style"
-        rows="4"
-        placeholder="例：最初と最後だけ会話して、作業中は集中したい。1〜2時間くらい一緒に作業したい。"
-        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-    >{{ old('work_style', $profile->work_style ?? '') }}</textarea>
+                        <textarea id="work_style" name="work_style" rows="4"
+                            placeholder="例：最初と最後だけ会話して、作業中は集中したい。1〜2時間くらい一緒に作業したい。"
+                            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('work_style', $profile->work_style ?? '') }}</textarea>
 
-    @error('work_style')
-        <p class="mt-2 text-sm font-semibold text-rose-600">
-            {{ $message }}
-        </p>
-    @enderror
-</div>
+                        @error('work_style')
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
+                        @enderror
+                    </div>
                 </div>
 
                 {{-- Buttons --}}
                 <div class="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-6">
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                    >
+                    <button type="submit"
+                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700">
                         保存する
                     </button>
 
-                    <a
-                        href="{{ route('mypage') }}"
-                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                    >
+                    <a href="{{ route('mypage') }}"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                         マイページへ戻る
                     </a>
                 </div>

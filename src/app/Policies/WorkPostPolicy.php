@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\WorkPost;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkPostPolicy
 {
@@ -21,5 +22,9 @@ class WorkPostPolicy
     public function manage(User $user): bool
     {
         return $user->isAdmin();
+    }
+    public function prefecture(): BelongsTo
+    {
+        return $this->belongsTo(Prefecture::class);
     }
 }

@@ -95,7 +95,7 @@
                         <div class="rounded-xl bg-slate-50 p-4">
                             <dt class="text-sm font-bold text-slate-500">都道府県</dt>
                             <dd class="mt-1 font-semibold text-slate-900">
-                                {{ $workPost->user->profile->prefecture ?? '未設定' }}
+                                {{ $user->profile?->prefecture?->name ?? '未設定' }}
                             </dd>
                         </div>
                     </dl>
@@ -121,7 +121,7 @@
 
                         <div>
                             <dt class="font-bold text-slate-500">都道府県</dt>
-                            <dd class="mt-1 text-slate-900">{{ $workPost->prefecture ?? '未設定' }}</dd>
+                            <dd class="mt-1 text-slate-900">{{ $workPost->prefecture?->name ?? '未設定' }}</dd>
                         </div>
 
                         <div>

@@ -13,19 +13,51 @@ return new class extends Migration
     {
         Schema::create('profiles', function (Blueprint $table) {
             $table->id()->comment('プロフィールID');
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete()->comment('ユーザーID');
-            $table->string('display_name', 50)->comment('表示名');
-            $table->string('job_type', 100)->nullable()->comment('職種');
-            $table->string('prefecture', 50)->nullable()->comment('都道府県');
-            $table->text('skills')->nullable()->comment('スキル');
-            $table->text('bio')->nullable()->comment('自己紹介');
-            $table->string('purpose', 255)->nullable()->comment('利用目的');
-            $table->string('work_style', 255)->nullable()->comment('希望作業スタイル');
+
+            $table->foreignId('user_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete()
+                ->comment('ユーザーID');
+
+            $table->string('avatar_path')
+                ->nullable()
+                ->comment('プロフィール画像パス');
+
+            $table->string('display_name', 50)
+                ->comment('表示名');
+
+            $table->string('job_type', 100)
+                ->nullable()
+                ->comment('職種');
+
+            $table->foreignId('prefecture_id')
+                ->nullable()
+                ->constrained('prefectures')
+                ->nullOnDelete()
+                ->comment('都道府県ID');
+
+            $table->text('skills')
+                ->nullable()
+                ->comment('スキル');
+
+            $table->text('bio')
+                ->nullable()
+                ->comment('自己紹介');
+
+            $table->string('purpose', 255)
+                ->nullable()
+                ->comment('利用目的');
+
+            $table->string('work_style', 255)
+                ->nullable()
+                ->comment('希望作業スタイル');
+
             $table->timestamps();
 
             $table->index('display_name');
             $table->index('job_type');
-            $table->index('prefecture');
+            $table->index('prefecture_id');
             $table->index('purpose');
         });
     }

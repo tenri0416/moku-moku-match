@@ -140,7 +140,7 @@
                                     都道府県
                                 </dt>
                                 <dd class="mt-1 font-semibold text-slate-900">
-                                    {{ $user->profile->prefecture ?? '未設定' }}
+                                    {{ $user->profile?->prefecture?->name ?? '未設定' }}
                                 </dd>
                             </div>
 

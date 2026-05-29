@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkPost extends Model
 {
-   use HasFactory;
+    use HasFactory;
 
     public const STATUS_OPEN = 1;
     public const STATUS_CLOSED = 2;
@@ -28,7 +29,7 @@ class WorkPost extends Model
         'purpose',
         'location_type',
         'meeting_tool',
-        'prefecture',
+        'prefecture_id',
         'start_at',
         'end_at',
         'time_zone',
@@ -43,20 +44,20 @@ class WorkPost extends Model
 
 
     public function user()
-{
-    return $this->belongsTo(User::class);
-}
+    {
+        return $this->belongsTo(User::class);
+    }
 
-public function applications()
-{
-    return $this->hasMany(Application::class);
-}
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 
-public function messages()
-{
-    return $this->hasMany(Message::class);
-}
-public function reports()
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+    public function reports()
     {
         return $this->hasMany(Report::class);
     }
@@ -70,5 +71,8 @@ public function reports()
     {
         return $this->user_id === $user->id;
     }
-    
+    public function prefecture(): BelongsTo
+    {
+        return $this->belongsTo(Prefecture::class);
+    }
 }

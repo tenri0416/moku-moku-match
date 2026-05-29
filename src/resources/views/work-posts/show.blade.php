@@ -48,13 +48,31 @@
             <h1 class="text-3xl font-bold leading-tight text-slate-900">
                 {{ $workPost->title }}
             </h1>
-
-            <p class="mt-4 text-sm text-slate-600">
-                投稿者：
-                <span class="font-semibold text-slate-800">
-                    {{ $workPost->user->profile->display_name ?? $workPost->user->name }}
-                </span>
-            </p>
+            @php
+            $profile = $workPost->user->profile;
+            $avatarPath = $profile?->avatar_path;
+            $avatarUrl = $avatarPath
+                ? asset('storage/' . $avatarPath)
+                : asset('images/default-avatar.png');
+            $displayName = $profile?->display_name ?? $workPost->user->name;
+        @endphp
+        
+        <div class="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-4">
+            <img
+                src="{{ $avatarUrl }}"
+                alt="{{ $displayName }}のプロフィール画像"
+                class="h-14 w-14 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+            >
+        
+            <div>
+                <p class="text-xs font-bold text-slate-500">
+                    投稿者
+                </p>
+                <p class="text-base font-bold text-slate-900">
+                    {{ $displayName }}
+                </p>
+            </div>
+        </div>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
@@ -76,26 +94,52 @@
                     <h2 class="text-xl font-bold text-slate-900">
                         投稿者プロフィール
                     </h2>
-
+                
+                    @php
+                        $profile = $workPost->user->profile;
+                        $avatarPath = $profile?->avatar_path;
+                        $avatarUrl = $avatarPath
+                            ? asset('storage/' . $avatarPath)
+                            : asset('images/default-avatar.png');
+                        $displayName = $profile?->display_name ?? $workPost->user->name;
+                    @endphp
+                
+                    <div class="mt-5 flex items-center gap-4 rounded-xl bg-slate-50 p-4">
+                        <img
+                            src="{{ $avatarUrl }}"
+                            alt="{{ $displayName }}のプロフィール画像"
+                            class="h-16 w-16 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+                        >
+                
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">
+                                投稿者
+                            </p>
+                            <p class="text-lg font-bold text-slate-900">
+                                {{ $displayName }}
+                            </p>
+                        </div>
+                    </div>
+                
                     <div class="mt-5 space-y-3 text-sm text-slate-600">
                         <p>
                             表示名：
                             <span class="font-semibold text-slate-800">
-                                {{ $workPost->user->profile->display_name ?? $workPost->user->name }}
+                                {{ $displayName }}
                             </span>
                         </p>
-
+                
                         <p>
                             職種：
                             <span class="font-semibold text-slate-800">
-                                {{ $workPost->user->profile->job_type ?? '未設定' }}
+                                {{ $profile?->job_type ?? '未設定' }}
                             </span>
                         </p>
-
+                
                         <p>
                             スキル：
                             <span class="font-semibold text-slate-800">
-                                {{ $workPost->user->profile->skills ?? '未設定' }}
+                                {{ $profile?->skills ?? '未設定' }}
                             </span>
                         </p>
                     </div>
@@ -123,7 +167,7 @@
 
                         <div>
                             <dt class="font-bold text-slate-500">都道府県</dt>
-                            <dd class="mt-1 text-slate-900">{{ $workPost->prefecture ?? '未設定' }}</dd>
+                            <dd class="mt-1 text-slate-900">{{ $workPost->prefecture?->name ?? '未設定' }}</dd>
                         </div>
 
                         <div>

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Prefecture;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -21,6 +22,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AdminSeeder::class,
+            PrefectureSeeder::class,
+            DemoUserSeeder::class,
+            DemoWorkPostSeeder::class,
         ]);
     }
 }

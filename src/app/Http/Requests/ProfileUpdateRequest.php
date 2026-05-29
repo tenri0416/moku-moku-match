@@ -23,18 +23,8 @@ class ProfileUpdateRequest extends FormRequest
             'skills' => ['nullable', 'string'],
             'purpose' => ['nullable', 'string'],
             'work_style' => ['nullable', 'string'],
-            
-
-        //             'user_id',
-        // 'display_name',
-        // 'job_type',
-        // 'prefecture',
-        // 'skills',
-        // 'bio',
-        // 'purpose',
-        // 'work_style',
-
-
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'prefecture_id' => ['nullable', 'integer', 'exists:prefectures,id'],
         ];
     }
 }

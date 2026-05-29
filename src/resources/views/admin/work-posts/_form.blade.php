@@ -108,18 +108,25 @@
                 都道府県
             </label>
 
-            <input
-                type="text"
-                id="prefecture"
-                name="prefecture"
-                value="{{ old('prefecture', $workPost->prefecture ?? '') }}"
-                placeholder="例：奈良県"
-                class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
+            <select
+            name="prefecture_id"
+            id="prefecture_id"
+            class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        >
+            <option value="">選択してください</option>
+            @foreach ($prefectures as $prefecture)
+                <option
+                    value="{{ $prefecture->id }}"
+                    @selected((string) old('prefecture_id', $profile?->prefecture_id) === (string) $prefecture->id)
+                >
+                    {{ $prefecture->name }}
+                </option>
+            @endforeach
+        </select>
 
-            @error('prefecture')
-                <p class="mt-2 text-sm font-semibold text-rose-600">{{ $message }}</p>
-            @enderror
+        @error('prefecture_id')
+        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+    @enderror
         </div>
 
         <div>

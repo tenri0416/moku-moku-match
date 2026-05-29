@@ -25,7 +25,7 @@ class WorkPostUpdateRequest extends FormRequest
         return [
             'display_name' => ['required', 'string', 'max:50'],
             'job_type' => ['nullable', 'string', 'max:100'],
-            'prefecture' => ['nullable', 'string', 'max:50'],
+            'prefecture_id' => ['nullable', 'integer', 'exists:prefectures,id'],
             'skills' => ['nullable', 'string', 'max:1000'],
             'bio' => ['nullable', 'string', 'max:3000'],
             'purpose' => ['nullable', 'string', 'max:255'],

@@ -116,7 +116,7 @@
                                     <div class="rounded-xl bg-slate-50 p-4">
                                         <dt class="font-bold text-slate-500">都道府県</dt>
                                         <dd class="mt-1 text-slate-900">
-                                            {{ $application->user->profile->prefecture ?? '未設定' }}
+                                            {{ $application->user->profile->prefecture?->name ?? '未設定' }}
                                         </dd>
                                     </div>
 
