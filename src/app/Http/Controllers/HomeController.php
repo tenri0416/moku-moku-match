@@ -10,10 +10,12 @@ class HomeController extends Controller
     public function index()
     {
         $latestWorkPosts = WorkPost::query()
-            ->with('user.profile')
-            ->where('status', WorkPost::STATUS_OPEN)
+            ->with([
+                'user.profile',
+                'user.profile.prefecture',
+            ])
             ->latest()
-            ->limit(6)
+            ->take(6)
             ->get();
 
         return view('home', compact('latestWorkPosts'));

@@ -237,21 +237,33 @@
                         </a>
                     </h3>
 
-                    <div class="mt-4 space-y-2 text-sm text-slate-600">
-                        <p>
-                            投稿者：
-                            <span class="font-semibold text-slate-800">
-                                {{ $workPost->user->profile->display_name ?? $workPost->user->name }}
-                            </span>
+                    @php
+                    $profile = $workPost->user->profile;
+                    $avatarPath = $profile?->avatar_path;
+                    $avatarUrl = $avatarPath
+                        ? asset('storage/' . $avatarPath)
+                        : asset('images/default-avatar.png');
+                    $displayName = $profile?->display_name ?? $workPost->user->name;
+                    $jobType = $profile?->job_type ?? '職種未設定';
+                @endphp
+                
+                <div class="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+                    <img
+                        src="{{ $avatarUrl }}"
+                        alt="{{ $displayName }}のプロフィール画像"
+                        class="h-12 w-12 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+                    >
+                
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-bold text-slate-900">
+                            {{ $displayName }}
                         </p>
-
-                        <p>
-                            開始日時：
-                            <span class="font-semibold text-slate-800">
-                                {{ $workPost->start_at ? $workPost->start_at->format('Y/m/d H:i') : '未定' }}
-                            </span>
+                
+                        <p class="mt-0.5 truncate text-xs font-semibold text-slate-500">
+                            {{ $jobType }}
                         </p>
                     </div>
+                </div>
 
                     <div class="mt-5">
                         <a
