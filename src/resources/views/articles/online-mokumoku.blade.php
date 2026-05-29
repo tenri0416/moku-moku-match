@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.article')
 
 @section('title', 'オンライン黙々会とは？話さなくても一緒に作業できる時間の作り方')
 

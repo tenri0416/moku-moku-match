@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.article')
 
 @section('title', '一緒に勉強する相手をオンラインで探す方法｜続かない勉強を習慣にする')
 

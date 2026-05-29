@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\WorkPost;
+use App\Models\Article;
 
 class HomeController extends Controller
 {
@@ -18,6 +19,11 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
-        return view('home', compact('latestWorkPosts'));
+        $latestArticles = Article::query()
+            ->public()
+            ->latest('published_at')
+            ->take(6)
+            ->get();
+        return view('home', compact('latestWorkPosts', 'latestArticles'));
     }
 }

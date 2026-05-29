@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.article')
 
 @section('title', 'フルリモートで仲間を作る方法｜仕事以外のつながりを小さく増やす')
 

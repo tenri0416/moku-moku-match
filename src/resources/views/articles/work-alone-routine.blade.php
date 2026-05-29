@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.article')
 
 @section('title', '一人だと作業が続かない理由｜在宅ワークで集中するための小さな工夫')
 

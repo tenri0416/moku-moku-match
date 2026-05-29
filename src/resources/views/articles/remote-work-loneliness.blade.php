@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.article')
 
 @section('title', 'フルリモートで孤独を感じる方へ｜一人で仕事が続かない時の対策')
 

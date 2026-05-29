@@ -11,7 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        
+        then: function () {
+            Route::middleware('web')
+                ->group(base_path('routes/articles.php'));
+    
+            Route::middleware(['web', 'auth'])
+                ->prefix('admin')
+                ->name('admin.')
+                ->group(base_path('routes/admin_articles.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(LogAccess::class);

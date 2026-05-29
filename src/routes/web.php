@@ -328,3 +328,6 @@ Route::get('/sitemap.xml', function () {
 */
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/articles.php';
+require __DIR__ . '/admin_articles.php';
+
