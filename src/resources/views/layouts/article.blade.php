@@ -44,6 +44,7 @@
     <meta name="theme-color" content="#0B1548">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 
 <body class="min-h-screen bg-[#F7F3EA] text-[#1F2933] antialiased">

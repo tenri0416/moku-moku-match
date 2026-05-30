@@ -42,6 +42,9 @@ return new class extends Migration
 
             // WordPress風にHTMLを保存する
             $table->longText('body_html')->comment('本文HTML');
+            $table->longText('body_css')
+                ->nullable()
+                ->comment('記事本文に適用する追加CSS');
 
             $table->string('thumbnail_path')->nullable()->comment('サムネイル画像パス');
 

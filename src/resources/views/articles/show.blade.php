@@ -1,8 +1,83 @@
 @extends('layouts.article')
 
-@section('title', $article->seo_title)
+@section('title', $article->seo_title ?: $article->title)
 
-@section('meta_description', $article->seo_description_text)
+@section('description', $article->seo_description_text ?: $article->excerpt)
+
+@push('styles')
+    @if ($article->body_css)
+        <style>
+            {!! $article->body_css !!}
+        </style>
+    @endif
+
+    <style>
+        .article-body {
+            color: #334155;
+            font-size: 16px;
+            line-height: 1.95;
+        }
+
+        .article-body h2 {
+            margin-top: 48px;
+            margin-bottom: 20px;
+            padding-left: 16px;
+            border-left: 5px solid #C9825D;
+            color: #0B1548;
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.5;
+        }
+
+        .article-body h3 {
+            margin-top: 36px;
+            margin-bottom: 16px;
+            color: #0B1548;
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1.6;
+        }
+
+        .article-body p {
+            margin-top: 18px;
+        }
+
+        .article-body ul,
+        .article-body ol {
+            margin-top: 20px;
+            padding-left: 1.5em;
+        }
+
+        .article-body ul {
+            list-style-type: disc;
+        }
+
+        .article-body ol {
+            list-style-type: decimal;
+        }
+
+        .article-body li {
+            margin-top: 10px;
+            line-height: 1.9;
+        }
+
+        .article-body blockquote {
+            margin: 32px 0;
+            padding: 20px 24px;
+            border-left: 5px solid #6F8FAF;
+            background: #F7F3EA;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .article-body a {
+            color: #4F46E5;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    </style>
+@endpush
 
 @section('content')
 <div class="min-h-screen bg-slate-50">
@@ -42,7 +117,7 @@
                 </p>
             @endif
 
-            <div class="article-body mt-8 leading-8 text-slate-700">
+            <div class="article-body mt-8">
                 {!! $article->body_html !!}
             </div>
 

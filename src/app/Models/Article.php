@@ -26,6 +26,7 @@ class Article extends Model
         'h1_title',
         'excerpt',
         'body_html',
+        'body_css',
         'thumbnail_path',
         'status',
         'published_at',

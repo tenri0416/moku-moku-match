@@ -42,6 +42,7 @@ class ArticleRequest extends FormRequest
             'h1_title' => ['nullable', 'string', 'max:150'],
             'excerpt' => ['nullable', 'string', 'max:255'],
             'body_html' => ['required', 'string'],
+            'body_css' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
 
             'status' => [

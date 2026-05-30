@@ -2,9 +2,100 @@
 
 @section('title', '記事詳細')
 
+@push('styles')
+    <style>
+        /*
+         * 管理者詳細画面でも、実際の記事本文に近い見た目で確認するための基本CSS
+         */
+        .article-preview-body {
+            color: #334155;
+            font-size: 16px;
+            line-height: 1.95;
+        }
+
+        .article-preview-body h2 {
+            margin-top: 48px;
+            margin-bottom: 20px;
+            padding-left: 16px;
+            border-left: 5px solid #C9825D;
+            color: #0B1548;
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.5;
+        }
+
+        .article-preview-body h3 {
+            margin-top: 36px;
+            margin-bottom: 16px;
+            padding-left: 14px;
+            border-left: 4px solid #6F8FAF;
+            color: #0B1548;
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1.6;
+        }
+
+        .article-preview-body p {
+            margin-top: 18px;
+        }
+
+        .article-preview-body ul,
+        .article-preview-body ol {
+            margin-top: 20px;
+            padding-left: 1.5em;
+        }
+
+        .article-preview-body ul {
+            list-style-type: disc;
+        }
+
+        .article-preview-body ol {
+            list-style-type: decimal;
+        }
+
+        .article-preview-body li {
+            margin-top: 10px;
+            line-height: 1.9;
+        }
+
+        .article-preview-body blockquote {
+            margin: 32px 0;
+            padding: 20px 24px;
+            border-left: 5px solid #6F8FAF;
+            background: #F7F3EA;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .article-preview-body a {
+            color: #4F46E5;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .article-preview-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+        }
+    </style>
+
+    @if (!empty($article->body_css))
+        <style>
+            /*
+             * 記事専用CSSを管理画面プレビューにも反映する
+             * show.blade.php側では .article-body として表示している想定のCSSも効くように、
+             * プレビュー側の本文にも article-body クラスを付けています。
+             */
+            {!! $article->body_css !!}
+        </style>
+    @endif
+@endpush
+
 @section('content')
 <div class="min-h-screen bg-slate-50">
-    <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-sm font-bold text-indigo-600">
@@ -16,7 +107,7 @@
                 </h1>
 
                 <p class="mt-3 text-slate-600">
-                    作成した記事の内容・SEO設定・公開状態を確認できます。
+                    作成した記事の内容・SEO設定・公開状態・本文デザインを確認できます。
                 </p>
             </div>
 
@@ -57,10 +148,10 @@
                 : route('articles.show', $article);
         @endphp
 
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
             {{-- Main --}}
-            <div class="space-y-6 lg:col-span-2">
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div class="space-y-6">
+                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
                     <div class="mb-4 flex flex-wrap gap-2">
                         <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
                             {{ $statusLabel }}
@@ -98,13 +189,109 @@
                     @endif
                 </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        本文プレビュー
-                    </h3>
+                {{-- 実際の記事プレビュー --}}
+                <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                    <div class="border-b border-slate-200 bg-slate-900 px-6 py-4 sm:px-8">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-xs font-bold tracking-[0.18em] text-indigo-200">
+                                    ARTICLE PREVIEW
+                                </p>
 
-                    <div class="article-body mt-5 leading-8 text-slate-700">
-                        {!! $article->body_html !!}
+                                <h3 class="mt-1 text-lg font-bold text-white">
+                                    実際の記事表示プレビュー
+                                </h3>
+                            </div>
+
+                            @if ((int) $article->status === 2)
+                                <a
+                                    href="{{ $publicUrl }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
+                                >
+                                    公開ページを別タブで確認
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <article class="px-6 py-8 sm:px-10">
+                        <div class="mb-4 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                                記事
+                            </span>
+
+                            @if ($article->prefecture)
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                                    {{ $article->prefecture->name }}
+                                </span>
+                            @endif
+                        </div>
+
+                        <h1 class="text-3xl font-bold leading-tight text-slate-900">
+                            {{ $article->h1_title ?: $article->title }}
+                        </h1>
+
+                        <p class="mt-4 text-sm text-slate-500">
+                            公開日：{{ $article->published_at?->format('Y/m/d') ?? '未設定' }}
+                        </p>
+
+                        @if ($article->thumbnail_path)
+                            <img
+                                src="{{ asset('storage/' . $article->thumbnail_path) }}"
+                                alt="{{ $article->title }}"
+                                class="mt-8 w-full rounded-2xl object-cover"
+                            >
+                        @endif
+
+                        @if ($article->excerpt)
+                            <p class="mt-8 rounded-xl bg-slate-50 p-4 leading-7 text-slate-700">
+                                {{ $article->excerpt }}
+                            </p>
+                        @endif
+
+                        <div class="article-body article-preview-body mt-8">
+                            {!! $article->body_html !!}
+                        </div>
+
+                        <div class="mt-10 rounded-2xl bg-indigo-50 p-5">
+                            <p class="font-bold text-indigo-900">
+                                作業仲間を探してみませんか？
+                            </p>
+
+                            <p class="mt-2 text-sm leading-7 text-indigo-800">
+                                MokuMoku Matchでは、フルリモートで働く人や学習中の人が、黙々作業・勉強・情報交換できる相手を探せます。
+                            </p>
+
+                            <div class="mt-4">
+                                <a
+                                    href="{{ route('work-posts.index') }}"
+                                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
+                                >
+                                    募集を見る
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                {{-- HTML/CSS確認用 --}}
+                <div class="grid gap-6 xl:grid-cols-2">
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900">
+                            保存されているHTML
+                        </h3>
+
+                        <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_html }}</code></pre>
+                    </div>
+
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900">
+                            保存されている記事専用CSS
+                        </h3>
+
+                        <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_css ?: '記事専用CSSは未設定です。' }}</code></pre>
                     </div>
                 </div>
             </div>
