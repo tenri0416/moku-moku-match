@@ -7,3 +7,5 @@
       @include('layouts.admin.content')
   </div>
 </div>
+@include('layouts.admin.notifications.modal')
+@include('layouts.admin.notifications.script')

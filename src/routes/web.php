@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminLogController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -282,6 +283,9 @@ Route::prefix('admin')
         Route::get('/logs/{file}', [AdminLogController::class, 'show'])
             ->where('file', 'laravel(\-\d{4}\-\d{2}\-\d{2})?\.log')
             ->name('logs.show');
+
+        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllAsRead'])
+            ->name('notifications.read-all');
     });
 
 /*

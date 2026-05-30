@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Models\Admin;
+use App\Notifications\AdminUserRegisteredNotification;
+use Illuminate\Support\Facades\Notification;
 
 class RegisteredUserController extends Controller
 {
@@ -45,6 +48,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
         Log::info('User registered', ['user_id' => $user->id]);
+
+        $admins = Admin::query()->get();
+
+        Notification::send($admins, new AdminUserRegisteredNotification($user));
 
         event(new Registered($user));
 
