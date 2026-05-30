@@ -88,6 +88,15 @@
                     記事
                 </span>
 
+                @if ($article->category)
+                    <a
+                        href="{{ route('articles.category', $article->category->slug) }}"
+                        class="rounded-full bg-[#0B1548] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#17215A]"
+                    >
+                        {{ $article->category->name }}
+                    </a>
+                @endif
+
                 @if ($article->prefecture)
                     <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                         {{ $article->prefecture->name }}
@@ -99,9 +108,37 @@
                 {{ $article->h1_title ?: $article->title }}
             </h1>
 
-            <p class="mt-4 text-sm text-slate-500">
-                公開日：{{ $article->published_at?->format('Y/m/d') }}
-            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                @if ($article->published_at)
+                    <span>
+                        公開日：{{ $article->published_at->format('Y/m/d') }}
+                    </span>
+                @endif
+
+                @if ($article->category)
+                    <span class="hidden sm:inline">/</span>
+
+                    <a
+                        href="{{ route('articles.category', $article->category->slug) }}"
+                        class="font-bold text-indigo-600 hover:text-indigo-700"
+                    >
+                        カテゴリー：{{ $article->category->name }}
+                    </a>
+                @endif
+            </div>
+
+            @if ($article->tags->isNotEmpty())
+                <div class="mt-5 flex flex-wrap gap-2">
+                    @foreach ($article->tags as $tag)
+                        <a
+                            href="{{ route('articles.tag', $tag->slug) }}"
+                            class="rounded-full bg-[#EEF3F7] px-3 py-1 text-xs font-bold text-[#34506A] transition hover:bg-[#DDEAF2]"
+                        >
+                            #{{ $tag->name }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
 
             @if ($article->thumbnail_path)
                 <img
@@ -125,9 +162,11 @@
                 <p class="font-bold text-indigo-900">
                     作業仲間を探してみませんか？
                 </p>
+
                 <p class="mt-2 text-sm leading-7 text-indigo-800">
                     MokuMoku Matchでは、フルリモートで働く人や学習中の人が、黙々作業・勉強・情報交換できる相手を探せます。
                 </p>
+
                 <div class="mt-4">
                     <a
                         href="{{ route('work-posts.index') }}"

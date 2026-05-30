@@ -61,4 +61,21 @@
       <span>記事管理</span>
       <span class="text-slate-400">›</span>
   </a>
+  <a
+    href="{{ route('admin.article-categories.index') }}"
+    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+    {{ request()->routeIs('admin.article-categories.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+>
+    <span>記事カテゴリー</span>
+    <span class="text-slate-400">›</span>
+</a>
+
+<a
+    href="{{ route('admin.article-tags.index') }}"
+    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+    {{ request()->routeIs('admin.article-tags.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+>
+    <span>記事タグ</span>
+    <span class="text-slate-400">›</span>
+</a>
 </nav>

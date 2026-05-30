@@ -13,6 +13,70 @@
             <p class="mt-2 text-sm font-semibold text-rose-600">{{ $message }}</p>
         @enderror
     </div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="text-lg font-black text-slate-900">
+            カテゴリー・タグ
+        </h2>
+    
+        <div class="mt-5">
+            <label for="article_category_id" class="block text-sm font-bold text-slate-700">
+                カテゴリー
+            </label>
+    
+            <select
+                id="article_category_id"
+                name="article_category_id"
+                class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+                <option value="">カテゴリーを選択しない</option>
+    
+                @foreach ($categories as $category)
+                    <option
+                        value="{{ $category->id }}"
+                        @selected(old('article_category_id', $article->article_category_id ?? null) == $category->id)
+                    >
+                        {{ $category->displayName() }}
+                    </option>
+                @endforeach
+            </select>
+    
+            @error('article_category_id')
+                <p class="mt-2 text-sm font-bold text-rose-600">
+                    {{ $message }}
+                </p>
+            @enderror
+        </div>
+    
+        <div class="mt-6">
+            <p class="block text-sm font-bold text-slate-700">
+                タグ
+            </p>
+    
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($tags as $tag)
+                    <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                        <input
+                            type="checkbox"
+                            name="tag_ids[]"
+                            value="{{ $tag->id }}"
+                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            @checked(in_array($tag->id, old('tag_ids', isset($article) ? $article->tags->pluck('id')->toArray() : [])))
+                        >
+    
+                        <span>
+                            #{{ $tag->name }}
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+    
+            @error('tag_ids')
+                <p class="mt-2 text-sm font-bold text-rose-600">
+                    {{ $message }}
+                </p>
+            @enderror
+        </div>
+    </div>
 
     <div class="grid gap-6 md:grid-cols-2">
         <div>

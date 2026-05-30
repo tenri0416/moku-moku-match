@@ -19,6 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminLogController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
+
+
+
 /*
 |--------------------------------------------------------------------------
 | 公開ページ

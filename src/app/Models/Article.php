@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Article extends Model
 {
@@ -30,6 +31,7 @@ class Article extends Model
         'thumbnail_path',
         'status',
         'published_at',
+        'article_category_id',
     ];
 
     protected $casts = [
@@ -61,13 +63,29 @@ class Article extends Model
             ?? $this->attributes['title']
             ?? null;
     }
-    
+
     public function getSeoDescriptionTextAttribute(): ?string
     {
         $seoDescription = $this->attributes['seo_description'] ?? null;
         $excerpt = $this->attributes['excerpt'] ?? null;
         $bodyHtml = $this->attributes['body_html'] ?? '';
-    
+
         return $seoDescription ?: ($excerpt ?: mb_substr(strip_tags($bodyHtml), 0, 120));
+    }
+    /**
+     * 記事カテゴリーを取得する
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ArticleCategory::class, 'article_category_id');
+    }
+
+    /**
+     * 記事タグを取得する
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(ArticleTag::class, 'article_article_tag')
+            ->withTimestamps();
     }
 }

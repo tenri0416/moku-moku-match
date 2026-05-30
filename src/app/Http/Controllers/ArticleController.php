@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use Illuminate\View\View;
+use App\Models\ArticleCategory;
+use App\Models\ArticleTag;
 
 class ArticleController extends Controller
 {
@@ -58,5 +60,48 @@ class ArticleController extends Controller
     {
         abort_if($article->status !== Article::STATUS_PUBLIC, 404);
         abort_if($article->published_at === null || $article->published_at->isFuture(), 404);
+    }
+    public function category(ArticleCategory $category)
+    {
+        abort_unless($category->is_active, 404);
+
+        $articles = Article::query()
+            ->with(['category', 'tags'])
+            ->where('article_category_id', $category->id)
+            ->where('status', 2)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->latest('published_at')
+            ->paginate(12);
+
+        return view('articles.index', [
+            'articles' => $articles,
+            'pageTitle' => $category->name . 'の記事一覧',
+            'pageDescription' => $category->description ?: $category->name . 'に関する記事一覧です。',
+            'currentCategory' => $category,
+        ]);
+    }
+
+    public function tag(ArticleTag $tag)
+    {
+        abort_unless($tag->is_active, 404);
+
+        $articles = Article::query()
+            ->with(['category', 'tags'])
+            ->whereHas('tags', function ($query) use ($tag) {
+                $query->where('article_tags.id', $tag->id);
+            })
+            ->where('status', 2)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->latest('published_at')
+            ->paginate(12);
+
+        return view('articles.index', [
+            'articles' => $articles,
+            'pageTitle' => $tag->name . 'の記事一覧',
+            'pageDescription' => $tag->description ?: $tag->name . 'に関する記事一覧です。',
+            'currentTag' => $tag,
+        ]);
     }
 }

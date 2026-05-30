@@ -56,6 +56,9 @@ class ArticleRequest extends FormRequest
             ],
 
             'published_at' => ['nullable', 'date'],
+            'article_category_id' => ['nullable', 'exists:article_categories,id'],
+            'tag_ids' => ['nullable', 'array'],
+            'tag_ids.*' => ['exists:article_tags,id'],
         ];
     }
 

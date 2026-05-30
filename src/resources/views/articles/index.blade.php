@@ -1,8 +1,8 @@
 @extends('layouts.article')
 
-@section('title', '記事一覧 | MokuMoku Match')
+@section('title', isset($pageTitle) ? $pageTitle . ' | MokuMoku Match' : '記事一覧 | MokuMoku Match')
 
-@section('meta_description', 'フルリモート作業、もくもく会、作業仲間探しに役立つ記事一覧です。')
+@section('description', $pageDescription ?? 'フルリモート作業、もくもく会、作業仲間探しに役立つ記事一覧です。')
 
 @section('content')
 <div class="min-h-screen bg-slate-50">
@@ -15,12 +15,24 @@
                 </p>
 
                 <h1 class="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-                    お役立ち記事一覧
+                    {{ $pageTitle ?? 'お役立ち記事一覧' }}
                 </h1>
 
                 <p class="mt-4 leading-7 text-slate-600">
-                    フルリモート作業、もくもく会、作業仲間探し、フリーランスの働き方に役立つ記事をまとめています。
+                    {{ $pageDescription ?? 'フルリモート作業、もくもく会、作業仲間探し、フリーランスの働き方に役立つ記事をまとめています。' }}
                 </p>
+
+                @if (isset($currentCategory))
+                    <div class="mt-5 inline-flex rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
+                        カテゴリー：{{ $currentCategory->name }}
+                    </div>
+                @endif
+
+                @if (isset($currentTag))
+                    <div class="mt-5 inline-flex rounded-full bg-[#EEF3F7] px-4 py-2 text-sm font-bold text-[#34506A]">
+                        タグ：#{{ $currentTag->name }}
+                    </div>
+                @endif
             </div>
         </div>
     </section>
@@ -59,6 +71,15 @@
                                 記事
                             </span>
 
+                            @if ($article->category)
+                                <a
+                                    href="{{ route('articles.category', $article->category->slug) }}"
+                                    class="rounded-full bg-[#0B1548] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#17215A]"
+                                >
+                                    {{ $article->category->name }}
+                                </a>
+                            @endif
+
                             @if ($article->prefecture)
                                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                                     {{ $article->prefecture->name }}
@@ -81,6 +102,19 @@
                         <p class="mt-3 text-sm leading-7 text-slate-600">
                             {{ $description }}
                         </p>
+
+                        @if ($article->tags->isNotEmpty())
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                @foreach ($article->tags as $tag)
+                                    <a
+                                        href="{{ route('articles.tag', $tag->slug) }}"
+                                        class="rounded-full bg-[#EEF3F7] px-3 py-1 text-xs font-bold text-[#34506A] transition hover:bg-[#DDEAF2]"
+                                    >
+                                        #{{ $tag->name }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
 
                         <div class="mt-5">
                             <a

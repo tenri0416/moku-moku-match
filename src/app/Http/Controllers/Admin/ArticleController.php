@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use App\Models\ArticleCategory;
+use App\Models\ArticleTag;
 
 class ArticleController extends Controller
 {
@@ -27,7 +29,7 @@ class ArticleController extends Controller
                         ->orWhere('short_slug', 'like', "%{$keyword}%");
                 });
             })
-            ->when($request->status, fn ($query, $status) => $query->where('status', $status))
+            ->when($request->status, fn($query, $status) => $query->where('status', $status))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -42,8 +44,19 @@ class ArticleController extends Controller
     {
         $article = new Article();
         $prefectures = Prefecture::orderBy('id')->get();
+        $categories = ArticleCategory::with('parent')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
 
-        return view('admin.articles.create', compact('article', 'prefectures'));
+        $tags = ArticleTag::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.articles.create', compact('article', 'prefectures', 'categories', 'tags'));
     }
 
     /**
@@ -63,6 +76,7 @@ class ArticleController extends Controller
             ...$validated,
             'admin_id' => auth('admin')->id(),
         ]);
+        $article->tags()->sync($request->input('tag_ids', []));
 
         return redirect()
             ->route('admin.articles.show', $article)
@@ -85,8 +99,19 @@ class ArticleController extends Controller
     public function edit(Article $article): View
     {
         $prefectures = Prefecture::orderBy('id')->get();
+        $categories = ArticleCategory::with('parent')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
 
-        return view('admin.articles.edit', compact('article', 'prefectures'));
+        $tags = ArticleTag::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.articles.edit', compact('article', 'prefectures', 'categories', 'tags'));
     }
 
     /**
@@ -107,6 +132,7 @@ class ArticleController extends Controller
         unset($validated['thumbnail']);
 
         $article->update($validated);
+        $article->tags()->sync($request->input('tag_ids', []));
 
         return redirect()
             ->route('admin.articles.show', $article)
