@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             PrefectureSeeder::class,
             DemoUserSeeder::class,
             DemoWorkPostSeeder::class,
+            ArticleCategorySeeder::class,
+            ArticleTagSeeder::class,
         ]);
     }
 }
