@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
+            $table->id()->comment('メッセージID');
             $table->foreignId('work_post_id')->constrained()->cascadeOnDelete()->comment('募集ID');
             $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete()->comment('送信者ユーザーID');
             $table->foreignId('receiver_id')->constrained('users')->cascadeOnDelete()->comment('受信者ユーザーID');

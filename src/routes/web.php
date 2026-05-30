@@ -93,17 +93,26 @@ Route::middleware('auth')->group(function () {
     | メール未認証でも見れる。
     */
 
-    Route::get('/work-posts/{workPost}/applications', [ApplicationController::class, 'index'])
-        ->whereNumber('workPost')
-        ->name('applications.index');
-
     Route::get('/messages', [MessageController::class, 'index'])
         ->name('messages.index');
 
-    Route::get('/messages/{workPost}/{user}', [MessageController::class, 'show'])
-        ->whereNumber('workPost')
-        ->whereNumber('user')
+    Route::get('/messages/work-posts/{workPost}', [MessageController::class, 'show'])
         ->name('messages.show');
+
+    Route::post('/messages/work-posts/{workPost}', [MessageController::class, 'store'])
+        ->name('messages.store');
+
+    Route::post('/messages/work-posts/{workPost}/reply', [MessageController::class, 'reply'])
+        ->name('messages.reply');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    Route::get('/notifications/{id}', [NotificationController::class, 'show'])
+        ->name('notifications.show');
+
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.read-all');
 
     /*
     |--------------------------------------------------------------------------

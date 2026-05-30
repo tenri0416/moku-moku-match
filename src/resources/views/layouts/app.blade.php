@@ -1,197 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>@yield('title', 'MokuMokuMatch | 一緒に作業できる仲間を探せるマッチングサービス')</title>
+@include('layouts.head')
 
-    <meta name="description" content="@yield('description', 'MokuMokuMatchは、フリーランスやリモートワーカーが一緒に黙々作業できる仲間を探せるマッチングサービスです。オンライン・オフラインで作業仲間を募集できます。')">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta property="og:site_name" content="MokuMokuMatch">
-    <meta property="og:type" content="@yield('og_type', 'website')">
-    <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
-    <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('description', '一緒に黙々作業できる仲間を探せるマッチングサービスです。')))">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="{{ asset('images/ogp.png') }}">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('og_title', trim($__env->yieldContent('title', 'MokuMokuMatch')))">
-    <meta name="twitter:description" content="@yield('og_description', trim($__env->yieldContent('description', '一緒に黙々作業できる仲間を探せるマッチングサービスです。')))">
-    <meta name="twitter:image" content="{{ asset('images/ogp.png') }}">
-
-    <meta name="google-site-verification" content="yDJmA1X0ZuNmPo5_GDEOTF1UZDA5K1MHTx9W84-AMqc" />
-
-    @if (config('services.ga4.measurement_id') && app()->environment('production'))
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4.measurement_id') }}"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', '{{ config('services.ga4.measurement_id') }}');
-        </script>
-    @endif
-
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
-    <meta name="theme-color" content="#0B1548">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-<header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
-    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {{-- ロゴ --}}
-        <a href="{{ route('home') }}" class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-base font-black text-white shadow-sm">
-                M
-            </span>
+@php
+    $headerNotifications = collect();
+    $headerGeneralNotifications = collect();
+    $headerArticleNotifications = collect();
+    $unreadNotificationCount = 0;
+    $unreadMessageCount = 0;
 
-            <span class="leading-tight">
-                <span class="block text-lg font-black tracking-tight text-slate-900">
-                    MokuMoku Match
-                </span>
-                <span class="hidden text-xs font-semibold text-slate-500 sm:block">
-                    リモート作業仲間を見つける
-                </span>
-            </span>
-        </a>
+    if (auth()->check()) {
+        $headerNotifications = auth()->user()
+            ->notifications()
+            ->latest()
+            ->take(20)
+            ->get();
 
-        {{-- PCメニュー --}}
-        <div class="hidden items-center gap-2 md:flex">
-            <a
-                href="{{ route('home') }}"
-                class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-                ホーム
-            </a>
+        // 通知タブ：メッセージ通知など
+        $headerGeneralNotifications = $headerNotifications->filter(function ($notification) {
+            return ($notification->data['type'] ?? 'general') !== 'article';
+        });
 
-            <a
-                href="{{ route('work-posts.index') }}"
-                class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-                募集一覧
-            </a>
+        // お知らせタブ：記事通知
+        $headerArticleNotifications = $headerNotifications->filter(function ($notification) {
+            return ($notification->data['type'] ?? 'general') === 'article';
+        });
 
-            @auth
-                <a
-                    href="{{ route('mypage') }}"
-                    class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    マイページ
-                </a>
+        $unreadNotificationCount = auth()->user()
+            ->unreadNotifications()
+            ->count();
 
-                <a
-                    href="{{ route('work-posts.create') }}"
-                    class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    募集作成
-                </a>
+        $unreadMessageCount = method_exists(auth()->user(), 'receivedMessages')
+            ? auth()->user()->receivedMessages()->whereNull('read_at')->count()
+            : 0;
+    }
+@endphp
 
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                    >
-                        ログアウト
-                    </button>
-                </form>
-            @else
-                <a
-                    href="{{ route('login') }}"
-                    class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    ログイン
-                </a>
-
-                <a
-                    href="{{ route('register') }}"
-                    class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    会員登録
-                </a>
-            @endauth
-        </div>
-
-        {{-- スマホメニュー --}}
-        <details class="relative md:hidden">
-            <summary class="cursor-pointer list-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                メニュー
-            </summary>
-
-            <div class="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                <div class="border-b border-slate-100 px-4 py-3">
-                    <p class="text-sm font-bold text-slate-900">
-                        MokuMoku Match
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500">
-                        メニュー
-                    </p>
-                </div>
-
-                <div class="p-2">
-                    <a
-                        href="{{ route('home') }}"
-                        class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                        ホーム
-                    </a>
-
-                    <a
-                        href="{{ route('work-posts.index') }}"
-                        class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                        募集一覧
-                    </a>
-
-                    @auth
-                        <a
-                            href="{{ route('mypage') }}"
-                            class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                        >
-                            マイページ
-                        </a>
-
-                        <a
-                            href="{{ route('work-posts.create') }}"
-                            class="mt-1 block rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700"
-                        >
-                            募集作成
-                        </a>
-
-                        <form method="POST" action="{{ route('logout') }}" class="mt-1">
-                            @csrf
-                            <button
-                                type="submit"
-                                class="block w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-100"
-                            >
-                                ログアウト
-                            </button>
-                        </form>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                        >
-                            ログイン
-                        </a>
-
-                        <a
-                            href="{{ route('register') }}"
-                            class="mt-1 block rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700"
-                        >
-                            会員登録
-                        </a>
-                    @endauth
-                </div>
-            </div>
-        </details>
-    </nav>
-</header>
+@include('layouts.header')
 
 <main>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -200,5 +46,8 @@
 
     @yield('content')
 </main>
+
+@include('layouts.notifications.modal')
+@include('layouts.notifications.script')
 </body>
 </html>

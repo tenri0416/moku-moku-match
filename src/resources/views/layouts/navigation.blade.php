@@ -1,12 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'MokuMoku Match')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-50 text-slate-900 antialiased">
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {{-- ロゴ --}}
@@ -35,7 +26,50 @@
                 募集一覧
             </a>
 
+            @if (Route::has('articles.index'))
+                <a
+                    href="{{ route('articles.index') }}"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                    記事
+                </a>
+            @endif
+
             @auth
+                @php
+                    $unreadNotificationCount = auth()->user()->unreadNotifications()->count();
+                    $unreadMessageCount = auth()->user()->receivedMessages()
+                        ->whereNull('read_at')
+                        ->count();
+                @endphp
+
+                <a
+                    href="{{ route('messages.index') }}"
+                    class="relative rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                    メッセージ
+
+                    @if ($unreadMessageCount > 0)
+                        <span class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white">
+                            {{ $unreadMessageCount > 99 ? '99+' : $unreadMessageCount }}
+                        </span>
+                    @endif
+                </a>
+
+                <a
+                    href="{{ route('notifications.index') }}"
+                    class="relative rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                    aria-label="通知"
+                >
+                    <span class="text-lg">🔔</span>
+
+                    @if ($unreadNotificationCount > 0)
+                        <span class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white">
+                            {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}
+                        </span>
+                    @endif
+                </a>
+
                 <a
                     href="{{ route('mypage') }}"
                     class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
@@ -82,7 +116,7 @@
                 メニュー
             </summary>
 
-            <div class="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div class="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                 <div class="p-2">
                     <a
                         href="{{ route('home') }}"
@@ -98,7 +132,49 @@
                         募集一覧
                     </a>
 
+                    @if (Route::has('articles.index'))
+                        <a
+                            href="{{ route('articles.index') }}"
+                            class="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                            記事
+                        </a>
+                    @endif
+
                     @auth
+                        @php
+                            $unreadNotificationCount = auth()->user()->unreadNotifications()->count();
+                            $unreadMessageCount = auth()->user()->receivedMessages()
+                                ->whereNull('read_at')
+                                ->count();
+                        @endphp
+
+                        <a
+                            href="{{ route('messages.index') }}"
+                            class="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                            <span>メッセージ</span>
+
+                            @if ($unreadMessageCount > 0)
+                                <span class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white">
+                                    {{ $unreadMessageCount > 99 ? '99+' : $unreadMessageCount }}
+                                </span>
+                            @endif
+                        </a>
+
+                        <a
+                            href="{{ route('notifications.index') }}"
+                            class="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                            <span>通知</span>
+
+                            @if ($unreadNotificationCount > 0)
+                                <span class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white">
+                                    {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}
+                                </span>
+                            @endif
+                        </a>
+
                         <a
                             href="{{ route('mypage') }}"
                             class="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
@@ -142,13 +218,3 @@
         </details>
     </nav>
 </header>
-
-<main>
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        @include('components.flash-message')
-    </div>
-
-    @yield('content')
-</main>
-</body>
-</html>

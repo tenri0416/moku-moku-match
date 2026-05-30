@@ -76,6 +76,12 @@
                             >
                                 {!! nl2br(e($message->body)) !!}
                             </div>
+
+                            @if ($isMine)
+                                <div class="mt-1 text-right text-xs text-slate-400">
+                                    {{ $message->read_at ? '既読' : '未読' }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @empty
@@ -116,6 +122,7 @@
                         rows="5"
                         placeholder="メッセージを入力してください"
                         class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        required
                     >{{ old('body') }}</textarea>
 
                     @error('body')

@@ -2,95 +2,126 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests\MessageStoreRequest;
-use App\Models\Application;
-use App\Models\Block;
 use App\Models\Message;
-use App\Models\User;
 use App\Models\WorkPost;
-
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use App\Notifications\MessageReceivedNotification;
 
 class MessageController extends Controller
 {
-    public function index()
+    /**
+     * 自分に関係するメッセージ一覧を表示する
+     */
+    public function index(): View
     {
         $messages = Message::query()
-            ->with(['workPost', 'sender.profile', 'receiver.profile'])
-            ->where('sender_id', auth()->id())
-            ->orWhere('receiver_id', auth()->id())
+            ->with(['workPost', 'sender', 'receiver'])
+            ->where(function ($query) {
+                $query->where('sender_id', Auth::id())
+                    ->orWhere('receiver_id', Auth::id());
+            })
             ->latest()
-            ->get();
+            ->get()
+            ->groupBy('work_post_id');
 
         return view('messages.index', compact('messages'));
     }
 
-    public function show(WorkPost $workPost, User $user)
+    /**
+     * 募集投稿に紐づくメッセージ詳細を表示する
+     */
+    public function show(WorkPost $workPost): View
     {
-        $this->validateCanMessage($workPost, $user);
+        $this->authorizeMessageAccess($workPost);
 
         $messages = Message::query()
+            ->with(['sender', 'receiver'])
             ->where('work_post_id', $workPost->id)
-            ->where(function ($query) use ($user) {
-                $query->where(function ($query) use ($user) {
-                    $query->where('sender_id', auth()->id())
-                        ->where('receiver_id', $user->id);
-                })->orWhere(function ($query) use ($user) {
-                    $query->where('sender_id', $user->id)
-                        ->where('receiver_id', auth()->id());
-                });
+            ->where(function ($query) {
+                $query->where('sender_id', Auth::id())
+                    ->orWhere('receiver_id', Auth::id());
             })
             ->oldest()
             ->get();
 
-        return view('messages.show', compact('workPost', 'user', 'messages'));
+        Message::query()
+            ->where('work_post_id', $workPost->id)
+            ->where('receiver_id', Auth::id())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return view('messages.show', compact('workPost', 'messages'));
     }
 
-     public function store(MessageStoreRequest $request, WorkPost $workPost, User $user)
+    /**
+     * 募集投稿の投稿者へメッセージを送信する
+     */
+    public function store(Request $request, WorkPost $workPost): RedirectResponse
     {
-        $this->validateCanMessage($workPost, $user);
+        abort_if($workPost->user_id === Auth::id(), 403);
 
-        Message::create([
-            'work_post_id' => $workPost->id,
-            'sender_id' => auth()->id(),
-            'receiver_id' => $user->id,
-            'body' => $request->validated('body'),
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
         ]);
 
-        return back()->with('success', 'メッセージを送信しました。');
+        $message = Message::create([
+            'work_post_id' => $workPost->id,
+            'sender_id' => Auth::id(),
+            'receiver_id' => $workPost->user_id,
+            'body' => $validated['body'],
+        ]);
+
+        $message->receiver->notify(new MessageReceivedNotification($message));
+
+        return redirect()
+            ->route('messages.show', $workPost)
+            ->with('success', 'メッセージを送信しました。');
     }
 
-    private function validateCanMessage(WorkPost $workPost, User $user): void
+    /**
+     * メッセージ返信
+     */
+    public function reply(Request $request, WorkPost $workPost): RedirectResponse
     {
-        abort_if($user->id === auth()->id(), 403);
+        $this->authorizeMessageAccess($workPost);
 
-        $isOwner = $workPost->user_id === auth()->id();
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+            'receiver_id' => ['required', 'exists:users,id'],
+        ]);
 
-        $approvedApplicationExists = Application::query()
+        abort_if((int) $validated['receiver_id'] === Auth::id(), 403);
+
+        $message = Message::create([
+            'work_post_id' => $workPost->id,
+            'sender_id' => Auth::id(),
+            'receiver_id' => $validated['receiver_id'],
+            'body' => $validated['body'],
+        ]);
+
+        $message->receiver->notify(new MessageReceivedNotification($message));
+
+        return redirect()
+            ->route('messages.show', $workPost)
+            ->with('success', '返信しました。');
+    }
+
+    /**
+     * ログインユーザーが対象募集のメッセージを見られるか確認する
+     */
+    private function authorizeMessageAccess(WorkPost $workPost): void
+    {
+        $exists = Message::query()
             ->where('work_post_id', $workPost->id)
-            ->where('status', Application::STATUS_APPROVED)
-            ->where(function ($query) use ($user, $workPost, $isOwner) {
-                if ($isOwner) {
-                    $query->where('user_id', $user->id);
-                } else {
-                    $query->where('user_id', auth()->id())
-                        ->whereHas('workPost', fn ($query) => $query->where('user_id', $user->id));
-                }
-            })
-            ->exists();
-            abort_unless($approvedApplicationExists, 403);
-
-        $blocked = Block::query()
-            ->where(function ($query) use ($user) {
-                $query->where('blocker_id', auth()->id())
-                    ->where('blocked_user_id', $user->id);
-            })
-            ->orWhere(function ($query) use ($user) {
-                $query->where('blocker_id', $user->id)
-                    ->where('blocked_user_id', auth()->id());
+            ->where(function ($query) {
+                $query->where('sender_id', Auth::id())
+                    ->orWhere('receiver_id', Auth::id());
             })
             ->exists();
 
-        abort_if($blocked, 403);
+        abort_unless($exists || $workPost->user_id === Auth::id(), 403);
     }
 }
