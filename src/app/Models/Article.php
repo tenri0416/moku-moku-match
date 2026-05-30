@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Article extends Model
 {
@@ -87,5 +88,12 @@ class Article extends Model
     {
         return $this->belongsToMany(ArticleTag::class, 'article_article_tag')
             ->withTimestamps();
+    }
+    /**
+     * 記事閲覧ログを取得する
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(ArticleView::class);
     }
 }

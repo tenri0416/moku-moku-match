@@ -69,6 +69,12 @@
                 <span>記事タグ</span>
                 <span class="text-slate-400">›</span>
             </a>
+            <a href="{{ route('admin.article-views.index') }}"
+                class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+    {{ request()->routeIs('admin.article-views.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <span>記事閲覧数</span>
+                <span class="text-slate-400">›</span>
+            </a>
 
             <div class="my-2 border-t border-slate-100"></div>
 

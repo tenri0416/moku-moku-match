@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ArticleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ArticleCategoryController;
 use App\Http\Controllers\Admin\ArticleTagController;
+use App\Http\Controllers\Admin\ArticleViewController;
 
 Route::prefix('admin')
     ->name('admin.')
@@ -15,4 +16,6 @@ Route::prefix('admin')
 
         Route::resource('article-tags', ArticleTagController::class)
             ->except(['show']);
+        Route::get('/article-views', [ArticleViewController::class, 'index'])
+            ->name('article-views.index');
     });

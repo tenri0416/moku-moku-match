@@ -6,6 +6,8 @@ use App\Models\Article;
 use Illuminate\View\View;
 use App\Models\ArticleCategory;
 use App\Models\ArticleTag;
+use App\Models\ArticleView;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleController extends Controller
 {
@@ -30,8 +32,16 @@ class ArticleController extends Controller
     public function show(Article $article): View
     {
         $this->abortIfNotPublic($article);
+        ArticleView::create([
+            'article_id' => $article->id,
+            'user_id' => Auth::id(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'referer' => request()->headers->get('referer'),
+        ]);
 
         $article->load('prefecture');
+
 
         return view('articles.show', compact('article'));
     }
