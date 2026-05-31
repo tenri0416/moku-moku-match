@@ -7,34 +7,54 @@
     <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="mb-8">
             <p class="text-sm font-bold text-indigo-600">MESSAGES</p>
+
             <h1 class="mt-2 text-3xl font-bold text-slate-900">
                 メッセージ一覧
             </h1>
+
             <p class="mt-2 text-slate-600">
                 募集に関するメッセージを確認できます。
             </p>
         </div>
 
         <div class="space-y-4">
-            @forelse ($messages as $message)
+            @forelse ($messages as $messageItem)
                 @php
-                    $partner = $message->sender_id === auth()->id()
-                        ? $message->receiver
-                        : $message->sender;
+                    /*
+                    |--------------------------------------------------------------------------
+                    | メッセージ一覧用の表示データを整える
+                    |--------------------------------------------------------------------------
+                    |
+                    | Controller側で groupBy() している場合、$messageItem は Collection になります。
+                    | groupBy() していない場合、$messageItem は Message モデル1件になります。
+                    | どちらでも動くように、ここで最新メッセージ1件に揃えます。
+                    |
+                    */
 
+                    $message = $messageItem instanceof \Illuminate\Support\Collection
+                        ? $messageItem->first()
+                        : $messageItem;
+
+                    $partner = null;
                     $unreadCount = 0;
 
-                    if ($partner) {
-                        $unreadCount = \App\Models\Message::query()
-                            ->where('work_post_id', $message->work_post_id)
-                            ->where('sender_id', $partner->id)
-                            ->where('receiver_id', auth()->id())
-                            ->whereNull('read_at')
-                            ->count();
+                    if ($message) {
+                        $partner = $message->sender_id === auth()->id()
+                            ? $message->receiver
+                            : $message->sender;
+
+                        if ($partner) {
+                            $unreadCount = \App\Models\Message::query()
+                                ->where('work_post_id', $message->work_post_id)
+                                ->where('sender_id', $partner->id)
+                                ->where('receiver_id', auth()->id())
+                                ->whereNull('read_at')
+                                ->count();
+                        }
                     }
                 @endphp
 
-                @if ($partner && $message->workPost)
+                @if ($message && $partner && $message->workPost)
                     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0">
@@ -50,7 +70,7 @@
                                     @endif
 
                                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                        {{ $message->created_at->format('Y/m/d H:i') }}
+                                        {{ $message->created_at?->format('Y/m/d H:i') }}
                                     </span>
                                 </div>
 
@@ -66,7 +86,7 @@
                                 <p class="mt-2 text-sm text-slate-600">
                                     相手：
                                     <span class="font-semibold text-slate-800">
-                                        {{ $partner->profile->display_name ?? $partner->name }}
+                                        {{ $partner->profile?->display_name ?? $partner->name }}
                                     </span>
                                 </p>
 

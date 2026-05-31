@@ -3,7 +3,16 @@
 @section('title', 'メッセージ')
 
 @section('content')
-<div class="min-h-screen bg-slate-50">
+@php
+    $latestMessageId = $messages->max('id') ?? 0;
+@endphp
+
+<div
+    class="min-h-screen bg-slate-50"
+    data-message-polling
+    data-latest-url="{{ route('messages.latest', [$workPost, $user]) }}"
+    data-latest-message-id="{{ $latestMessageId }}"
+>
     <div class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
         {{-- Header --}}
         <div class="mb-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -45,13 +54,13 @@
         <section class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
             <h2 class="sr-only">やり取り</h2>
 
-            <div class="space-y-5">
+            <div class="space-y-5" data-message-list>
                 @forelse ($messages as $message)
                     @php
                         $isMine = $message->sender_id === auth()->id();
                     @endphp
 
-                    <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
+                    <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">
                         <div class="max-w-[85%] sm:max-w-[70%]">
                             <div class="mb-1 flex items-center gap-2 {{ $isMine ? 'justify-end' : 'justify-start' }}">
                                 <span class="text-xs font-semibold text-slate-500">
@@ -85,7 +94,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="rounded-xl bg-slate-50 p-8 text-center">
+                    <div class="rounded-xl bg-slate-50 p-8 text-center" data-empty-message>
                         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl shadow-sm">
                             ✉️
                         </div>
@@ -108,7 +117,12 @@
                 メッセージ送信
             </h2>
 
-            <form method="POST" action="{{ route('messages.store', [$workPost, $user]) }}" class="mt-4">
+            <form
+                method="POST"
+                action="{{ route('messages.store', [$workPost, $user]) }}"
+                class="mt-4"
+                data-message-form
+            >
                 @csrf
 
                 <div>
@@ -123,6 +137,7 @@
                         placeholder="メッセージを入力してください"
                         class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         required
+                        data-message-body
                     >{{ old('body') }}</textarea>
 
                     @error('body')

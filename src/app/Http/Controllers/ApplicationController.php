@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ApplicationStoreRequest;
 use App\Models\Application;
 use App\Models\Block;
 use App\Models\WorkPost;
-
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ApplicationController extends Controller
 {
-    public function index(WorkPost $workPost)
+    public function index(WorkPost $workPost): View
     {
         abort_unless($workPost->user_id === auth()->id(), 403);
 
@@ -25,14 +25,26 @@ class ApplicationController extends Controller
 
     public function create(WorkPost $workPost)
     {
-        $this->validateApplicationAvailable($workPost);
+        $unavailableReason = $this->getApplicationUnavailableReason($workPost);
+
+        if ($unavailableReason) {
+            return redirect()
+                ->route('work-posts.show', $workPost)
+                ->with('error', $unavailableReason);
+        }
 
         return view('applications.create', compact('workPost'));
     }
 
-     public function store(ApplicationStoreRequest $request, WorkPost $workPost)
+    public function store(ApplicationStoreRequest $request, WorkPost $workPost): RedirectResponse
     {
-        $this->validateApplicationAvailable($workPost);
+        $unavailableReason = $this->getApplicationUnavailableReason($workPost);
+
+        if ($unavailableReason) {
+            return redirect()
+                ->route('work-posts.show', $workPost)
+                ->with('error', $unavailableReason);
+        }
 
         Application::create([
             'work_post_id' => $workPost->id,
@@ -41,10 +53,12 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_PENDING,
         ]);
 
-        return redirect()->route('work-posts.show', $workPost)->with('success', '参加申請を送信しました。');
+        return redirect()
+            ->route('work-posts.show', $workPost)
+            ->with('success', '参加申請を送信しました。');
     }
 
-    public function approve(Application $application)
+    public function approve(Application $application): RedirectResponse
     {
         $this->authorize('approve', $application);
 
@@ -55,7 +69,7 @@ class ApplicationController extends Controller
         return back()->with('success', '参加申請を承認しました。');
     }
 
-    public function reject(Application $application)
+    public function reject(Application $application): RedirectResponse
     {
         $this->authorize('reject', $application);
 
@@ -66,14 +80,32 @@ class ApplicationController extends Controller
         return back()->with('success', '参加申請を否認しました。');
     }
 
-     private function validateApplicationAvailable(WorkPost $workPost): void
+    /**
+     * 参加申請できない理由を返す
+     *
+     * null の場合は申請可能。
+     */
+    private function getApplicationUnavailableReason(WorkPost $workPost): ?string
     {
-        abort_unless(auth()->user()->profile, 403, 'プロフィール登録が必要です。');
-        abort_if($workPost->user_id === auth()->id(), 403, '自分の募集には申請できません。');
-        abort_unless($workPost->isOpen(), 403, 'この募集は申請できません。');
+        if (! auth()->user()->profile) {
+            return '参加申請をするには、先にプロフィール登録が必要です。';
+        }
 
-        $alreadyApplied = $workPost->applications()->where('user_id', auth()->id())->exists();
-        abort_if($alreadyApplied, 403, 'すでに申請済みです。');
+        if ($workPost->user_id === auth()->id()) {
+            return '自分が作成した募集には参加申請できません。';
+        }
+
+        if (! $workPost->isOpen()) {
+            return 'この募集は現在、参加申請を受け付けていません。募集状態をご確認ください。';
+        }
+
+        $alreadyApplied = $workPost->applications()
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        if ($alreadyApplied) {
+            return 'この募集にはすでに参加申請済みです。';
+        }
 
         $blocked = Block::query()
             ->where(function ($query) use ($workPost) {
@@ -86,8 +118,10 @@ class ApplicationController extends Controller
             })
             ->exists();
 
-            abort_if($blocked, 403, 'ブロック関係のため申請できません。');
+        if ($blocked) {
+            return 'ブロック関係にあるユーザーの募集には参加申請できません。';
+        }
+
+        return null;
     }
-
-
 }

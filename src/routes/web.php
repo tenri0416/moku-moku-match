@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminDatabaseController;
+use App\Http\Controllers\AdminLogController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWorkPostController;
@@ -11,16 +12,14 @@ use App\Http\Controllers\BlockController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MyPageController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WorkPostController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AdminLogController;
-use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -53,7 +52,8 @@ Route::get('/email/verify', function () {
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
 
-    return redirect()->route('mypage')
+    return redirect()
+        ->route('mypage')
         ->with('status', 'メールアドレスの認証が完了しました。');
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
@@ -77,6 +77,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/mypage', [MyPageController::class, 'index'])
         ->name('mypage');
 
+    /*
+    |--------------------------------------------------------------------------
+    | プロフィール
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/profile/edit', [ProfileController::class, 'edit'])
         ->name('profile.edit');
 
@@ -91,23 +97,34 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 閲覧系
+    | メッセージ
     |--------------------------------------------------------------------------
-    | ログインしていれば閲覧できる。
-    | メール未認証でも見れる。
+    | Ajaxポーリング対応のため、workPost と user をURLに含める。
     */
 
     Route::get('/messages', [MessageController::class, 'index'])
         ->name('messages.index');
 
-    Route::get('/messages/work-posts/{workPost}', [MessageController::class, 'show'])
+    Route::get('/messages/{workPost}/{user}', [MessageController::class, 'show'])
+        ->whereNumber('workPost')
+        ->whereNumber('user')
         ->name('messages.show');
 
-    Route::post('/messages/work-posts/{workPost}', [MessageController::class, 'store'])
+    Route::post('/messages/{workPost}/{user}', [MessageController::class, 'store'])
+        ->whereNumber('workPost')
+        ->whereNumber('user')
         ->name('messages.store');
 
-    Route::post('/messages/work-posts/{workPost}/reply', [MessageController::class, 'reply'])
-        ->name('messages.reply');
+    Route::get('/messages/{workPost}/{user}/latest', [MessageController::class, 'latest'])
+        ->whereNumber('workPost')
+        ->whereNumber('user')
+        ->name('messages.latest');
+
+    /*
+    |--------------------------------------------------------------------------
+    | 通知
+    |--------------------------------------------------------------------------
+    */
 
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
@@ -120,9 +137,21 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | 参加申請
+    |--------------------------------------------------------------------------
+    | Route::resource('applications') は使わない。
+    | applications.create に workPost が必須なので、募集IDをURLに含める。
+    */
+
+    Route::get('/work-posts/{workPost}/applications', [ApplicationController::class, 'index'])
+        ->whereNumber('workPost')
+        ->name('applications.index');
+
+    /*
+    |--------------------------------------------------------------------------
     | メール認証済みユーザーだけ利用できる機能
     |--------------------------------------------------------------------------
-    | 募集作成・編集・応募・メッセージ送信・通報・ブロックなど、
+    | 募集作成・編集・応募・通報・ブロックなど、
     | 他ユーザーに影響する操作だけメール認証を必須にする。
     */
 
@@ -160,11 +189,6 @@ Route::middleware('auth')->group(function () {
         Route::patch('/applications/{application}/reject', [ApplicationController::class, 'reject'])
             ->whereNumber('application')
             ->name('applications.reject');
-
-        Route::post('/messages/{workPost}/{user}', [MessageController::class, 'store'])
-            ->whereNumber('workPost')
-            ->whereNumber('user')
-            ->name('messages.store');
 
         Route::get('/reports/create', [ReportController::class, 'create'])
             ->name('reports.create');
@@ -228,6 +252,24 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
+        /*
+        |--------------------------------------------------------------------------
+        | 管理者通知
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/notifications/unread', [AdminNotificationController::class, 'unread'])
+            ->name('notifications.unread');
+
+        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllAsRead'])
+            ->name('notifications.read-all');
+
+        /*
+        |--------------------------------------------------------------------------
+        | ユーザー管理
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('users.index');
 
@@ -242,6 +284,12 @@ Route::prefix('admin')
         Route::patch('/users/{user}/activate', [AdminDashboardController::class, 'activate'])
             ->whereNumber('user')
             ->name('users.activate');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 募集管理
+        |--------------------------------------------------------------------------
+        */
 
         Route::get('/work-posts', [AdminWorkPostController::class, 'index'])
             ->name('work-posts.index');
@@ -258,6 +306,12 @@ Route::prefix('admin')
             ->whereNumber('workPost')
             ->name('work-posts.open');
 
+        /*
+        |--------------------------------------------------------------------------
+        | 通報管理
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/reports', [AdminReportController::class, 'index'])
             ->name('reports.index');
 
@@ -273,6 +327,12 @@ Route::prefix('admin')
             ->whereNumber('report')
             ->name('reports.close');
 
+        /*
+        |--------------------------------------------------------------------------
+        | DB閲覧
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/database', [AdminDatabaseController::class, 'index'])
             ->name('database.index');
 
@@ -280,15 +340,18 @@ Route::prefix('admin')
             ->where('table', '[A-Za-z0-9_]+')
             ->name('database.show');
 
+        /*
+        |--------------------------------------------------------------------------
+        | ログ閲覧
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/logs', [AdminLogController::class, 'index'])
             ->name('logs.index');
 
         Route::get('/logs/{file}', [AdminLogController::class, 'show'])
             ->where('file', 'laravel(\-\d{4}\-\d{2}\-\d{2})?\.log')
             ->name('logs.show');
-
-        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllAsRead'])
-            ->name('notifications.read-all');
     });
 
 /*
@@ -338,12 +401,16 @@ Route::get('/sitemap.xml', function () {
 |--------------------------------------------------------------------------
 | 通常ユーザー認証ルート
 |--------------------------------------------------------------------------
-| Breeze等のログイン・登録・パスワードリセット用。
-| このファイル内で dashboard / profile を定義しているため、
-| auth.php 側で同じルートがある場合は重複に注意。
 */
 
 require __DIR__ . '/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| 記事ルート
+|--------------------------------------------------------------------------
+| 記事関連は分割ファイル側で管理する。
+*/
+
 require __DIR__ . '/articles.php';
 require __DIR__ . '/admin_articles.php';
-

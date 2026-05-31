@@ -1,6 +1,10 @@
 @php
     $unreadMessageCount = $unreadMessageCount ?? 0;
     $unreadNotificationCount = $unreadNotificationCount ?? 0;
+
+    $loginUserName = auth()->check()
+        ? (auth()->user()->profile->display_name ?? auth()->user()->name)
+        : null;
 @endphp
 
 <div class="hidden items-center gap-2 md:flex">
@@ -28,12 +32,6 @@
     @endif
 
     @auth
-        <a
-            href="{{ route('mypage') }}"
-            class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-        >
-            マイページ
-        </a>
 
         @if (Route::has('messages.index'))
             <a
@@ -52,15 +50,24 @@
 
         @include('layouts.navigation.notification-button')
 
+        {{-- ログアウトの横にログイン中ユーザー名を表示 --}}
         <a
-            href="{{ route('work-posts.create') }}"
-            class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
+            href="{{ route('mypage') }}"
+            class="ml-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+            title="ログイン中のユーザー"
         >
-            募集作成
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-black text-white">
+                {{ mb_substr($loginUserName, 0, 1) }}
+            </span>
+
+            <span class="max-w-[140px] truncate">
+                {{ $loginUserName }}
+            </span>
         </a>
 
         <form method="POST" action="{{ route('logout') }}">
             @csrf
+
             <button
                 type="submit"
                 class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"

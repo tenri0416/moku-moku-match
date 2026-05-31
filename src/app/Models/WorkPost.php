@@ -40,6 +40,8 @@ class WorkPost extends Model
     protected $casts = [
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'status' => 'integer',
+        'max_participants' => 'integer',
     ];
 
 
