@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Prefecture;
+use App\Support\ApiActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Log;
-use App\Models\Prefecture;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
@@ -19,13 +19,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        Log::info('ユーザープロフィールの編集画面にアクセスされました。', [
-            'user_id' => auth()->id(),
-        ]);
-    
+        ApiActionLogger::info(
+            'ProfileController::edit',
+            'ユーザープロフィール編集画面にアクセス',
+            [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         $profile = auth()->user()->profile;
         $prefectures = Prefecture::orderBy('id')->get();
-    
+
         return view('profile.edit', compact('profile', 'prefectures'));
     }
 
@@ -34,27 +38,41 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        ApiActionLogger::info(
+            'ProfileController::update',
+            'ユーザープロフィール更新処理開始',
+            [
+                'user_id' => auth()->id(),
+                'has_avatar' => $request->hasFile('avatar'),
+            ]
+        );
+
         $validated = $request->validated();
 
         $profile = auth()->user()->profile;
 
-        // プロフィール画像がアップロードされた場合
         if ($request->hasFile('avatar')) {
-            // 既存画像がある場合は削除
             if ($profile && $profile->avatar_path) {
                 Storage::disk('public')->delete($profile->avatar_path);
             }
 
-            // 新しい画像を保存
             $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        // avatar は profiles テーブルに保存しないため除外
         unset($validated['avatar']);
 
         auth()->user()->profile()->updateOrCreate(
             ['user_id' => auth()->id()],
             $validated
+        );
+
+        ApiActionLogger::info(
+            'ProfileController::update',
+            'ユーザープロフィール更新成功',
+            [
+                'user_id' => auth()->id(),
+                'has_avatar' => isset($validated['avatar_path']),
+            ]
         );
 
         return redirect()->route('mypage')->with('success', 'プロフィールを保存しました。');
@@ -65,11 +83,20 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        ApiActionLogger::info(
+            'ProfileController::destroy',
+            'ユーザー退会処理開始',
+            [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+        $userId = $user->id;
 
         Auth::logout();
 
@@ -77,6 +104,14 @@ class ProfileController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        ApiActionLogger::info(
+            'ProfileController::destroy',
+            'ユーザー退会処理成功',
+            [
+                'deleted_user_id' => $userId,
+            ]
+        );
 
         return Redirect::to('/');
     }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ApiActionLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 
 class AdminLogController extends Controller
@@ -13,6 +15,15 @@ class AdminLogController extends Controller
     public function index(Request $request)
     {
         $date = $request->input('date');
+
+        ApiActionLogger::info(
+            'AdminLogController::index',
+            '管理者ログファイル一覧画面にアクセス',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'date' => $date,
+            ]
+        );
 
         $logFiles = collect(File::files(storage_path('logs')))
             ->filter(function ($file) {
@@ -34,6 +45,16 @@ class AdminLogController extends Controller
             })
             ->values();
 
+        ApiActionLogger::info(
+            'AdminLogController::index',
+            '管理者ログファイル一覧取得完了',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'date' => $date,
+                'log_file_count' => $logFiles->count(),
+            ]
+        );
+
         return view('admin.logs.index', [
             'logFiles' => $logFiles,
             'date' => $date,
@@ -45,14 +66,32 @@ class AdminLogController extends Controller
      */
     public function show(string $file)
     {
+        ApiActionLogger::info(
+            'AdminLogController::show',
+            '管理者ログファイル詳細画面にアクセス',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'file' => $file,
+            ]
+        );
+
         abort_unless($this->isValidLogFileName($file), 404);
 
         $path = storage_path('logs/' . $file);
 
         abort_unless(File::exists($path), 404);
 
-        // 制限なしで全件表示する
         $content = File::get($path);
+
+        ApiActionLogger::info(
+            'AdminLogController::show',
+            '管理者ログファイル詳細取得完了',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'file' => $file,
+                'size' => $this->formatBytes(File::size($path)),
+            ]
+        );
 
         return view('admin.logs.show', [
             'file' => $file,

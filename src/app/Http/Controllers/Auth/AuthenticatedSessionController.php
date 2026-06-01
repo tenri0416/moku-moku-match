@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
+use App\Support\ApiActionLogger;
 
 
 class AuthenticatedSessionController extends Controller
@@ -18,7 +19,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        Log::info('ログインしてページにアクセス');
+
+        ApiActionLogger::info('
+            AuthenticatedSessionController::create',
+            'ユーザーログイン画面にアクセス',
+            request()->all()
+        );
         return view('auth.login');
     }
 
@@ -27,11 +33,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        Log::info('ログイン処理開始', ['email' => $request->email]);
         $request->authenticate();
 
         $request->session()->regenerate();
-        Log::info('User logged in', ['user_id' => Auth::id()]);
+        ApiActionLogger::info(
+            'AuthenticatedSessionController::store',
+            'ユーザーログイン成功',
+            $request->only(['email'])
+        );
 
         return redirect()->intended(route('mypage', absolute: false));
     }
@@ -41,12 +50,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        ApiActionLogger::info('ユーザーログアウト','AuthenticatedSessionController::store', ['user_id' => Auth::id()]);
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
-
+    
         return redirect('/');
     }
 }

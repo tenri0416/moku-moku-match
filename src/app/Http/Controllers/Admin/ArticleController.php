@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ArticleRequest;
 use App\Models\Article;
+use App\Models\ArticleCategory;
+use App\Models\ArticleTag;
 use App\Models\Prefecture;
+use App\Support\ApiActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use App\Models\ArticleCategory;
-use App\Models\ArticleTag;
 
 class ArticleController extends Controller
 {
@@ -20,6 +21,17 @@ class ArticleController extends Controller
      */
     public function index(Request $request): View
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::index',
+            '管理者記事一覧画面にアクセス',
+            [
+                'admin_id' => auth('admin')->id(),
+                'keyword' => $request->keyword,
+                'status' => $request->status,
+                'page' => $request->query('page'),
+            ]
+        );
+
         $articles = Article::query()
             ->with(['admin', 'prefecture'])
             ->when($request->keyword, function ($query, $keyword) {
@@ -42,8 +54,17 @@ class ArticleController extends Controller
      */
     public function create(): View
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::create',
+            '管理者記事作成画面にアクセス',
+            [
+                'admin_id' => auth('admin')->id(),
+            ]
+        );
+
         $article = new Article();
         $prefectures = Prefecture::orderBy('id')->get();
+
         $categories = ArticleCategory::with('parent')
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -64,6 +85,22 @@ class ArticleController extends Controller
      */
     public function store(ArticleRequest $request): RedirectResponse
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::store',
+            '管理者記事作成処理開始',
+            [
+                'admin_id' => auth('admin')->id(),
+                'title' => $request->title,
+                'slug' => $request->slug,
+                'short_slug' => $request->short_slug,
+                'status' => $request->status,
+                'prefecture_id' => $request->prefecture_id,
+                'article_category_id' => $request->article_category_id,
+                'tag_ids' => $request->input('tag_ids', []),
+                'has_thumbnail' => $request->hasFile('thumbnail'),
+            ]
+        );
+
         $validated = $request->validated();
 
         if ($request->hasFile('thumbnail')) {
@@ -76,7 +113,20 @@ class ArticleController extends Controller
             ...$validated,
             'admin_id' => auth('admin')->id(),
         ]);
+
         $article->tags()->sync($request->input('tag_ids', []));
+
+        ApiActionLogger::info(
+            'Admin\ArticleController::store',
+            '管理者記事作成成功',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'status' => $article->status,
+            ]
+        );
 
         return redirect()
             ->route('admin.articles.show', $article)
@@ -88,6 +138,18 @@ class ArticleController extends Controller
      */
     public function show(Article $article): View
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::show',
+            '管理者記事詳細画面にアクセス',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'status' => $article->status,
+            ]
+        );
+
         $article->load(['admin', 'prefecture']);
 
         return view('admin.articles.show', compact('article'));
@@ -98,7 +160,20 @@ class ArticleController extends Controller
      */
     public function edit(Article $article): View
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::edit',
+            '管理者記事編集画面にアクセス',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'status' => $article->status,
+            ]
+        );
+
         $prefectures = Prefecture::orderBy('id')->get();
+
         $categories = ArticleCategory::with('parent')
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -119,6 +194,23 @@ class ArticleController extends Controller
      */
     public function update(ArticleRequest $request, Article $article): RedirectResponse
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::update',
+            '管理者記事更新処理開始',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $request->title,
+                'slug' => $request->slug,
+                'short_slug' => $request->short_slug,
+                'status' => $request->status,
+                'prefecture_id' => $request->prefecture_id,
+                'article_category_id' => $request->article_category_id,
+                'tag_ids' => $request->input('tag_ids', []),
+                'has_thumbnail' => $request->hasFile('thumbnail'),
+            ]
+        );
+
         $validated = $request->validated();
 
         if ($request->hasFile('thumbnail')) {
@@ -134,6 +226,18 @@ class ArticleController extends Controller
         $article->update($validated);
         $article->tags()->sync($request->input('tag_ids', []));
 
+        ApiActionLogger::info(
+            'Admin\ArticleController::update',
+            '管理者記事更新成功',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'status' => $article->status,
+            ]
+        );
+
         return redirect()
             ->route('admin.articles.show', $article)
             ->with('success', '記事を更新しました。');
@@ -144,7 +248,30 @@ class ArticleController extends Controller
      */
     public function destroy(Article $article): RedirectResponse
     {
+        ApiActionLogger::info(
+            'Admin\ArticleController::destroy',
+            '管理者記事削除処理開始',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'status' => $article->status,
+            ]
+        );
+
+        $articleId = $article->id;
+
         $article->delete();
+
+        ApiActionLogger::info(
+            'Admin\ArticleController::destroy',
+            '管理者記事削除成功',
+            [
+                'admin_id' => auth('admin')->id(),
+                'article_id' => $articleId,
+            ]
+        );
 
         return redirect()
             ->route('admin.articles.index')

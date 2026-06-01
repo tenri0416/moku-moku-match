@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ApiActionLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 class AdminDatabaseController extends Controller
 {
@@ -30,6 +31,14 @@ class AdminDatabaseController extends Controller
      */
     public function index()
     {
+        ApiActionLogger::info(
+            'AdminDatabaseController::index',
+            '管理者DBテーブル一覧画面にアクセス',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+            ]
+        );
+
         $tables = collect(Schema::getTables())
             ->map(function (array $table) {
                 return $table['name'] ?? $table['table'] ?? null;
@@ -44,6 +53,15 @@ class AdminDatabaseController extends Controller
             ];
         });
 
+        ApiActionLogger::info(
+            'AdminDatabaseController::index',
+            '管理者DBテーブル一覧取得完了',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'table_count' => $tables->count(),
+            ]
+        );
+
         return view('admin.database.index', [
             'tables' => $tables,
             'tableCounts' => $tableCounts,
@@ -55,6 +73,16 @@ class AdminDatabaseController extends Controller
      */
     public function show(Request $request, string $table)
     {
+        ApiActionLogger::info(
+            'AdminDatabaseController::show',
+            '管理者DBテーブル詳細画面にアクセス',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'table' => $table,
+                'page' => $request->query('page'),
+            ]
+        );
+
         abort_if(in_array($table, $this->hiddenTables, true), 404);
 
         $tables = collect(Schema::getTables())
@@ -74,6 +102,16 @@ class AdminDatabaseController extends Controller
             ->latest($this->getOrderColumn($table, $columns))
             ->paginate(30)
             ->withQueryString();
+
+        ApiActionLogger::info(
+            'AdminDatabaseController::show',
+            '管理者DBテーブル詳細取得完了',
+            [
+                'admin_id' => Auth::guard('admin')->id(),
+                'table' => $table,
+                'column_count' => $columns->count(),
+            ]
+        );
 
         return view('admin.database.show', [
             'table' => $table,

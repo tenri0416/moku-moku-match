@@ -2,14 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\Message;
+use App\Support\ApiActionLogger;
 
 class MyPageController extends Controller
 {
     public function index()
     {
+        ApiActionLogger::info(
+            'MyPageController::index',
+            'マイページにアクセス',
+            [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         $user = auth()->user()->load('profile');
 
         $workPosts = $user->workPosts()->latest()->get();
@@ -24,6 +32,7 @@ class MyPageController extends Controller
             ->where('status', Application::STATUS_APPROVED)
             ->latest()
             ->get();
+
         $messages = Message::query()
             ->with(['workPost', 'sender.profile', 'receiver.profile'])
             ->where('sender_id', $user->id)

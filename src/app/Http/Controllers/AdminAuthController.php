@@ -19,8 +19,12 @@ class AdminAuthController extends Controller
     public function index()
     {
         if (Auth::guard('admin')->check()) {
+            Log::info('管理者は既にログインしています', [
+                'admin_id' => Auth::guard('admin')->id(),
+            ]);
             return redirect()->route('admin.dashboard');
         }
+        Log::info('管理者ログイン画面にアクセス');
 
         return view('admin.auth.login');
     }
@@ -54,6 +58,7 @@ class AdminAuthController extends Controller
                 'email' => $request->input('email'),
             ]);
 
+        
             return back()->withErrors([
                 'email' => 'メールアドレスまたはパスワードが正しくありません。',
             ])->onlyInput('email');
@@ -96,8 +101,15 @@ class AdminAuthController extends Controller
     public function showVerify(Request $request)
     {
         if (!$request->session()->has('admin_2fa_pending_id')) {
+            Log::info('管理者2段階認証コード入力画面にアクセスしたが、セッションにpending_idがない', [
+                'session_data' => $request->session()->all(),
+            ]);
             return redirect()->route('admin.login');
         }
+
+        Log::info('管理者2段階認証コード入力画面にアクセス', [
+            'admin_id' => $request->session()->get('admin_2fa_pending_id'),
+        ]);
 
         return view('admin.auth.verify');
     }
@@ -114,6 +126,9 @@ class AdminAuthController extends Controller
         $adminId = $request->session()->get('admin_2fa_pending_id');
 
         if (!$adminId) {
+            Log::info('管理者2段階認証コード確認処理にアクセスしたが、セッションにpending_idがない', [
+                'session_data' => $request->session()->all(),
+            ]);
             return redirect()->route('admin.login');
         }
 

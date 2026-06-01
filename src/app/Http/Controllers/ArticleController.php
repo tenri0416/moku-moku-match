@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use Illuminate\View\View;
 use App\Models\ArticleCategory;
 use App\Models\ArticleTag;
 use App\Models\ArticleView;
+use App\Support\ApiActionLogger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ArticleController extends Controller
 {
@@ -16,6 +17,14 @@ class ArticleController extends Controller
      */
     public function index(): View
     {
+        ApiActionLogger::info(
+            'ArticleController::index',
+            '記事一覧画面にアクセス',
+            [
+                'user_id' => Auth::id(),
+            ]
+        );
+
         $articles = Article::query()
             ->with('prefecture')
             ->public()
@@ -31,7 +40,19 @@ class ArticleController extends Controller
      */
     public function show(Article $article): View
     {
+        ApiActionLogger::info(
+            'ArticleController::show',
+            '記事詳細画面にアクセス',
+            [
+                'user_id' => Auth::id(),
+                'article_id' => $article->id,
+                'article_title' => $article->title ?? null,
+                'article_slug' => $article->slug ?? null,
+            ]
+        );
+
         $this->abortIfNotPublic($article);
+
         ArticleView::create([
             'article_id' => $article->id,
             'user_id' => Auth::id(),
@@ -42,7 +63,6 @@ class ArticleController extends Controller
 
         $article->load('prefecture');
 
-
         return view('articles.show', compact('article'));
     }
 
@@ -52,6 +72,15 @@ class ArticleController extends Controller
      */
     public function showShort(string $shortSlug): View
     {
+        ApiActionLogger::info(
+            'ArticleController::showShort',
+            '短縮URLの記事詳細画面にアクセス',
+            [
+                'user_id' => Auth::id(),
+                'short_slug' => $shortSlug,
+            ]
+        );
+
         $article = Article::query()
             ->where('short_slug', $shortSlug)
             ->firstOrFail();
@@ -71,8 +100,19 @@ class ArticleController extends Controller
         abort_if($article->status !== Article::STATUS_PUBLIC, 404);
         abort_if($article->published_at === null || $article->published_at->isFuture(), 404);
     }
+
     public function category(ArticleCategory $category)
     {
+        ApiActionLogger::info(
+            'ArticleController::category',
+            '記事カテゴリ一覧画面にアクセス',
+            [
+                'user_id' => Auth::id(),
+                'category_id' => $category->id,
+                'category_name' => $category->name,
+            ]
+        );
+
         abort_unless($category->is_active, 404);
 
         $articles = Article::query()
@@ -94,6 +134,16 @@ class ArticleController extends Controller
 
     public function tag(ArticleTag $tag)
     {
+        ApiActionLogger::info(
+            'ArticleController::tag',
+            '記事タグ一覧画面にアクセス',
+            [
+                'user_id' => Auth::id(),
+                'tag_id' => $tag->id,
+                'tag_name' => $tag->name,
+            ]
+        );
+
         abort_unless($tag->is_active, 404);
 
         $articles = Article::query()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Support\ApiActionLogger;
 use Illuminate\View\View;
 
 class ArticleViewController extends Controller
@@ -13,6 +14,14 @@ class ArticleViewController extends Controller
      */
     public function index(): View
     {
+        ApiActionLogger::info(
+            'Admin\ArticleViewController::index',
+            '管理者記事閲覧数一覧画面にアクセス',
+            [
+                'admin_id' => auth('admin')->id(),
+            ]
+        );
+
         $articles = Article::query()
             ->with(['category'])
             ->withCount('views')
