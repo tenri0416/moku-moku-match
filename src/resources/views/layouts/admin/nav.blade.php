@@ -86,4 +86,12 @@
     <span>記事閲覧数</span>
     <span class="text-slate-400">›</span>
 </a>
+<a
+    href="{{ route('admin.trainings.index') }}"
+    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+    {{ request()->routeIs('admin.trainings.index.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+>
+    <span>トレーニング</span>
+    <span class="text-slate-400">›</span>
+</a>
 </nav>

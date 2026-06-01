@@ -20,7 +20,7 @@ use App\Http\Controllers\Admin\NotificationController as AdminNotificationContro
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Admin\AdminTrainingController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -352,6 +352,17 @@ Route::prefix('admin')
         Route::get('/logs/{file}', [AdminLogController::class, 'show'])
             ->where('file', 'laravel(\-\d{4}\-\d{2}\-\d{2})?\.log')
             ->name('logs.show');
+
+
+        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
+
+        Route::get('/trainings/diary/create', [AdminTrainingController::class, 'createDiary'])->name('trainings.diary.create');
+        Route::post('/trainings/diary', [AdminTrainingController::class, 'storeDiary'])->name('trainings.diary.store');
+
+        Route::get('/trainings/challenge/create', [AdminTrainingController::class, 'createChallenge'])->name('trainings.challenge.create');
+        Route::post('/trainings/challenge', [AdminTrainingController::class, 'storeChallenge'])->name('trainings.challenge.store');
+
+        Route::get('/trainings/{training}', [AdminTrainingController::class, 'show'])->name('trainings.show');
     });
 
 /*
