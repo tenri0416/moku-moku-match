@@ -51,5 +51,6 @@
 @include('components.mobile-footer-nav')
 @include('layouts.notifications.modal')
 @include('layouts.notifications.script')
+@include('components.ai-loading-modal')
 </body>
 </html>

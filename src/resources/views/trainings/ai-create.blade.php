@@ -31,7 +31,7 @@
         <div class="whitespace-pre-wrap leading-relaxed border rounded p-4 bg-gray-50">{{ $questionBody }}</div>
     </div>
 
-    <form method="POST" action="{{ $storeRoute }}" class="bg-white rounded shadow p-5">
+    <form method="POST" action="{{ $storeRoute }}" data-ai-loading="true" data-ai-loading-type="score" class="bg-white rounded shadow p-5">
         @csrf
 
         <div class="mb-4">

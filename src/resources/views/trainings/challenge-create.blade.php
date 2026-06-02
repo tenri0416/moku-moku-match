@@ -13,7 +13,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('trainings.challenge.store') }}" class="space-y-5">
+    <form method="POST" action="{{ route('trainings.challenge.store') }}" data-ai-loading="true" data-ai-loading-type="score" class="space-y-5">
         @csrf
 
         <div>
