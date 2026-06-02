@@ -20,8 +20,12 @@ return new class extends Migration
 
             $table->date('training_date')->comment('対象日');
 
+            $table->string('question_title')->nullable()->comment('AIが作成した問題タイトル');
+
             // 日記トレーニング用
             $table->text('diary_body')->nullable()->comment('日記本文');
+            $table->longText('question_body')->nullable()->comment('AIが作成した問題本文');
+            $table->longText('answer_body')->nullable()->comment('管理者の回答');
 
             // 今日のチャレンジ用
             $table->text('challenged_thing')->nullable()->comment('今日チャレンジしたこと');

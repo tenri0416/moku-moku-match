@@ -362,6 +362,34 @@ Route::prefix('admin')
         Route::get('/trainings/challenge/create', [AdminTrainingController::class, 'createChallenge'])->name('trainings.challenge.create');
         Route::post('/trainings/challenge', [AdminTrainingController::class, 'storeChallenge'])->name('trainings.challenge.store');
 
+
+
+        Route::get('/trainings/summary/create', [AdminTrainingController::class, 'createSummary'])
+            ->name('trainings.summary.create');
+
+        Route::post('/trainings/summary/{training}', [AdminTrainingController::class, 'storeSummary'])
+            ->name('trainings.summary.store');
+
+        Route::get('/trainings/verbalization/create', [AdminTrainingController::class, 'createVerbalization'])
+            ->name('trainings.verbalization.create');
+
+        Route::post('/trainings/verbalization/{training}', [AdminTrainingController::class, 'storeVerbalization'])
+            ->name('trainings.verbalization.store');
+
+        Route::get('/trainings/abstraction/create', [AdminTrainingController::class, 'createAbstraction'])
+            ->name('trainings.abstraction.create');
+
+        Route::post('/trainings/abstraction/{training}', [AdminTrainingController::class, 'storeAbstraction'])
+            ->name('trainings.abstraction.store');
+
+        Route::get('/trainings/concretization/create', [AdminTrainingController::class, 'createConcretization'])
+            ->name('trainings.concretization.create');
+
+        Route::post('/trainings/concretization/{training}', [AdminTrainingController::class, 'storeConcretization'])
+            ->name('trainings.concretization.store');
+
+
+
         Route::get('/trainings/{training}', [AdminTrainingController::class, 'show'])->name('trainings.show');
     });
 
