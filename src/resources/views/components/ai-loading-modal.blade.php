@@ -128,5 +128,51 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 700);
         });
     });
+    const loadingLinks = document.querySelectorAll('a[data-ai-loading-link="true"]');
+
+loadingLinks.forEach(function (link) {
+    link.addEventListener('click', function () {
+        const loadingType = link.dataset.aiLoadingType || 'question';
+
+        if (loadingType === 'question') {
+            title.textContent = 'AIが問題を作成しています';
+            message.textContent = 'あなたの成長につながる問題を準備しています。少しだけお待ちください。';
+        } else {
+            title.textContent = 'AIが処理しています';
+            message.textContent = '内容を確認しています。完了まで少しだけお待ちください。';
+        }
+
+        stepText.textContent = 'AIに接続しています';
+        percentText.textContent = '0%';
+        bar.style.width = '0%';
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.setAttribute('aria-hidden', 'false');
+
+        let percent = 0;
+
+        setInterval(function () {
+            if (percent < 95) {
+                percent += Math.floor(Math.random() * 7) + 3;
+
+                if (percent > 95) {
+                    percent = 95;
+                }
+
+                if (percent < 35) {
+                    stepText.textContent = '問題のテーマを考えています';
+                } else if (percent < 70) {
+                    stepText.textContent = '問題文を作成しています';
+                } else {
+                    stepText.textContent = 'もう少しで完了します';
+                }
+
+                percentText.textContent = percent + '%';
+                bar.style.width = percent + '%';
+            }
+        }, 700);
+    });
+});
 });
 </script>
