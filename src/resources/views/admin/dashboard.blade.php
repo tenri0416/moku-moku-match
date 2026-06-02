@@ -64,14 +64,6 @@
                     </div>
                 </div>
 
-                <div class="mt-5">
-                    <a
-                        href="{{ route('admin.work-posts.index') }}"
-                        class="text-sm font-bold text-indigo-600 hover:text-indigo-700"
-                    >
-                        募集一覧を見る →
-                    </a>
-                </div>
             </div>
 
             <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">

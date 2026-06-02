@@ -21,6 +21,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminTrainingController;
+use App\Http\Controllers\User\TrainingController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -37,6 +38,9 @@ Route::get('/welcome', function () {
 Route::get('/work-posts', [WorkPostController::class, 'index'])
     ->name('work-posts.index');
 
+    Route::get('/trainings/ranking', [TrainingController::class, 'ranking'])
+    ->name('trainings.ranking');
+    
 /*
 |--------------------------------------------------------------------------
 | メール認証関連
@@ -203,8 +207,37 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}/blocks', [BlockController::class, 'destroy'])
             ->whereNumber('user')
             ->name('blocks.destroy');
+        
     });
 });
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('trainings')->name('trainings.')->group(function () {
+        Route::get('/', [TrainingController::class, 'index'])->name('index');
+        Route::get('/ranking', [TrainingController::class, 'ranking'])->name('ranking');
+
+        Route::get('/diary/create', [TrainingController::class, 'createDiary'])->name('diary.create');
+        Route::post('/diary', [TrainingController::class, 'storeDiary'])->name('diary.store');
+
+        Route::get('/challenge/create', [TrainingController::class, 'createChallenge'])->name('challenge.create');
+        Route::post('/challenge', [TrainingController::class, 'storeChallenge'])->name('challenge.store');
+
+        Route::get('/summary/create', [TrainingController::class, 'createSummary'])->name('summary.create');
+        Route::post('/summary/{training}', [TrainingController::class, 'storeSummary'])->name('summary.store');
+
+        Route::get('/verbalization/create', [TrainingController::class, 'createVerbalization'])->name('verbalization.create');
+        Route::post('/verbalization/{training}', [TrainingController::class, 'storeVerbalization'])->name('verbalization.store');
+
+        Route::get('/abstraction/create', [TrainingController::class, 'createAbstraction'])->name('abstraction.create');
+        Route::post('/abstraction/{training}', [TrainingController::class, 'storeAbstraction'])->name('abstraction.store');
+
+        Route::get('/concretization/create', [TrainingController::class, 'createConcretization'])->name('concretization.create');
+        Route::post('/concretization/{training}', [TrainingController::class, 'storeConcretization'])->name('concretization.store');
+
+        Route::get('/{type}/{id}', [TrainingController::class, 'show'])->name('show');
+    });
+});
+
 
 /*
 |--------------------------------------------------------------------------

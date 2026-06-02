@@ -17,11 +17,13 @@ class GoogleAiScoringService
     /**
      * 日記トレーニングを採点する
      */
-    public function scoreDiary(string $diaryBody): array
+    public function scoreDiary(string $diaryBody, int|string $difficulty = 0): array
     {
         $prompt = <<<PROMPT
 あなたは文章トレーニングの先生です。
 以下の日記を採点してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 採点基準：
 - 総合点：100点満点
@@ -54,11 +56,13 @@ PROMPT;
     /**
      * 今日のチャレンジを採点する
      */
-    public function scoreChallenge(array $data): array
+    public function scoreChallenge(array $data, int|string $difficulty = 0): array
     {
         $prompt = <<<PROMPT
 あなたは行動改善トレーニングの先生です。
 以下の「今日のチャレンジ」を採点してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 採点基準：
 - 総合点：100点満点
@@ -100,13 +104,13 @@ PROMPT;
     /**
      * AI出題型トレーニングの問題を生成する
      */
-    public function generateAiTrainingQuestion(string $type): array
+    public function generateAiTrainingQuestion(string $type, int|string $difficulty = 0): array
     {
         $prompt = match ($type) {
-            'summary' => $this->summaryQuestionPrompt(),
-            'verbalization' => $this->verbalizationQuestionPrompt(),
-            'abstraction' => $this->abstractionQuestionPrompt(),
-            'concretization' => $this->concretizationQuestionPrompt(),
+            'summary' => $this->summaryQuestionPrompt($difficulty),
+            'verbalization' => $this->verbalizationQuestionPrompt($difficulty),
+            'abstraction' => $this->abstractionQuestionPrompt($difficulty),
+            'concretization' => $this->concretizationQuestionPrompt($difficulty),
             default => throw new RuntimeException('不正なトレーニング種別です。'),
         };
 
@@ -116,7 +120,13 @@ PROMPT;
     /**
      * AI出題型トレーニングを採点する
      */
-    public function scoreAiTraining(string $type, string $questionTitle, string $questionBody, string $answerBody): array
+    public function scoreAiTraining(
+        string $type,
+        string $questionTitle,
+        string $questionBody,
+        string $answerBody,
+        int|string $difficulty = 0
+    ): array
     {
         $scoreLabels = match ($type) {
             'summary' => [
@@ -149,6 +159,8 @@ PROMPT;
         $prompt = <<<PROMPT
 あなたは文章力・思考力トレーニングの先生です。
 以下の問題に対する回答を採点してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 トレーニング種別：
 {$type}
@@ -186,6 +198,38 @@ PROMPT;
 
         return $this->requestScore($prompt);
     }
+
+
+    /**
+     * ユーザーの総獲得ポイントに応じた難易度指示を作成する
+     */
+    private function difficultyInstruction(int|string $difficulty): string
+    {
+        $difficultyText = (string) $difficulty;
+
+        $levelInstruction = match ($difficultyText) {
+            '0' => '初心者向け。問題はやさしく、回答しやすい内容にする。アドバイスは基礎的で前向きにする。',
+            '1', '2' => '初級向け。少しだけ理由や具体例を求める。アドバイスは改善しやすい内容にする。',
+            '3', '4' => '初中級向け。理由、具体例、改善案を含めた回答を促す。採点では構成と具体性も見る。',
+            '5', '6' => '中級向け。比較、原因分析、改善行動まで求める。採点では論理性と深さも重視する。',
+            '7', '8' => '中上級向け。複数の観点から考えさせる。採点では本質理解、説得力、実行可能性を重視する。',
+            '9', '10' => '上級向け。抽象度の高いテーマや複雑な状況を扱う。採点では論理構成、洞察、具体化の質を厳しめに見る。',
+            'Max' => '最高難易度。実務・対人・学習改善など複合的なテーマにする。採点では深い洞察、再現性、行動への落とし込みを高く求める。',
+            default => '初心者向け。問題はやさしく、回答しやすい内容にする。アドバイスは基礎的で前向きにする。',
+        };
+
+        return <<<TEXT
+現在のトレーニング難易度：{$difficultyText}
+
+難易度に応じた方針：
+{$levelInstruction}
+
+注意：
+- 難易度は問題の難しさ、採点の厳しさ、アドバイス、次回課題に反映してください。
+- ただし、ユーザーの継続意欲を下げないように、否定的すぎる表現は避けてください。
+TEXT;
+    }
+
 
     /**
      * Google AIへ採点依頼する
@@ -548,11 +592,13 @@ PROMPT;
     /**
      * 要約力トレーニングの問題生成プロンプト
      */
-    private function summaryQuestionPrompt(): string
+    private function summaryQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
 あなたは要約力トレーニングの先生です。
 要約力を鍛える問題を1つ作成してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 条件：
 - 日本語
@@ -577,11 +623,13 @@ PROMPT;
     /**
      * 言語化力トレーニングの問題生成プロンプト
      */
-    private function verbalizationQuestionPrompt(): string
+    private function verbalizationQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
 あなたは言語化力トレーニングの先生です。
 自分の考えを言葉にする力を鍛える問題を1つ作成してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 条件：
 - 日本語
@@ -608,11 +656,13 @@ PROMPT;
     /**
      * 抽象化力トレーニングの問題生成プロンプト
      */
-    private function abstractionQuestionPrompt(): string
+    private function abstractionQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
 あなたは抽象化力トレーニングの先生です。
 具体例から共通点や本質を見つける力を鍛える問題を1つ作成してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 条件：
 - 日本語
@@ -637,11 +687,13 @@ PROMPT;
     /**
      * 具体化力トレーニングの問題生成プロンプト
      */
-    private function concretizationQuestionPrompt(): string
+    private function concretizationQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
 あなたは具体化力トレーニングの先生です。
 抽象的な言葉を具体的な行動や場面に落とし込む力を鍛える問題を1つ作成してください。
+
+{$this->difficultyInstruction($difficulty)}
 
 条件：
 - 日本語
