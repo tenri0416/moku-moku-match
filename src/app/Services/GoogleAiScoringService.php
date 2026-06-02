@@ -10,9 +10,11 @@ use RuntimeException;
 class GoogleAiScoringService
 {
     /**
-     * Google AI APIのリトライ回数
+     * Google AI APIの最大試行回数
+     *
+     * モデルを切り替えながら最大5回まで試す。
      */
-    private const MAX_RETRY_COUNT = 3;
+    private const MAX_ATTEMPT_COUNT = 5;
 
     /**
      * 日記トレーニングを採点する
@@ -126,8 +128,7 @@ PROMPT;
         string $questionBody,
         string $answerBody,
         int|string $difficulty = 0
-    ): array
-    {
+    ): array {
         $scoreLabels = match ($type) {
             'summary' => [
                 'score_1' => '重要点の抽出',
@@ -199,7 +200,6 @@ PROMPT;
         return $this->requestScore($prompt);
     }
 
-
     /**
      * ユーザーの総獲得ポイントに応じた難易度指示を作成する
      */
@@ -229,7 +229,6 @@ PROMPT;
 - ただし、ユーザーの継続意欲を下げないように、否定的すぎる表現は避けてください。
 TEXT;
     }
-
 
     /**
      * Google AIへ採点依頼する
@@ -297,25 +296,33 @@ TEXT;
     }
 
     /**
-     * Gemini APIへリトライ付きでリクエストする
+     * Gemini APIへモデル切り替え付きでリクエストする
      *
-     * 503や一時的な429はリトライする。
-     * 課金・プリペイド・quota limit 0 のような設定系エラーはリトライしない。
+     * 無料枠やモデル別上限に達した場合、別モデルへ切り替えて最大5回まで試す。
+     * ただし、APIキー・プロジェクト全体の上限に達している場合は、モデルを変えても失敗する可能性がある。
      */
     private function postGeminiWithRetry(string $prompt, float $temperature, string $actionName): HttpResponse
     {
         $apiKey = config('services.google_ai.api_key');
-        $model = config('services.google_ai.model', 'gemini-2.0-flash');
 
         if (! $apiKey) {
             throw new RuntimeException('GOOGLE_AI_API_KEY が設定されていません。');
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+        $models = $this->fallbackModels();
 
         $response = null;
+        $attempt = 0;
 
-        for ($attempt = 1; $attempt <= self::MAX_RETRY_COUNT; $attempt++) {
+        foreach ($models as $model) {
+            $attempt++;
+
+            if ($attempt > self::MAX_ATTEMPT_COUNT) {
+                break;
+            }
+
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
             try {
                 $response = Http::timeout(60)
                     ->withHeaders([
@@ -338,15 +345,15 @@ TEXT;
                         ],
                     ]);
             } catch (\Throwable $e) {
-                Log::warning('Google AI通信例外が発生しました', [
+                Log::warning('Google AI通信例外が発生しました。次のモデルを試します。', [
                     'action' => $actionName,
                     'model' => $model,
                     'attempt' => $attempt,
-                    'max_attempts' => self::MAX_RETRY_COUNT,
+                    'max_attempts' => self::MAX_ATTEMPT_COUNT,
                     'message' => $e->getMessage(),
                 ]);
 
-                if ($attempt >= self::MAX_RETRY_COUNT) {
+                if ($attempt >= self::MAX_ATTEMPT_COUNT) {
                     throw new RuntimeException(
                         'Google AIとの通信に失敗しました。ネットワーク状況を確認して、少し時間を置いて再度お試しください。'
                     );
@@ -358,7 +365,7 @@ TEXT;
 
             if ($response->successful()) {
                 if ($attempt > 1) {
-                    Log::info('Google AI APIリトライ後に成功しました', [
+                    Log::info('Google AI APIがモデル切り替え後に成功しました', [
                         'action' => $actionName,
                         'model' => $model,
                         'attempt' => $attempt,
@@ -368,59 +375,112 @@ TEXT;
                 return $response;
             }
 
-            if (! $this->shouldRetry($response, $attempt)) {
-                return $response;
-            }
-
-            Log::warning('Google AI APIをリトライします', [
+            Log::warning('Google AI APIリクエスト失敗。必要に応じて次のモデルを試します。', [
                 'action' => $actionName,
                 'model' => $model,
                 'attempt' => $attempt,
-                'max_attempts' => self::MAX_RETRY_COUNT,
+                'max_attempts' => self::MAX_ATTEMPT_COUNT,
                 'status' => $response->status(),
+                'google_status' => $response->json('error.status'),
                 'message' => $response->json('error.message'),
                 'retry_delay_seconds' => $this->retryDelaySeconds($response, $attempt),
             ]);
 
+            if ($this->shouldStopModelFallback($response)) {
+                return $response;
+            }
+
+            if ($attempt >= self::MAX_ATTEMPT_COUNT) {
+                return $response;
+            }
+
             sleep($this->retryDelaySeconds($response, $attempt));
+        }
+
+        if (! $response) {
+            throw new RuntimeException(
+                'Google AIへのリクエストに失敗しました。少し時間を置いて再度お試しください。'
+            );
         }
 
         return $response;
     }
 
     /**
-     * リトライするか判定する
+     * フォールバック用のGeminiモデル一覧
+     *
+     * 上から順番に試す。
+     * .env に GOOGLE_AI_FALLBACK_MODELS を設定すれば、そちらを優先する。
      */
-    private function shouldRetry(HttpResponse $response, int $attempt): bool
+    private function fallbackModels(): array
     {
-        if ($attempt >= self::MAX_RETRY_COUNT) {
-            return false;
+        $envModels = env('GOOGLE_AI_FALLBACK_MODELS');
+
+        if ($envModels) {
+            $models = collect(explode(',', $envModels))
+                ->map(fn (string $model) => trim($model))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (! empty($models)) {
+                return $models;
+            }
         }
 
-        $status = $response->status();
+        $mainModel = config('services.google_ai.model', 'gemini-2.5-flash');
 
-        if (! in_array($status, [429, 500, 502, 503, 504], true)) {
-            return false;
-        }
-
-        if ($this->isNonRetryableQuotaError($response)) {
-            return false;
-        }
-
-        return true;
+        return collect([
+            $mainModel,
+            'gemini-2.5-flash',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash',
+            'gemini-2.5-flash-lite',
+            'gemini-2.0-flash-lite',
+        ])
+            ->filter()
+            ->unique()
+            ->take(self::MAX_ATTEMPT_COUNT)
+            ->values()
+            ->all();
     }
 
     /**
-     * リトライしても改善しにくいquota / billing系エラーか判定する
+     * モデルを切り替えても改善しにくいエラーか判定する
      */
-    private function isNonRetryableQuotaError(HttpResponse $response): bool
+    private function shouldStopModelFallback(HttpResponse $response): bool
     {
+        $status = $response->status();
         $message = strtolower((string) $response->json('error.message'));
 
-        return str_contains($message, 'prepayment credits are depleted')
+        // リクエスト内容が悪い場合は、モデルを変えても基本的に直らない
+        if ($status === 400) {
+            return true;
+        }
+
+        // APIキーや権限エラーは、モデルを変えても直らない
+        if (in_array($status, [401, 403], true)) {
+            return true;
+        }
+
+        // モデル名が存在しない場合は、次のモデルで成功する可能性がある
+        if ($status === 404) {
+            return false;
+        }
+
+        // 課金・APIキー・権限など、プロジェクト全体の問題は止める
+        if (str_contains($message, 'prepayment credits are depleted')
             || str_contains($message, 'billing')
-            || str_contains($message, 'limit: 0')
-            || str_contains($message, 'quota exceeded for metric');
+            || str_contains($message, 'api key not valid')
+            || str_contains($message, 'permission')
+        ) {
+            return true;
+        }
+
+        // quota exceeded や limit: 0 はモデル別制限の可能性もあるため、
+        // 次のモデルを試す。
+        return false;
     }
 
     /**
@@ -437,9 +497,11 @@ TEXT;
         }
 
         return match ($attempt) {
-            1 => 2,
-            2 => 5,
-            default => 10,
+            1 => 1,
+            2 => 2,
+            3 => 4,
+            4 => 6,
+            default => 8,
         };
     }
 
@@ -504,7 +566,7 @@ TEXT;
             'google_message' => $response->json('error.message'),
             'quota_details' => $response->json('error.details'),
             'body' => $response->body(),
-            'model' => config('services.google_ai.model', 'gemini-2.0-flash'),
+            'fallback_models' => $this->fallbackModels(),
         ]);
     }
 
@@ -522,29 +584,29 @@ TEXT;
 
         if ($status === 429) {
             if (str_contains($message, 'prepayment credits are depleted')) {
-                return "Google AIのプリペイド残高が不足しているため、{$actionName}に失敗しました。AI StudioのBillingまたはPrepay設定を確認してください。";
+                return "現在AIの利用枠が不足しているため、{$actionName}できませんでした。入力内容はそのまま残して、少し時間を置いて再度お試しください。";
             }
 
             if (str_contains($message, 'limit: 0')) {
-                return "Google AIの無料枠またはプロジェクトの利用上限が0になっているため、{$actionName}に失敗しました。AI Studioのプロジェクト、APIキー、Billing設定を確認してください。";
+                return "現在AIの無料利用枠に制限がかかっているため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
             }
 
-            return "Google AIの利用上限に達したため、{$actionName}に失敗しました。少し時間を置いて再度お試しください。";
+            return "現在AIの利用上限に達しているため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
         }
 
         if ($status === 400) {
-            return "Google AIへのリクエスト内容に問題があるため、{$actionName}に失敗しました。プロンプトや送信データを確認してください。";
+            return "AIへのリクエスト内容に問題があるため、{$actionName}できませんでした。入力内容を少し短くするか、内容を調整して再度お試しください。";
         }
 
         if ($status === 401 || $status === 403) {
-            return "Google AIの認証または権限に問題があるため、{$actionName}に失敗しました。APIキー、プロジェクト、権限設定を確認してください。";
+            return "AI機能の設定に問題があるため、現在{$actionName}できません。時間を置いて再度お試しください。";
         }
 
         if ($status === 404) {
-            return "Google AIのモデル名が見つからないため、{$actionName}に失敗しました。.env の GOOGLE_AI_MODEL を確認してください。";
+            return "AIモデルが利用できないため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
         }
 
-        return "Google AIによる{$actionName}に失敗しました。しばらくしても直らない場合は、laravel.log の Google AI APIエラーを確認してください。";
+        return "AIによる{$actionName}に失敗しました。少し時間を置いて再度お試しください。";
     }
 
     /**
