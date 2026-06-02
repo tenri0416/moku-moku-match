@@ -3,56 +3,102 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\User;
 use App\Models\WorkPost;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use App\Notifications\MessageReceivedNotification;
 use Illuminate\Http\JsonResponse;
-use App\Models\User;
-
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class MessageController extends Controller
 {
     /**
      * 自分に関係するメッセージ一覧を表示する
+     *
+     * messages テーブルから work_post_id を削除したため、
+     * sender_id / receiver_id のみで会話相手ごとに一覧化する。
      */
     public function index(): View
     {
-        $messages = Message::query()
-            ->with(['workPost', 'sender', 'receiver'])
-            ->where(function ($query) {
-                $query->where('sender_id', Auth::id())
-                    ->orWhere('receiver_id', Auth::id());
+        $loginUserId = Auth::id();
+
+        $allMessages = Message::query()
+            ->with(['sender.profile', 'receiver.profile'])
+            ->where(function ($query) use ($loginUserId) {
+                $query->where('sender_id', $loginUserId)
+                    ->orWhere('receiver_id', $loginUserId);
             })
             ->latest()
-            ->get()
-            ->groupBy('work_post_id');
+            ->get();
+
+        $messages = $allMessages
+            ->groupBy(function (Message $message) use ($loginUserId) {
+                return $message->sender_id === $loginUserId
+                    ? $message->receiver_id
+                    : $message->sender_id;
+            })
+            ->map(function ($group) {
+                return $group->first();
+            })
+            ->values();
 
         return view('messages.index', compact('messages'));
     }
 
     /**
-     * 募集投稿に紐づくメッセージ詳細を表示する
+     * 旧URL互換用
+     *
+     * 以前の /messages/{workPost}/{user} にアクセスされた場合も、
+     * 募集なしDM画面へ流す。
      */
     public function show(WorkPost $workPost, User $user): View
     {
+        return $this->showUser($user);
+    }
+
+    /**
+     * 旧URL互換用
+     *
+     * 以前の /messages/{workPost}/{user} へPOSTされた場合も、
+     * 募集なしDMとして保存する。
+     */
+    public function store(Request $request, WorkPost $workPost, User $user): RedirectResponse|JsonResponse
+    {
+        return $this->storeUser($request, $user);
+    }
+
+    /**
+     * 旧URL互換用
+     *
+     * 以前の /messages/{workPost}/{user}/latest にアクセスされた場合も、
+     * 募集なしDMの新着取得として扱う。
+     */
+    public function latest(Request $request, WorkPost $workPost, User $user): JsonResponse
+    {
+        return $this->latestUser($request, $user);
+    }
+
+    /**
+     * 募集に紐づかないユーザー同士のメッセージ画面を表示する
+     */
+    public function showUser(User $user): View
+    {
         $loginUser = Auth::user();
+
+        abort_unless($loginUser, 403);
 
         // 自分自身とのメッセージ画面は開けないようにする
         abort_if($loginUser->id === $user->id, 404);
 
-        // この募集に関係するメッセージで、
-        // ログインユーザーと相手ユーザーのやり取りだけ取得
         $messages = Message::query()
-            ->where('work_post_id', $workPost->id)
+            ->with(['sender.profile', 'receiver.profile'])
             ->where(function ($query) use ($loginUser, $user) {
                 $query->where(function ($query) use ($loginUser, $user) {
                     $query->where('sender_id', $loginUser->id)
                         ->where('receiver_id', $user->id);
-                })
-                ->orWhere(function ($query) use ($loginUser, $user) {
+                })->orWhere(function ($query) use ($loginUser, $user) {
                     $query->where('sender_id', $user->id)
                         ->where('receiver_id', $loginUser->id);
                 });
@@ -62,7 +108,6 @@ class MessageController extends Controller
 
         // 相手から自分宛てに届いた未読メッセージを既読にする
         Message::query()
-            ->where('work_post_id', $workPost->id)
             ->where('sender_id', $user->id)
             ->where('receiver_id', $loginUser->id)
             ->whereNull('read_at')
@@ -72,8 +117,7 @@ class MessageController extends Controller
 
         $latestMessageId = $messages->last()?->id ?? 0;
 
-        return view('messages.show', [
-            'workPost' => $workPost,
+        return view('messages.user-show', [
             'user' => $user,
             'messages' => $messages,
             'latestMessageId' => $latestMessageId,
@@ -81,27 +125,33 @@ class MessageController extends Controller
     }
 
     /**
-     * メッセージを送信する
+     * 募集に紐づかないユーザー同士のメッセージを送信する
      */
-    public function store(Request $request, WorkPost $workPost, User $user)
+    public function storeUser(Request $request, User $user): RedirectResponse|JsonResponse
     {
-        $this->authorizeMessagePartner($workPost, $user);
+        abort_unless(Auth::check(), 403);
+
+        // 自分自身には送れない
+        abort_if(Auth::id() === $user->id, 403);
 
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
+        ], [
+            'body.required' => 'メッセージを入力してください。',
+            'body.max' => 'メッセージは2000文字以内で入力してください。',
         ]);
 
         $message = Message::create([
-            'work_post_id' => $workPost->id,
             'sender_id' => Auth::id(),
             'receiver_id' => $user->id,
             'body' => $validated['body'],
         ]);
 
-        // 既存の通知クラスがある場合
-        if (class_exists(\App\Notifications\MessageReceivedNotification::class)) {
+        $message->load(['sender.profile', 'receiver.profile']);
+
+        if (class_exists(MessageReceivedNotification::class)) {
             $message->receiver->notify(
-                new \App\Notifications\MessageReceivedNotification($message)
+                new MessageReceivedNotification($message)
             );
         }
 
@@ -120,65 +170,24 @@ class MessageController extends Controller
         }
 
         return redirect()
-            ->route('messages.show', [$workPost, $user])
+            ->route('messages.users.show', $user)
             ->with('success', 'メッセージを送信しました。');
     }
 
     /**
-     * メッセージ返信
+     * 募集に紐づかないユーザー同士の新着メッセージを取得する
      */
-    public function reply(Request $request, WorkPost $workPost): RedirectResponse
+    public function latestUser(Request $request, User $user): JsonResponse
     {
-        $this->authorizeMessageAccess($workPost);
+        abort_unless(Auth::check(), 403);
 
-        $validated = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
-            'receiver_id' => ['required', 'exists:users,id'],
-        ]);
-
-        abort_if((int) $validated['receiver_id'] === Auth::id(), 403);
-
-        $message = Message::create([
-            'work_post_id' => $workPost->id,
-            'sender_id' => Auth::id(),
-            'receiver_id' => $validated['receiver_id'],
-            'body' => $validated['body'],
-        ]);
-
-        $message->receiver->notify(new MessageReceivedNotification($message));
-
-        return redirect()
-            ->route('messages.show', $workPost)
-            ->with('success', '返信しました。');
-    }
-
-    /**
-     * ログインユーザーが対象募集のメッセージを見られるか確認する
-     */
-    private function authorizeMessageAccess(WorkPost $workPost): void
-    {
-        $exists = Message::query()
-            ->where('work_post_id', $workPost->id)
-            ->where(function ($query) {
-                $query->where('sender_id', Auth::id())
-                    ->orWhere('receiver_id', Auth::id());
-            })
-            ->exists();
-
-        abort_unless($exists || $workPost->user_id === Auth::id(), 403);
-    }
-    /**
-     * 新着メッセージを取得する
-     */
-    public function latest(Request $request, WorkPost $workPost, User $user): JsonResponse
-    {
-        $this->authorizeMessagePartner($workPost, $user);
+        // 自分自身とのメッセージ取得は不可
+        abort_if(Auth::id() === $user->id, 403);
 
         $afterId = (int) $request->query('after_id', 0);
 
         $messages = Message::query()
             ->with(['sender.profile'])
-            ->where('work_post_id', $workPost->id)
             ->where('id', '>', $afterId)
             ->where(function ($query) use ($user) {
                 $query->where(function ($query) use ($user) {
@@ -200,7 +209,9 @@ class MessageController extends Controller
             Message::query()
                 ->whereIn('id', $messageIds)
                 ->whereNull('read_at')
-                ->update(['read_at' => now()]);
+                ->update([
+                    'read_at' => now(),
+                ]);
         }
 
         return response()->json([
@@ -219,26 +230,42 @@ class MessageController extends Controller
     }
 
     /**
-     * ログインユーザーが対象のメッセージ画面を見られるか確認する
+     * 旧返信処理
+     *
+     * work_post_id を使わず、receiver_id 宛ての通常DMとして保存する。
      */
-    private function authorizeMessagePartner(WorkPost $workPost, User $user): void
+    public function reply(Request $request, WorkPost $workPost): RedirectResponse
     {
-        $isOwner = $workPost->user_id === Auth::id();
-        $isPartner = $user->id === Auth::id();
+        abort_unless(Auth::check(), 403);
 
-        $hasMessageRelation = Message::query()
-            ->where('work_post_id', $workPost->id)
-            ->where(function ($query) use ($user) {
-                $query->where(function ($query) use ($user) {
-                    $query->where('sender_id', Auth::id())
-                        ->where('receiver_id', $user->id);
-                })->orWhere(function ($query) use ($user) {
-                    $query->where('sender_id', $user->id)
-                        ->where('receiver_id', Auth::id());
-                });
-            })
-            ->exists();
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+            'receiver_id' => ['required', 'exists:users,id'],
+        ], [
+            'body.required' => 'メッセージを入力してください。',
+            'body.max' => 'メッセージは2000文字以内で入力してください。',
+            'receiver_id.required' => '送信先ユーザーが指定されていません。',
+            'receiver_id.exists' => '送信先ユーザーが存在しません。',
+        ]);
 
-        abort_unless($isOwner || $isPartner || $hasMessageRelation, 403);
+        abort_if((int) $validated['receiver_id'] === Auth::id(), 403);
+
+        $receiver = User::findOrFail($validated['receiver_id']);
+
+        $message = Message::create([
+            'sender_id' => Auth::id(),
+            'receiver_id' => $receiver->id,
+            'body' => $validated['body'],
+        ]);
+
+        if (class_exists(MessageReceivedNotification::class)) {
+            $message->receiver->notify(
+                new MessageReceivedNotification($message)
+            );
+        }
+
+        return redirect()
+            ->route('messages.users.show', $receiver)
+            ->with('success', '返信しました。');
     }
 }

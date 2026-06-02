@@ -22,6 +22,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminTrainingController;
 use App\Http\Controllers\User\TrainingController;
+use App\Http\Controllers\User\UserProfileController;
+
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -40,7 +42,10 @@ Route::get('/work-posts', [WorkPostController::class, 'index'])
 
     Route::get('/trainings/ranking', [TrainingController::class, 'ranking'])
     ->name('trainings.ranking');
-    
+
+    Route::get('/users/{user}', [UserProfileController::class, 'show'])
+    ->name('users.show');
+
 /*
 |--------------------------------------------------------------------------
 | メール認証関連
@@ -207,6 +212,16 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}/blocks', [BlockController::class, 'destroy'])
             ->whereNumber('user')
             ->name('blocks.destroy');
+
+
+            Route::get('/messages/users/{user}', [MessageController::class, 'showUser'])
+            ->name('messages.users.show');
+    
+        Route::post('/messages/users/{user}', [MessageController::class, 'storeUser'])
+            ->name('messages.users.store');
+    
+        Route::get('/messages/users/{user}/latest', [MessageController::class, 'latestUser'])
+            ->name('messages.users.latest');
         
     });
 });

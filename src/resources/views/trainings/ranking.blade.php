@@ -27,7 +27,9 @@
                         <tr class="border-t">
                             <td class="p-2">{{ $index + 1 }}位</td>
                             <td class="p-2">
-                                {{ $ranking->user->profile->display_name ?? $ranking->user->name }}
+                                <a href="{{ route('users.show', $ranking->user) }}" class="text-blue-600 hover:underline font-semibold">
+                                    {{ $ranking->user->profile->display_name ?? $ranking->user->name }}
+                                </a>
                             </td>
                             <td class="p-2 font-bold">{{ $ranking->total_points }} pt</td>
                             <td class="p-2">{{ $ranking->training_count }}回</td>
@@ -60,7 +62,9 @@
                         <tr class="border-t">
                             <td class="p-2">{{ $index + 1 }}位</td>
                             <td class="p-2">
-                                {{ $ranking->user->profile->display_name ?? $ranking->user->name }}
+                                <a href="{{ route('users.show', $ranking->user) }}" class="text-blue-600 hover:underline font-semibold">
+                                    {{ $ranking->user->profile->display_name ?? $ranking->user->name }}
+                                </a>
                             </td>
                             <td class="p-2 font-bold">{{ $ranking->total_points }} pt</td>
                             <td class="p-2">{{ $ranking->training_count }}回</td>

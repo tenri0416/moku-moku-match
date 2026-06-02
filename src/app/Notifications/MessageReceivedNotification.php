@@ -13,10 +13,11 @@ class MessageReceivedNotification extends Notification
     public function __construct(
         private readonly Message $message
     ) {
+        //
     }
 
     /**
-     * 通知の保存先を指定する
+     * 通知の保存先
      */
     public function via(object $notifiable): array
     {
@@ -24,18 +25,27 @@ class MessageReceivedNotification extends Notification
     }
 
     /**
-     * DB通知として保存する内容
+     * データベース通知に保存する内容
      */
-    public function toDatabase(object $notifiable): array
+    public function toArray(object $notifiable): array
     {
+        $this->message->loadMissing(['sender.profile']);
+
+        $senderName = $this->message->sender->profile->display_name
+            ?? $this->message->sender->name;
+
         return [
             'type' => 'message',
             'title' => '新しいメッセージが届きました',
-            'body' => $this->message->sender->name . 'さんからメッセージが届きました',
-            'url' => route('messages.show', $this->message->workPost),
+            'body' => $senderName . 'さんからメッセージが届きました',
+
+            // 募集に紐づく messages.show ではなく、
+            // ユーザー同士のDM画面へ遷移させる
+            'url' => route('messages.users.show', $this->message->sender_id),
+
             'message_id' => $this->message->id,
-            'work_post_id' => $this->message->work_post_id,
             'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
         ];
     }
 }

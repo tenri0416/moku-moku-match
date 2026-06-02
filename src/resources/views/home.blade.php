@@ -82,6 +82,20 @@
     ];
 @endphp
 
+
+
+        {{-- TOP画像 --}}
+        <section class="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+            <div class="overflow-hidden rounded-[32px] bg-white shadow-sm ring-1 ring-slate-200">
+                <img
+                    src="{{ $heroImageUrl }}"
+                    alt="MokuMoku Match メインビジュアル"
+                    class="h-64 w-full object-cover sm:h-80 lg:h-[420px]"
+                >
+            </div>
+        </section>
+    
+        {{-- Main Area --}}
     {{-- Main Area --}}
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
