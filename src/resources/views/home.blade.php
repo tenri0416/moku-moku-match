@@ -312,72 +312,58 @@
                 </div>
 
                 {{-- Articles --}}
-                @if (Route::has('articles.index') && $homeArticles->isNotEmpty())
-                    <div class="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <p class="text-sm font-black tracking-widest text-indigo-600">ARTICLES</p>
-                                <h2 class="mt-2 text-2xl font-black text-slate-900">
-                                    お役立ち記事
-                                </h2>
-                                <p class="mt-2 text-sm font-semibold text-slate-500">
-                                    リモートワークや継続に役立つ記事です。
-                                </p>
-                            </div>
+{{-- Articles --}}
+@if (Route::has('articles.index') && $homeArticles->isNotEmpty())
+    <div class="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-black tracking-widest text-indigo-600">
+                    ARTICLES
+                </p>
 
-                            <a
-                                href="{{ route('articles.index') }}"
-                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
-                            >
-                                記事一覧を見る
-                            </a>
-                        </div>
+                <h2 class="mt-2 text-2xl font-black text-slate-900">
+                    お役立ち記事
+                </h2>
 
-                        <div class="grid gap-4 lg:grid-cols-3">
-                            @foreach ($homeArticles as $article)
-                                @php
-                                    $articleUrl = $article->short_slug
-                                        ? route('articles.short-show', $article->short_slug)
-                                        : route('articles.show', $article);
+                <p class="mt-2 text-sm font-semibold text-slate-500">
+                    リモートワークや継続に役立つ記事です。
+                </p>
+            </div>
 
-                                    $thumbnailUrl = $article->thumbnail_path
-                                        ? asset('storage/' . $article->thumbnail_path)
-                                        : asset('images/default-article.png');
-                                @endphp
+            <a
+                href="{{ route('articles.index') }}"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+            >
+                記事一覧を見る
+            </a>
+        </div>
 
-                                <article class="overflow-hidden rounded-[24px] border border-slate-200 bg-white transition hover:-translate-y-1 hover:shadow-md">
-                                    <a href="{{ $articleUrl }}" class="block">
-                                        <div class="aspect-[16/10] overflow-hidden bg-slate-100">
-                                            <img
-                                                src="{{ $thumbnailUrl }}"
-                                                alt="{{ $article->title }}"
-                                                class="h-full w-full object-cover"
-                                            >
-                                        </div>
-                                    </a>
+        <div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-slate-50/60">
+            @foreach ($homeArticles as $article)
+                @php
+                    $articleUrl = $article->short_slug
+                        ? route('articles.short-show', $article->short_slug)
+                        : route('articles.show', $article);
 
-                                    <div class="p-5">
-                                        <h3 class="line-clamp-2 text-lg font-black leading-7 text-slate-900">
-                                            <a href="{{ $articleUrl }}" class="transition hover:text-indigo-600">
-                                                {{ $article->title }}
-                                            </a>
-                                        </h3>
+                    $articleTitle = $article->h1_title
+                        ?? $article->seo_title
+                        ?? $article->title;
+                @endphp
 
-                                        <p class="mt-3 text-sm font-semibold leading-7 text-slate-600">
-                                            {{ \Illuminate\Support\Str::limit(strip_tags($article->body_html ?? $article->excerpt), 80) }}
-                                        </p>
-
-                                        <div class="mt-4">
-                                            <a href="{{ $articleUrl }}" class="text-sm font-black text-indigo-600 hover:text-indigo-700">
-                                                記事を読む →
-                                            </a>
-                                        </div>
-                                    </div>
-                                </article>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
+                <article class="group bg-white first:rounded-t-2xl last:rounded-b-2xl">
+                    <a
+                        href="{{ $articleUrl }}"
+                        class="block px-5 py-4 transition hover:bg-indigo-50"
+                    >
+                        <h3 class="text-base font-black leading-7 text-slate-900 transition group-hover:text-indigo-600 sm:text-lg">
+                            {{ $articleTitle }}
+                        </h3>
+                    </a>
+                </article>
+            @endforeach
+        </div>
+    </div>
+@endif
             </div>
 
             {{-- Right Ranking Sidebar --}}
