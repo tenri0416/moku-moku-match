@@ -61,7 +61,7 @@
             </div>
 
             <p class="mt-3 text-xs font-semibold leading-5 text-slate-400">
-                閉じるボタンを押すと表示だけ閉じます。処理中の場合は、再送信せずに少し待ってください。
+                スマホでは進捗表示が途中で止まることがありますが、処理は続いています。画面が切り替わるまでお待ちください。
             </p>
         </div>
     </div>
@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.remove('flex');
         modal.setAttribute('aria-hidden', 'true');
 
-        // ブラウザバック後にボタンが無効のまま残る対策
         document.querySelectorAll('button[type="submit"]').forEach(function (button) {
             if (button.dataset.originalText) {
                 button.textContent = button.dataset.originalText;
@@ -162,48 +161,83 @@ document.addEventListener('DOMContentLoaded', function () {
             button.disabled = false;
             button.classList.remove('opacity-60', 'cursor-not-allowed');
         });
+
+        document.querySelectorAll('form[data-ai-loading="true"]').forEach(function (form) {
+            form.dataset.submitting = 'false';
+        });
     }
 
-    // ✕ボタンで閉じる
+    function disableSubmitButton(form) {
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        if (!submitButton) {
+            return;
+        }
+
+        if (!submitButton.dataset.originalText) {
+            submitButton.dataset.originalText = submitButton.textContent;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'AI処理中...';
+        submitButton.classList.add('opacity-60', 'cursor-not-allowed');
+    }
+
     if (closeButton) {
         closeButton.addEventListener('click', function () {
             hideAiLoadingModal();
         });
     }
 
-    // Escキーでも閉じる
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             hideAiLoadingModal();
         }
     });
 
-    // ブラウザバック・履歴復元時にモーダルを必ず閉じる
     window.addEventListener('pageshow', function () {
         hideAiLoadingModal();
     });
 
-    // 通常フォーム送信時
     const forms = document.querySelectorAll('form[data-ai-loading="true"]');
 
     forms.forEach(function (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (event) {
+            if (form.dataset.submitting === 'true') {
+                return;
+            }
+
+            event.preventDefault();
+
+            form.dataset.submitting = 'true';
+
             const loadingType = form.dataset.aiLoadingType || 'score';
 
             showAiLoadingModal(loadingType);
+            disableSubmitButton(form);
 
-            const submitButton = form.querySelector('button[type="submit"]');
+            // スマホではフォーム送信直後にJSが止まりやすいため、
+            // 少しだけ進捗を見せてから実際に送信する
+            setTimeout(function () {
+                stepText.textContent = 'AIに送信しています';
+                percentText.textContent = '18%';
+                bar.style.width = '18%';
+            }, 300);
 
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.dataset.originalText = submitButton.textContent;
-                submitButton.textContent = 'AI処理中...';
-                submitButton.classList.add('opacity-60', 'cursor-not-allowed');
-            }
+            setTimeout(function () {
+                stepText.textContent = loadingType === 'question'
+                    ? '問題作成を開始しています'
+                    : '採点処理を開始しています';
+                percentText.textContent = '32%';
+                bar.style.width = '32%';
+            }, 900);
+
+            setTimeout(function () {
+                form.submit();
+            }, 1300);
         });
     });
 
-    // リンククリック時
     const loadingLinks = document.querySelectorAll('a[data-ai-loading-link="true"]');
 
     loadingLinks.forEach(function (link) {
@@ -211,6 +245,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const loadingType = link.dataset.aiLoadingType || 'question';
 
             showAiLoadingModal(loadingType);
+
+            setTimeout(function () {
+                stepText.textContent = 'AIに接続しています';
+                percentText.textContent = '18%';
+                bar.style.width = '18%';
+            }, 300);
+
+            setTimeout(function () {
+                stepText.textContent = loadingType === 'question'
+                    ? '問題作成を開始しています'
+                    : '処理を開始しています';
+                percentText.textContent = '32%';
+                bar.style.width = '32%';
+            }, 900);
         });
     });
 });
