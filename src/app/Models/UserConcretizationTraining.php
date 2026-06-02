@@ -28,11 +28,18 @@ class UserConcretizationTraining extends Model
         'next_task',
         'earned_points',
         'ai_response',
+        'ai_provider',
+        'ai_model',
+        'ai_status',
+        'ai_error_message',
+        'is_fallback',
+        'ai_attempts',
     ];
 
     protected $casts = [
         'training_date' => 'date',
         'ai_response' => 'array',
+        'is_fallback' => 'boolean',
     ];
 
     public function user(): BelongsTo

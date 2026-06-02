@@ -6,15 +6,14 @@ use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 class GoogleAiScoringService
 {
     /**
-     * Google AI APIの最大試行回数
-     *
-     * モデルを切り替えながら最大5回まで試す。
+     * AI会社ごとの最大試行回数
      */
-    private const MAX_ATTEMPT_COUNT = 5;
+    private const MAX_ATTEMPT_COUNT = 3;
 
     /**
      * 日記トレーニングを採点する
@@ -52,7 +51,11 @@ class GoogleAiScoringService
 {$diaryBody}
 PROMPT;
 
-        return $this->requestScore($prompt);
+        return $this->requestScore(
+            prompt: $prompt,
+            fallbackText: $diaryBody,
+            actionName: '日記採点'
+        );
     }
 
     /**
@@ -60,6 +63,13 @@ PROMPT;
      */
     public function scoreChallenge(array $data, int|string $difficulty = 0): array
     {
+        $fallbackText = implode("\n", [
+            $data['challenged_thing'] ?? '',
+            $data['completed_thing'] ?? '',
+            $data['difficult_thing'] ?? '',
+            $data['next_improvement'] ?? '',
+        ]);
+
         $prompt = <<<PROMPT
 あなたは行動改善トレーニングの先生です。
 以下の「今日のチャレンジ」を採点してください。
@@ -100,7 +110,11 @@ PROMPT;
 {$data['next_improvement']}
 PROMPT;
 
-        return $this->requestScore($prompt);
+        return $this->requestScore(
+            prompt: $prompt,
+            fallbackText: $fallbackText,
+            actionName: '今日のチャレンジ採点'
+        );
     }
 
     /**
@@ -116,7 +130,7 @@ PROMPT;
             default => throw new RuntimeException('不正なトレーニング種別です。'),
         };
 
-        return $this->requestQuestion($prompt);
+        return $this->requestQuestion($prompt, $type);
     }
 
     /**
@@ -197,7 +211,519 @@ PROMPT;
 }
 PROMPT;
 
-        return $this->requestScore($prompt);
+        return $this->requestScore(
+            prompt: $prompt,
+            fallbackText: $answerBody,
+            actionName: $type . '採点'
+        );
+    }
+
+    /**
+     * 採点処理
+     *
+     * Google → OpenRouter → Groq → Laravel簡易採点 の順番で試す。
+     */
+    private function requestScore(string $prompt, string $fallbackText, string $actionName): array
+    {
+        $result = $this->requestAiWithFallback(
+            prompt: $prompt,
+            temperature: 0.2,
+            actionName: $actionName
+        );
+
+        if ($result['success']) {
+            $score = $this->decodeJsonText($result['text']);
+
+            return $this->formatScoreResult(
+                score: $score,
+                aiProvider: $result['provider'],
+                aiModel: $result['model'],
+                aiStatus: 'success',
+                aiErrorMessage: $result['error_message'],
+                isFallback: $result['is_fallback'],
+                aiAttempts: $result['attempts']
+            );
+        }
+
+        Log::warning('すべてのAI採点に失敗したため、Laravel簡易採点へ切り替えました。', [
+            'action' => $actionName,
+            'error_message' => $result['error_message'],
+            'attempts' => $result['attempts'],
+        ]);
+
+        $score = $this->localScore($fallbackText);
+
+        return $this->formatScoreResult(
+            score: $score,
+            aiProvider: 'local',
+            aiModel: 'laravel-rule-based',
+            aiStatus: 'success',
+            aiErrorMessage: $result['error_message'],
+            isFallback: true,
+            aiAttempts: $result['attempts'] + 1
+        );
+    }
+
+    /**
+     * 問題生成処理
+     *
+     * AIが全て失敗した場合は、Laravel側で固定問題を出す。
+     */
+    private function requestQuestion(string $prompt, string $type): array
+    {
+        $result = $this->requestAiWithFallback(
+            prompt: $prompt,
+            temperature: 0.8,
+            actionName: $type . '問題生成'
+        );
+
+        if ($result['success']) {
+            $question = $this->decodeJsonText($result['text']);
+
+            return [
+                'question_title' => $this->normalizeAiText((string) ($question['question_title'] ?? '本日のトレーニング問題')),
+                'question_body' => $this->normalizeAiText((string) ($question['question_body'] ?? '')),
+                'ai_provider' => $result['provider'],
+                'ai_model' => $result['model'],
+                'ai_status' => 'success',
+                'ai_error_message' => $result['error_message'],
+                'is_fallback' => $result['is_fallback'],
+                'ai_attempts' => $result['attempts'],
+            ];
+        }
+
+        $question = $this->localQuestion($type);
+
+        return [
+            'question_title' => $question['question_title'],
+            'question_body' => $question['question_body'],
+            'ai_provider' => 'local',
+            'ai_model' => 'laravel-rule-based',
+            'ai_status' => 'success',
+            'ai_error_message' => $result['error_message'],
+            'is_fallback' => true,
+            'ai_attempts' => $result['attempts'] + 1,
+        ];
+    }
+
+    /**
+     * AI会社をまたいでフォールバックする
+     */
+    private function requestAiWithFallback(string $prompt, float $temperature, string $actionName): array
+    {
+        $providers = $this->providers();
+
+        $attempts = 0;
+        $lastErrorMessage = null;
+
+        foreach ($providers as $provider) {
+            $attempts++;
+
+            try {
+                $response = match ($provider['type']) {
+                    'google' => $this->postGoogle(
+                        model: $provider['model'],
+                        apiKey: $provider['api_key'],
+                        prompt: $prompt,
+                        temperature: $temperature
+                    ),
+                    'openai_compatible' => $this->postOpenAiCompatible(
+                        endpoint: $provider['endpoint'],
+                        apiKey: $provider['api_key'],
+                        model: $provider['model'],
+                        prompt: $prompt,
+                        temperature: $temperature,
+                        extraHeaders: $provider['extra_headers'] ?? []
+                    ),
+                    default => throw new RuntimeException('未対応のAIプロバイダーです。'),
+                };
+
+                if ($response->successful()) {
+                    return [
+                        'success' => true,
+                        'provider' => $provider['name'],
+                        'model' => $provider['model'],
+                        'text' => $this->extractText($response, $provider['type']),
+                        'error_message' => $lastErrorMessage,
+                        'is_fallback' => $attempts > 1,
+                        'attempts' => $attempts,
+                    ];
+                }
+
+                $lastErrorMessage = $this->responseErrorMessage($response);
+
+                Log::warning('AIリクエストに失敗しました。次のAI会社を試します。', [
+                    'action' => $actionName,
+                    'provider' => $provider['name'],
+                    'model' => $provider['model'],
+                    'status' => $response->status(),
+                    'message' => $lastErrorMessage,
+                    'attempt' => $attempts,
+                ]);
+
+                if ($attempts >= self::MAX_ATTEMPT_COUNT) {
+                    break;
+                }
+
+                sleep($this->retryDelaySeconds($response, $attempts));
+            } catch (Throwable $e) {
+                $lastErrorMessage = $e->getMessage();
+
+                Log::warning('AI通信例外が発生しました。次のAI会社を試します。', [
+                    'action' => $actionName,
+                    'provider' => $provider['name'],
+                    'model' => $provider['model'],
+                    'message' => $e->getMessage(),
+                    'attempt' => $attempts,
+                ]);
+
+                if ($attempts >= self::MAX_ATTEMPT_COUNT) {
+                    break;
+                }
+
+                sleep($this->retryDelaySeconds(null, $attempts));
+            }
+        }
+
+        return [
+            'success' => false,
+            'provider' => null,
+            'model' => null,
+            'text' => null,
+            'error_message' => $lastErrorMessage,
+            'is_fallback' => true,
+            'attempts' => $attempts,
+        ];
+    }
+
+    /**
+     * 使用するAI会社の一覧
+     *
+     * APIキーが未設定の会社は自動スキップする。
+     */
+    private function providers(): array
+    {
+        $providers = [
+            [
+                'name' => 'google',
+                'type' => 'google',
+                'api_key' => config('services.google_ai.api_key'),
+                'model' => config('services.google_ai.model', 'gemini-2.5-flash'),
+            ],
+            [
+                'name' => 'openrouter',
+                'type' => 'openai_compatible',
+                'api_key' => config('services.openrouter.api_key'),
+                'model' => config('services.openrouter.model', 'deepseek/deepseek-r1-0528:free'),
+                'endpoint' => 'https://openrouter.ai/api/v1/chat/completions',
+                'extra_headers' => [
+                    'HTTP-Referer' => config('app.url'),
+                    'X-Title' => config('app.name', 'MokuMoku Match'),
+                ],
+            ],
+            [
+                'name' => 'groq',
+                'type' => 'openai_compatible',
+                'api_key' => config('services.groq.api_key'),
+                'model' => config('services.groq.model', 'llama-3.1-8b-instant'),
+                'endpoint' => 'https://api.groq.com/openai/v1/chat/completions',
+                'extra_headers' => [],
+            ],
+        ];
+
+        return collect($providers)
+            ->filter(fn (array $provider) => filled($provider['api_key'] ?? null))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Google Gemini APIへ送信
+     */
+    private function postGoogle(string $model, string $apiKey, string $prompt, float $temperature): HttpResponse
+    {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
+        return Http::timeout(60)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'X-goog-api-key' => $apiKey,
+            ])
+            ->post($url, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            [
+                                'text' => $prompt,
+                            ],
+                        ],
+                    ],
+                ],
+                'generationConfig' => [
+                    'temperature' => $temperature,
+                    'response_mime_type' => 'application/json',
+                ],
+            ]);
+    }
+
+    /**
+     * OpenRouter / Groq などOpenAI互換APIへ送信
+     */
+    private function postOpenAiCompatible(
+        string $endpoint,
+        string $apiKey,
+        string $model,
+        string $prompt,
+        float $temperature,
+        array $extraHeaders = []
+    ): HttpResponse {
+        return Http::timeout(60)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $apiKey,
+                ...$extraHeaders,
+            ])
+            ->post($endpoint, [
+                'model' => $model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'あなたは日本語で回答する文章トレーニングの先生です。必ずJSONだけで返してください。',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+                'temperature' => $temperature,
+                'response_format' => [
+                    'type' => 'json_object',
+                ],
+            ]);
+    }
+
+    /**
+     * AIレスポンスから本文を取り出す
+     */
+    private function extractText(HttpResponse $response, string $providerType): string
+    {
+        $text = match ($providerType) {
+            'google' => $response->json('candidates.0.content.parts.0.text'),
+            'openai_compatible' => $response->json('choices.0.message.content'),
+            default => null,
+        };
+
+        if (! filled($text)) {
+            Log::error('AIレスポンス本文取得失敗', [
+                'provider_type' => $providerType,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            throw new RuntimeException('AIのレスポンス本文を取得できませんでした。');
+        }
+
+        return (string) $text;
+    }
+
+    /**
+     * AIレスポンス文字列をJSONとして解析する
+     */
+    private function decodeJsonText(string $text): array
+    {
+        $text = trim($text);
+
+        $text = preg_replace('/^```json\s*/', '', $text);
+        $text = preg_replace('/^```\s*/', '', $text);
+        $text = preg_replace('/\s*```$/', '', $text);
+
+        $decoded = json_decode($text, true);
+
+        if (! is_array($decoded)) {
+            Log::error('AI JSON変換失敗', [
+                'text' => $text,
+            ]);
+
+            throw new RuntimeException('AIのレスポンスをJSONとして解析できませんでした。');
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * 採点結果をDB保存しやすい形へ整える
+     */
+    private function formatScoreResult(
+        array $score,
+        string $aiProvider,
+        string $aiModel,
+        string $aiStatus,
+        ?string $aiErrorMessage,
+        bool $isFallback,
+        int $aiAttempts
+    ): array {
+        return [
+            'total_score' => (int) ($score['total_score'] ?? 0),
+            'readability_score' => (int) ($score['readability_score'] ?? 0),
+            'specificity_score' => (int) ($score['specificity_score'] ?? 0),
+            'structure_score' => (int) ($score['structure_score'] ?? 0),
+            'expression_score' => (int) ($score['expression_score'] ?? 0),
+            'good_point' => $this->normalizeAiText((string) ($score['good_point'] ?? '')),
+            'improvement_point' => $this->normalizeAiText((string) ($score['improvement_point'] ?? '')),
+            'next_task' => $this->normalizeAiText((string) ($score['next_task'] ?? '')),
+            'ai_response' => $score,
+
+            // ここが今回追加した履歴
+            'ai_provider' => $aiProvider,
+            'ai_model' => $aiModel,
+            'ai_status' => $aiStatus,
+            'ai_error_message' => $aiErrorMessage,
+            'is_fallback' => $isFallback,
+            'ai_attempts' => $aiAttempts,
+        ];
+    }
+
+    /**
+     * Laravel簡易採点
+     *
+     * AIが全て使えなかった場合でも、サービスを止めないための最低限の採点。
+     */
+    private function localScore(string $text): array
+    {
+        $plainText = trim(strip_tags($text));
+        $length = mb_strlen($plainText);
+
+        $readabilityScore = $this->clampScore(
+            10
+            + (str_contains($plainText, '。') ? 5 : 0)
+            + (str_contains($plainText, "\n") ? 5 : 0)
+            + ($length >= 100 ? 5 : 0)
+        );
+
+        $specificityScore = $this->clampScore(
+            8
+            + (preg_match('/[0-9０-９]/u', $plainText) ? 5 : 0)
+            + (preg_match('/なぜ|理由|ため|だから|ので/u', $plainText) ? 6 : 0)
+            + ($length >= 150 ? 6 : 0)
+        );
+
+        $structureScore = $this->clampScore(
+            8
+            + (preg_match('/まず|次に|最後|結論|理由|改善/u', $plainText) ? 7 : 0)
+            + (substr_count($plainText, "\n") >= 2 ? 5 : 0)
+            + ($length >= 120 ? 5 : 0)
+        );
+
+        $expressionScore = $this->clampScore(
+            10
+            + ($length >= 80 ? 5 : 0)
+            + ($length >= 200 ? 5 : 0)
+            + (preg_match('/感じ|学び|気づき|改善|挑戦/u', $plainText) ? 5 : 0)
+        );
+
+        $totalScore = min(100, $readabilityScore + $specificityScore + $structureScore + $expressionScore);
+
+        return [
+            'total_score' => $totalScore,
+            'readability_score' => $readabilityScore,
+            'specificity_score' => $specificityScore,
+            'structure_score' => $structureScore,
+            'expression_score' => $expressionScore,
+            'good_point' => '入力内容をもとに、Laravel側の簡易採点で評価しました。継続して記録できている点は良いです。',
+            'improvement_point' => 'AI採点が利用できなかったため、細かな表現面の評価は簡易的です。次回は、理由・具体例・学びをもう少し入れるとより良くなります。',
+            'next_task' => '次回は「出来事 → 感情 → 理由 → 学び → 次の行動」の順番で書いてみましょう。',
+        ];
+    }
+
+    private function clampScore(int $score): int
+    {
+        return max(0, min(25, $score));
+    }
+
+    /**
+     * Laravel簡易問題生成
+     */
+    private function localQuestion(string $type): array
+    {
+        return match ($type) {
+            'summary' => [
+                'question_title' => '150文字以内で要約してください',
+                'question_body' => '在宅で仕事や学習を続けると、自分のペースで進められる一方で、集中力が切れやすくなることがあります。特に一人で作業していると、誰にも見られていない安心感から、つい休憩が長くなったり、後回しにしたりすることがあります。そのため、作業時間を決めたり、誰かと一緒に作業する環境を作ったりすることが、継続の助けになります。',
+            ],
+            'verbalization' => [
+                'question_title' => '最近うまく説明できなかったことについて',
+                'question_body' => "以下の4つに分けて書いてください。\n1. 何があったか\n2. そのとき何を感じたか\n3. なぜそう感じたか\n4. 次にどう改善したいか",
+            ],
+            'abstraction' => [
+                'question_title' => '3つの具体例に共通する本質を考えてください',
+                'question_body' => "例1：作業を後回しにしてしまった。\n例2：説明が長くなり、相手に伝わりにくかった。\n例3：目標はあったが、具体的な行動に落とし込めなかった。\n質問：これらに共通する問題を一言で抽象化し、その理由も説明してください。",
+            ],
+            'concretization' => [
+                'question_title' => '抽象的な言葉を具体的な行動に落とし込んでください',
+                'question_body' => "テーマ：継続力を高める\n回答条件：\n1. 具体的な場面\n2. 実際に取る行動\n3. 相手や自分にどう影響するか\n4. 明日からできる小さな行動",
+            ],
+            default => [
+                'question_title' => '本日のトレーニング問題',
+                'question_body' => '今日の学び、気づき、改善したいことを具体的に書いてください。',
+            ],
+        };
+    }
+
+    /**
+     * リトライ待機秒数
+     */
+    private function retryDelaySeconds(?HttpResponse $response, int $attempt): int
+    {
+        if ($response) {
+            $retryDelay = $this->extractRetryDelaySeconds($response);
+
+            if ($retryDelay !== null) {
+                return min($retryDelay, 10);
+            }
+        }
+
+        return match ($attempt) {
+            1 => 1,
+            2 => 2,
+            default => 3,
+        };
+    }
+
+    private function extractRetryDelaySeconds(HttpResponse $response): ?int
+    {
+        $details = $response->json('error.details');
+
+        if (! is_array($details)) {
+            return null;
+        }
+
+        foreach ($details as $detail) {
+            if (! is_array($detail)) {
+                continue;
+            }
+
+            $retryDelay = $detail['retryDelay'] ?? null;
+
+            if (! is_string($retryDelay)) {
+                continue;
+            }
+
+            if (preg_match('/^(\d+)s$/', $retryDelay, $matches)) {
+                return (int) $matches[1];
+            }
+        }
+
+        return null;
+    }
+
+    private function responseErrorMessage(HttpResponse $response): string
+    {
+        return (string) (
+            $response->json('error.message')
+            ?? $response->json('message')
+            ?? $response->body()
+            ?? 'AIリクエストに失敗しました。'
+        );
     }
 
     /**
@@ -231,409 +757,6 @@ TEXT;
     }
 
     /**
-     * Google AIへ採点依頼する
-     */
-    private function requestScore(string $prompt): array
-    {
-        $response = $this->postGeminiWithRetry(
-            prompt: $prompt,
-            temperature: 0.2,
-            actionName: '採点'
-        );
-
-        if (! $response->successful()) {
-            $this->logGoogleAiError('Google AI採点APIエラー', $response);
-
-            throw new RuntimeException(
-                $this->buildFriendlyErrorMessage($response, '採点')
-            );
-        }
-
-        $text = $this->getTextFromResponse($response, '採点');
-
-        $score = $this->decodeJsonText($text);
-
-        return [
-            'total_score' => (int) ($score['total_score'] ?? 0),
-            'readability_score' => (int) ($score['readability_score'] ?? 0),
-            'specificity_score' => (int) ($score['specificity_score'] ?? 0),
-            'structure_score' => (int) ($score['structure_score'] ?? 0),
-            'expression_score' => (int) ($score['expression_score'] ?? 0),
-            'good_point' => $this->normalizeAiText((string) ($score['good_point'] ?? '')),
-            'improvement_point' => $this->normalizeAiText((string) ($score['improvement_point'] ?? '')),
-            'next_task' => $this->normalizeAiText((string) ($score['next_task'] ?? '')),
-            'ai_response' => $score,
-        ];
-    }
-
-    /**
-     * Google AIへ問題生成を依頼する
-     */
-    private function requestQuestion(string $prompt): array
-    {
-        $response = $this->postGeminiWithRetry(
-            prompt: $prompt,
-            temperature: 0.8,
-            actionName: '問題生成'
-        );
-
-        if (! $response->successful()) {
-            $this->logGoogleAiError('Google AI問題生成APIエラー', $response);
-
-            throw new RuntimeException(
-                $this->buildFriendlyErrorMessage($response, '問題生成')
-            );
-        }
-
-        $text = $this->getTextFromResponse($response, '問題生成');
-
-        $question = $this->decodeJsonText($text);
-
-        return [
-            'question_title' => $this->normalizeAiText((string) ($question['question_title'] ?? '本日のトレーニング問題')),
-            'question_body' => $this->normalizeAiText((string) ($question['question_body'] ?? '')),
-        ];
-    }
-
-    /**
-     * Gemini APIへモデル切り替え付きでリクエストする
-     *
-     * 無料枠やモデル別上限に達した場合、別モデルへ切り替えて最大5回まで試す。
-     * ただし、APIキー・プロジェクト全体の上限に達している場合は、モデルを変えても失敗する可能性がある。
-     */
-    private function postGeminiWithRetry(string $prompt, float $temperature, string $actionName): HttpResponse
-    {
-        $apiKey = config('services.google_ai.api_key');
-
-        if (! $apiKey) {
-            throw new RuntimeException('GOOGLE_AI_API_KEY が設定されていません。');
-        }
-
-        $models = $this->fallbackModels();
-
-        $response = null;
-        $attempt = 0;
-
-        foreach ($models as $model) {
-            $attempt++;
-
-            if ($attempt > self::MAX_ATTEMPT_COUNT) {
-                break;
-            }
-
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
-
-            try {
-                $response = Http::timeout(60)
-                    ->withHeaders([
-                        'Content-Type' => 'application/json',
-                        'X-goog-api-key' => $apiKey,
-                    ])
-                    ->post($url, [
-                        'contents' => [
-                            [
-                                'parts' => [
-                                    [
-                                        'text' => $prompt,
-                                    ],
-                                ],
-                            ],
-                        ],
-                        'generationConfig' => [
-                            'temperature' => $temperature,
-                            'response_mime_type' => 'application/json',
-                        ],
-                    ]);
-            } catch (\Throwable $e) {
-                Log::warning('Google AI通信例外が発生しました。次のモデルを試します。', [
-                    'action' => $actionName,
-                    'model' => $model,
-                    'attempt' => $attempt,
-                    'max_attempts' => self::MAX_ATTEMPT_COUNT,
-                    'message' => $e->getMessage(),
-                ]);
-
-                if ($attempt >= self::MAX_ATTEMPT_COUNT) {
-                    throw new RuntimeException(
-                        'Google AIとの通信に失敗しました。ネットワーク状況を確認して、少し時間を置いて再度お試しください。'
-                    );
-                }
-
-                sleep($this->retryDelaySeconds(null, $attempt));
-                continue;
-            }
-
-            if ($response->successful()) {
-                if ($attempt > 1) {
-                    Log::info('Google AI APIがモデル切り替え後に成功しました', [
-                        'action' => $actionName,
-                        'model' => $model,
-                        'attempt' => $attempt,
-                    ]);
-                }
-
-                return $response;
-            }
-
-            Log::warning('Google AI APIリクエスト失敗。必要に応じて次のモデルを試します。', [
-                'action' => $actionName,
-                'model' => $model,
-                'attempt' => $attempt,
-                'max_attempts' => self::MAX_ATTEMPT_COUNT,
-                'status' => $response->status(),
-                'google_status' => $response->json('error.status'),
-                'message' => $response->json('error.message'),
-                'retry_delay_seconds' => $this->retryDelaySeconds($response, $attempt),
-            ]);
-
-            if ($this->shouldStopModelFallback($response)) {
-                return $response;
-            }
-
-            if ($attempt >= self::MAX_ATTEMPT_COUNT) {
-                return $response;
-            }
-
-            sleep($this->retryDelaySeconds($response, $attempt));
-        }
-
-        if (! $response) {
-            throw new RuntimeException(
-                'Google AIへのリクエストに失敗しました。少し時間を置いて再度お試しください。'
-            );
-        }
-
-        return $response;
-    }
-
-    /**
-     * フォールバック用のGeminiモデル一覧
-     *
-     * 上から順番に試す。
-     * .env に GOOGLE_AI_FALLBACK_MODELS を設定すれば、そちらを優先する。
-     */
-    private function fallbackModels(): array
-    {
-        $envModels = env('GOOGLE_AI_FALLBACK_MODELS');
-
-        if ($envModels) {
-            $models = collect(explode(',', $envModels))
-                ->map(fn (string $model) => trim($model))
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            if (! empty($models)) {
-                return $models;
-            }
-        }
-
-        $mainModel = config('services.google_ai.model', 'gemini-2.5-flash');
-
-        return collect([
-            $mainModel,
-            'gemini-2.5-flash',
-            'gemini-2.0-flash',
-            'gemini-1.5-flash',
-            'gemini-2.5-flash-lite',
-            'gemini-2.0-flash-lite',
-        ])
-            ->filter()
-            ->unique()
-            ->take(self::MAX_ATTEMPT_COUNT)
-            ->values()
-            ->all();
-    }
-
-    /**
-     * モデルを切り替えても改善しにくいエラーか判定する
-     */
-    private function shouldStopModelFallback(HttpResponse $response): bool
-    {
-        $status = $response->status();
-        $message = strtolower((string) $response->json('error.message'));
-
-        // リクエスト内容が悪い場合は、モデルを変えても基本的に直らない
-        if ($status === 400) {
-            return true;
-        }
-
-        // APIキーや権限エラーは、モデルを変えても直らない
-        if (in_array($status, [401, 403], true)) {
-            return true;
-        }
-
-        // モデル名が存在しない場合は、次のモデルで成功する可能性がある
-        if ($status === 404) {
-            return false;
-        }
-
-        // 課金・APIキー・権限など、プロジェクト全体の問題は止める
-        if (str_contains($message, 'prepayment credits are depleted')
-            || str_contains($message, 'billing')
-            || str_contains($message, 'api key not valid')
-            || str_contains($message, 'permission')
-        ) {
-            return true;
-        }
-
-        // quota exceeded や limit: 0 はモデル別制限の可能性もあるため、
-        // 次のモデルを試す。
-        return false;
-    }
-
-    /**
-     * リトライ待機秒数を取得する
-     */
-    private function retryDelaySeconds(?HttpResponse $response, int $attempt): int
-    {
-        if ($response) {
-            $retryDelay = $this->extractRetryDelaySeconds($response);
-
-            if ($retryDelay !== null) {
-                return min($retryDelay, 10);
-            }
-        }
-
-        return match ($attempt) {
-            1 => 1,
-            2 => 2,
-            3 => 4,
-            4 => 6,
-            default => 8,
-        };
-    }
-
-    /**
-     * Google APIレスポンスのRetryInfoから待機秒数を取り出す
-     */
-    private function extractRetryDelaySeconds(HttpResponse $response): ?int
-    {
-        $details = $response->json('error.details');
-
-        if (! is_array($details)) {
-            return null;
-        }
-
-        foreach ($details as $detail) {
-            if (! is_array($detail)) {
-                continue;
-            }
-
-            $retryDelay = $detail['retryDelay'] ?? null;
-
-            if (! is_string($retryDelay)) {
-                continue;
-            }
-
-            if (preg_match('/^(\d+)s$/', $retryDelay, $matches)) {
-                return (int) $matches[1];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Google AIレスポンスから本文を取得する
-     */
-    private function getTextFromResponse(HttpResponse $response, string $actionName): string
-    {
-        $text = $response->json('candidates.0.content.parts.0.text');
-
-        if (! $text) {
-            Log::error('Google AIレスポンス本文取得失敗', [
-                'action' => $actionName,
-                'status' => $response->status(),
-                'response' => $response->json(),
-            ]);
-
-            throw new RuntimeException("Google AIの{$actionName}結果を取得できませんでした。少し時間を置いて再度お試しください。");
-        }
-
-        return (string) $text;
-    }
-
-    /**
-     * Google AI APIエラーを開発者向けに詳細ログ出力する
-     */
-    private function logGoogleAiError(string $title, HttpResponse $response): void
-    {
-        Log::error($title, [
-            'status' => $response->status(),
-            'google_status' => $response->json('error.status'),
-            'google_message' => $response->json('error.message'),
-            'quota_details' => $response->json('error.details'),
-            'body' => $response->body(),
-            'fallback_models' => $this->fallbackModels(),
-        ]);
-    }
-
-    /**
-     * ユーザーにも開発者にも分かりやすいエラーメッセージを作る
-     */
-    private function buildFriendlyErrorMessage(HttpResponse $response, string $actionName): string
-    {
-        $status = $response->status();
-        $message = strtolower((string) $response->json('error.message'));
-
-        if ($status === 503) {
-            return "Google AIが現在混雑しているため、{$actionName}に失敗しました。少し時間を置いて再度お試しください。";
-        }
-
-        if ($status === 429) {
-            if (str_contains($message, 'prepayment credits are depleted')) {
-                return "現在AIの利用枠が不足しているため、{$actionName}できませんでした。入力内容はそのまま残して、少し時間を置いて再度お試しください。";
-            }
-
-            if (str_contains($message, 'limit: 0')) {
-                return "現在AIの無料利用枠に制限がかかっているため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
-            }
-
-            return "現在AIの利用上限に達しているため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
-        }
-
-        if ($status === 400) {
-            return "AIへのリクエスト内容に問題があるため、{$actionName}できませんでした。入力内容を少し短くするか、内容を調整して再度お試しください。";
-        }
-
-        if ($status === 401 || $status === 403) {
-            return "AI機能の設定に問題があるため、現在{$actionName}できません。時間を置いて再度お試しください。";
-        }
-
-        if ($status === 404) {
-            return "AIモデルが利用できないため、{$actionName}できませんでした。少し時間を置いて再度お試しください。";
-        }
-
-        return "AIによる{$actionName}に失敗しました。少し時間を置いて再度お試しください。";
-    }
-
-    /**
-     * AIレスポンス文字列をJSONとして解析する
-     */
-    private function decodeJsonText(string $text): array
-    {
-        $text = trim($text);
-
-        $text = preg_replace('/^```json\s*/', '', $text);
-        $text = preg_replace('/^```\s*/', '', $text);
-        $text = preg_replace('/\s*```$/', '', $text);
-
-        $decoded = json_decode($text, true);
-
-        if (! is_array($decoded)) {
-            Log::error('Google AI JSON変換失敗', [
-                'text' => $text,
-            ]);
-
-            throw new RuntimeException('Google AIのレスポンスをJSONとして解析できませんでした。少し時間を置いて再度お試しください。');
-        }
-
-        return $decoded;
-    }
-
-    /**
      * AIが返した文章の余計な空白・インデントを整える
      */
     private function normalizeAiText(string $text): string
@@ -644,16 +767,11 @@ TEXT;
             return trim($text);
         }
 
-        $lines = array_map(function (string $line) {
-            return trim($line);
-        }, $lines);
+        $lines = array_map(fn (string $line) => trim($line), $lines);
 
         return trim(implode(PHP_EOL, $lines));
     }
 
-    /**
-     * 要約力トレーニングの問題生成プロンプト
-     */
     private function summaryQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
@@ -682,9 +800,6 @@ TEXT;
 PROMPT;
     }
 
-    /**
-     * 言語化力トレーニングの問題生成プロンプト
-     */
     private function verbalizationQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
@@ -715,9 +830,6 @@ PROMPT;
 PROMPT;
     }
 
-    /**
-     * 抽象化力トレーニングの問題生成プロンプト
-     */
     private function abstractionQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT
@@ -746,9 +858,6 @@ PROMPT;
 PROMPT;
     }
 
-    /**
-     * 具体化力トレーニングの問題生成プロンプト
-     */
     private function concretizationQuestionPrompt(int|string $difficulty): string
     {
         return <<<PROMPT

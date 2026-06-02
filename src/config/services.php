@@ -43,4 +43,13 @@ return [
         'api_key' => env('GOOGLE_AI_API_KEY'),
         'model' => env('GOOGLE_AI_MODEL', 'gemini-2.0-flash'),
     ],
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
+        'model' => env('OPENROUTER_MODEL', 'deepseek/deepseek-r1-0528:free'),
+    ],
+
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+        'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
+    ],
 ];
