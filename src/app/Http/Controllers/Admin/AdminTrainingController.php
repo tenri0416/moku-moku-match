@@ -263,8 +263,8 @@ class AdminTrainingController extends Controller
                 report($e);
 
                 return redirect()
-                    ->route('admin.trainings.index')
-                    ->with('error', 'AIによる問題生成に失敗しました。Google AIの設定を確認してください。');
+    ->route('admin.trainings.index')
+    ->with('error', $e->getMessage());
             }
 
             $training = AdminTraining::create([
@@ -329,9 +329,9 @@ class AdminTrainingController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            return back()
-                ->withInput()
-                ->with('error', 'AI採点に失敗しました。Google AIの利用枠、モデル名、課金設定を確認してください。');
+            return redirect()
+    ->route('admin.trainings.index')
+    ->with('error', $e->getMessage());
         }
 
         $training->update([

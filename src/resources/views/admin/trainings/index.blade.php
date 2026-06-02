@@ -66,25 +66,21 @@
         </a>
 
         <a href="{{ route('admin.trainings.index', ['type' => 'summary']) }}"
-          data-ai-question-loading
            class="px-3 py-1 border rounded {{ request('type') === 'summary' ? 'bg-gray-800 text-white' : '' }}">
             要約力
         </a>
 
         <a href="{{ route('admin.trainings.index', ['type' => 'verbalization']) }}"
-          data-ai-question-loading
            class="px-3 py-1 border rounded {{ request('type') === 'verbalization' ? 'bg-gray-800 text-white' : '' }}">
             言語化力
         </a>
 
         <a href="{{ route('admin.trainings.index', ['type' => 'abstraction']) }}"
-          data-ai-question-loading
            class="px-3 py-1 border rounded {{ request('type') === 'abstraction' ? 'bg-gray-800 text-white' : '' }}">
             抽象化力
         </a>
 
         <a href="{{ route('admin.trainings.index', ['type' => 'concretization']) }}"
-          data-ai-question-loading
            class="px-3 py-1 border rounded {{ request('type') === 'concretization' ? 'bg-gray-800 text-white' : '' }}">
             具体化力
         </a>
