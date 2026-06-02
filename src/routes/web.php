@@ -174,6 +174,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/work-posts/{workPost}/edit', [WorkPostController::class, 'edit'])
             ->whereNumber('workPost')
             ->name('work-posts.edit');
+            
 
         Route::put('/work-posts/{workPost}', [WorkPostController::class, 'update'])
             ->whereNumber('workPost')

@@ -267,7 +267,7 @@
                         @endauth
 
                         <a
-                            href="{{ route('work-posts.index') }}"
+                            href="{{ route('home') }}"
                             class="flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
                         >
                             募集一覧へ戻る

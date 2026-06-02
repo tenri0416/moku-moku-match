@@ -68,7 +68,7 @@
 
         <div>
             <button type="submit">通報する</button>
-            <a href="{{ route('work-posts.index') }}">募集一覧へ戻る</a>
+            <a href="{{ route('home') }}">募集一覧へ戻る</a>
         </div>
     </form>
 </div>

@@ -1,170 +1,135 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'MokuMoku Match')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@extends('layouts.app')
 
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-<header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
-    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {{-- ロゴ --}}
-        <a href="{{ route('home') }}" class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-base font-black text-white shadow-sm">
-                M
-            </span>
+@section('title', '通報する')
 
-            <span class="leading-tight">
-                <span class="block text-lg font-black tracking-tight text-slate-900">
-                    MokuMoku Match
-                </span>
-                <span class="hidden text-xs font-semibold text-slate-500 sm:block">
-                    リモート作業仲間を見つける
-                </span>
-            </span>
-        </a>
+@section('content')
+<div class="min-h-screen bg-slate-50">
+    <div class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        {{-- Header --}}
+        <div class="mb-8">
+            <p class="text-sm font-bold text-rose-600">
+                REPORT
+            </p>
 
-        {{-- PCメニュー --}}
-        <div class="hidden items-center gap-2 md:flex">
-            <a
-                href="{{ route('home') }}"
-                class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-                ホーム
-            </a>
+            <h1 class="mt-2 text-3xl font-bold text-slate-900">
+                通報する
+            </h1>
 
-            <a
-                href="{{ route('work-posts.index') }}"
-                class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-                募集一覧
-            </a>
-
-            @auth
-                <a
-                    href="{{ route('mypage') }}"
-                    class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    マイページ
-                </a>
-
-                <a
-                    href="{{ route('work-posts.create') }}"
-                    class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    募集作成
-                </a>
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                    >
-                        ログアウト
-                    </button>
-                </form>
-            @else
-                <a
-                    href="{{ route('login') }}"
-                    class="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    ログイン
-                </a>
-
-                <a
-                    href="{{ route('register') }}"
-                    class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    会員登録
-                </a>
-            @endauth
+            <p class="mt-2 text-slate-600">
+                不適切な募集やユーザーを管理者へ通報できます。
+            </p>
         </div>
 
-        {{-- スマホメニュー --}}
-        <details class="relative md:hidden">
-            <summary class="cursor-pointer list-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                メニュー
-            </summary>
+        {{-- Error --}}
+        @if ($errors->any())
+            <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4">
+                <p class="font-bold text-rose-700">
+                    入力内容を確認してください。
+                </p>
 
-            <div class="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                <div class="border-b border-slate-100 px-4 py-3">
-                    <p class="text-sm font-bold text-slate-900">
-                        MokuMoku Match
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500">
-                        メニュー
-                    </p>
-                </div>
-
-                <div class="p-2">
-                    <a
-                        href="{{ route('home') }}"
-                        class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                        ホーム
-                    </a>
-
-                    <a
-                        href="{{ route('work-posts.index') }}"
-                        class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                        募集一覧
-                    </a>
-
-                    @auth
-                        <a
-                            href="{{ route('mypage') }}"
-                            class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                        >
-                            マイページ
-                        </a>
-
-                        <a
-                            href="{{ route('work-posts.create') }}"
-                            class="mt-1 block rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700"
-                        >
-                            募集作成
-                        </a>
-
-                        <form method="POST" action="{{ route('logout') }}" class="mt-1">
-                            @csrf
-                            <button
-                                type="submit"
-                                class="block w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-100"
-                            >
-                                ログアウト
-                            </button>
-                        </form>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            class="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                        >
-                            ログイン
-                        </a>
-
-                        <a
-                            href="{{ route('register') }}"
-                            class="mt-1 block rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700"
-                        >
-                            会員登録
-                        </a>
-                    @endauth
-                </div>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-700">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
-        </details>
-    </nav>
-</header>
+        @endif
 
-<main>
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        @include('components.flash-message')
+        {{-- Report Target --}}
+        <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h2 class="text-lg font-bold text-slate-900">
+                通報対象
+            </h2>
+
+            <div class="mt-4 space-y-3 text-sm text-slate-700">
+                <p>
+                    <span class="font-bold text-slate-500">対象ユーザー：</span>
+                    {{ $reportedUser->profile->display_name ?? $reportedUser->name }}
+                </p>
+
+                <p>
+                    <span class="font-bold text-slate-500">対象募集：</span>
+                    {{ $workPost->title }}
+                </p>
+            </div>
+        </section>
+
+        {{-- Form --}}
+        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <form method="POST" action="{{ route('reports.store') }}" class="space-y-6">
+                @csrf
+
+                {{-- GETで受け取った値をPOSTでも送る --}}
+                <input type="hidden" name="reported_user_id" value="{{ old('reported_user_id', $reportedUser->id) }}">
+                <input type="hidden" name="work_post_id" value="{{ old('work_post_id', $workPost->id) }}">
+
+                <div>
+                    <label for="reason" class="mb-2 block text-sm font-bold text-slate-700">
+                        通報理由 <span class="text-rose-500">*</span>
+                    </label>
+
+                    <select
+                        id="reason"
+                        name="reason"
+                        required
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                    >
+                        <option value="">選択してください</option>
+                        <option value="spam" @selected(old('reason') === 'spam')>
+                            スパム・宣伝目的
+                        </option>
+                        <option value="harassment" @selected(old('reason') === 'harassment')>
+                            迷惑行為・嫌がらせ
+                        </option>
+                        <option value="inappropriate" @selected(old('reason') === 'inappropriate')>
+                            不適切な内容
+                        </option>
+                        <option value="false_information" @selected(old('reason') === 'false_information')>
+                            虚偽・誤解を招く内容
+                        </option>
+                        <option value="other" @selected(old('reason') === 'other')>
+                            その他
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="body" class="mb-2 block text-sm font-bold text-slate-700">
+                        詳細 <span class="text-rose-500">*</span>
+                    </label>
+
+                    <textarea
+                        id="body"
+                        name="body"
+                        rows="7"
+                        required
+                        maxlength="2000"
+                        placeholder="通報理由の詳細を入力してください"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                    >{{ old('body') }}</textarea>
+
+                    <p class="mt-2 text-xs text-slate-500">
+                        できるだけ具体的に記載してください。最大2000文字まで入力できます。
+                    </p>
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <a
+                        href="{{ route('work-posts.show', $workPost) }}"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                    >
+                        戻る
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700"
+                    >
+                        通報を送信する
+                    </button>
+                </div>
+            </form>
+        </section>
     </div>
-
-    @yield('content')
-</main>
-</body>
-</html>
+</div>
+@endsection

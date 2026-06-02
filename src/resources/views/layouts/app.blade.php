@@ -46,7 +46,7 @@
 
     @yield('content')
 </main>
-
+@include('components.mobile-footer-nav')
 @include('layouts.notifications.modal')
 @include('layouts.notifications.script')
 </body>

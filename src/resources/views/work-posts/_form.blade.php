@@ -189,7 +189,7 @@
             保存する
         </button>
 
-        <a href="{{ route('work-posts.index') }}"
+        <a href="{{ route('home') }}"
             class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
             募集一覧へ戻る
         </a>

@@ -5,132 +5,155 @@
 @section('content')
 <div class="min-h-screen bg-slate-50">
     <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        {{-- Header --}}
         <div class="mb-8">
-            <p class="text-sm font-bold text-indigo-600">MESSAGES</p>
+            <p class="text-sm font-bold text-indigo-600">
+                MESSAGES
+            </p>
 
             <h1 class="mt-2 text-3xl font-bold text-slate-900">
                 メッセージ一覧
             </h1>
 
             <p class="mt-2 text-slate-600">
-                募集に関するメッセージを確認できます。
+                ユーザー同士のメッセージ履歴を確認できます。
             </p>
         </div>
 
-        <div class="space-y-4">
-            @forelse ($messages as $messageItem)
-                @php
-                    /*
-                    |--------------------------------------------------------------------------
-                    | メッセージ一覧用の表示データを整える
-                    |--------------------------------------------------------------------------
-                    |
-                    | Controller側で groupBy() している場合、$messageItem は Collection になります。
-                    | groupBy() していない場合、$messageItem は Message モデル1件になります。
-                    | どちらでも動くように、ここで最新メッセージ1件に揃えます。
-                    |
-                    */
+        {{-- Flash --}}
+        @if (session('success'))
+            <div class="mb-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                {{ session('success') }}
+            </div>
+        @endif
 
-                    $message = $messageItem instanceof \Illuminate\Support\Collection
-                        ? $messageItem->first()
-                        : $messageItem;
+        {{-- List --}}
+        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div class="mb-5 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-slate-900">
+                    会話一覧
+                </h2>
 
-                    $partner = null;
-                    $unreadCount = 0;
+                <p class="text-sm font-semibold text-slate-500">
+                    {{ $messages->count() }}件
+                </p>
+            </div>
 
-                    if ($message) {
-                        $partner = $message->sender_id === auth()->id()
+            <div class="space-y-4">
+                @forelse ($messages as $message)
+                    @php
+                        $loginUserId = auth()->id();
+
+                        // 自分ではない相手ユーザーを取得
+                        $partner = $message->sender_id === $loginUserId
                             ? $message->receiver
                             : $message->sender;
 
+                        $partnerProfile = $partner?->profile;
+                        $displayName = $partnerProfile?->display_name ?? $partner?->name ?? 'ユーザー';
+                        $jobType = $partnerProfile?->job_type ?? '職種未設定';
+
+                        $avatarPath = $partnerProfile?->avatar_path;
+                        $avatarUrl = $avatarPath
+                            ? asset('storage/' . $avatarPath)
+                            : asset('images/default-avatar.png');
+
+                        // work_post_id は使わず、sender_id / receiver_id のみで未読数を集計
+                        $unreadCount = 0;
+
                         if ($partner) {
                             $unreadCount = \App\Models\Message::query()
-                                ->where('work_post_id', $message->work_post_id)
                                 ->where('sender_id', $partner->id)
-                                ->where('receiver_id', auth()->id())
+                                ->where('receiver_id', $loginUserId)
                                 ->whereNull('read_at')
                                 ->count();
                         }
-                    }
-                @endphp
 
-                @if ($message && $partner && $message->workPost)
-                    <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                                        募集
-                                    </span>
+                        $lastMessageBody = \Illuminate\Support\Str::limit($message->body, 80);
+                    @endphp
 
-                                    @if ($unreadCount > 0)
-                                        <span class="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">
-                                            未読 {{ $unreadCount }}
-                                        </span>
-                                    @endif
-
-                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                        {{ $message->created_at?->format('Y/m/d H:i') }}
-                                    </span>
-                                </div>
-
-                                <h2 class="mt-3 text-lg font-bold text-slate-900">
-                                    <a
-                                        href="{{ route('messages.show', [$message->workPost, $partner]) }}"
-                                        class="hover:text-indigo-600"
+                    @if ($partner)
+                        <article class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-indigo-300 hover:bg-white hover:shadow-sm">
+                            <a href="{{ route('messages.users.show', $partner) }}" class="block">
+                                <div class="flex items-start gap-4">
+                                    {{-- Avatar --}}
+                                    <img
+                                        src="{{ $avatarUrl }}"
+                                        alt="{{ $displayName }}のプロフィール画像"
+                                        class="h-14 w-14 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
                                     >
-                                        {{ $message->workPost->title }}
-                                    </a>
-                                </h2>
 
-                                <p class="mt-2 text-sm text-slate-600">
-                                    相手：
-                                    <span class="font-semibold text-slate-800">
-                                        {{ $partner->profile?->display_name ?? $partner->name }}
-                                    </span>
-                                </p>
+                                    {{-- Content --}}
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <h3 class="truncate text-lg font-bold text-slate-900">
+                                                        {{ $displayName }}
+                                                    </h3>
 
-                                <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
-                                    {{ \Illuminate\Support\Str::limit($message->body, 80) }}
-                                </p>
-                            </div>
+                                                    @if ($unreadCount > 0)
+                                                        <span class="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-bold text-white">
+                                                            未読 {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                                                        </span>
+                                                    @endif
+                                                </div>
 
-                            <div class="shrink-0">
-                                <a
-                                    href="{{ route('messages.show', [$message->workPost, $partner]) }}"
-                                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                                >
-                                    メッセージを見る
-                                </a>
-                            </div>
+                                                <p class="mt-1 truncate text-sm font-semibold text-slate-500">
+                                                    {{ $jobType }}
+                                                </p>
+                                            </div>
+
+                                            <div class="text-xs font-semibold text-slate-400">
+                                                {{ optional($message->created_at)->format('Y/m/d H:i') }}
+                                            </div>
+                                        </div>
+
+                                        <p class="mt-3 text-sm leading-6 text-slate-600">
+                                            @if ($message->sender_id === $loginUserId)
+                                                <span class="font-bold text-slate-500">あなた：</span>
+                                            @else
+                                                <span class="font-bold text-indigo-600">{{ $displayName }}：</span>
+                                            @endif
+
+                                            {{ $lastMessageBody }}
+                                        </p>
+                                    </div>
+
+                                    {{-- Arrow --}}
+                                    <div class="hidden text-slate-400 sm:block">
+                                        →
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                    @endif
+                @empty
+                    <div class="rounded-2xl bg-slate-50 p-10 text-center ring-1 ring-slate-200">
+                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl">
+                            💬
                         </div>
-                    </article>
-                @endif
-            @empty
-                <div class="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
-                        💬
+
+                        <h3 class="mt-4 text-lg font-bold text-slate-900">
+                            まだメッセージはありません
+                        </h3>
+
+                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                            ランキングやユーザープロフィール画面から、気になるユーザーにメッセージを送ってみましょう。
+                        </p>
+
+                        <div class="mt-6">
+                            <a
+                                href="{{ route('trainings.ranking') }}"
+                                class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
+                            >
+                                ランキングを見る
+                            </a>
+                        </div>
                     </div>
-
-                    <h2 class="mt-4 text-lg font-bold text-slate-900">
-                        メッセージはありません
-                    </h2>
-
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        募集への参加や相談が始まると、ここにメッセージが表示されます。
-                    </p>
-
-                    <div class="mt-6">
-                        <a
-                            href="{{ route('work-posts.index') }}"
-                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-                        >
-                            募集を探す
-                        </a>
-                    </div>
-                </div>
-            @endforelse
-        </div>
+                @endforelse
+            </div>
+        </section>
     </div>
 </div>
 @endsection

@@ -28,22 +28,57 @@
                     </p>
                 </div>
 
-                <a
-                    href="{{ route('profile.edit') }}"
-                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700"
-                >
-                    プロフィール編集
-                </a>
+                <div class="flex flex-wrap gap-3">
+                    <a
+                        href="{{ route('users.show', auth()->user()) }}"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                    >
+                        公開プロフィールを見る
+                    </a>
+
+                    <a
+                        href="{{ route('profile.edit') }}"
+                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700"
+                    >
+                        プロフィール編集
+                    </a>
+                </div>
             </div>
 
             @if ($user->profile)
+                @php
+                    $profile = $user->profile;
+                    $avatarPath = $profile?->avatar_path;
+                    $avatarUrl = $avatarPath
+                        ? asset('storage/' . $avatarPath)
+                        : asset('images/default-avatar.png');
+                    $displayName = $profile?->display_name ?? $user->name;
+                @endphp
+
+                <div class="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center">
+                    <img
+                        src="{{ $avatarUrl }}"
+                        alt="{{ $displayName }}のプロフィール画像"
+                        class="h-20 w-20 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+                    >
+
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-900">
+                            {{ $displayName }}
+                        </h3>
+                        <p class="mt-1 text-sm font-semibold text-slate-500">
+                            {{ $profile->job_type ?? '職種未設定' }}
+                        </p>
+                    </div>
+                </div>
+
                 <div class="mt-6 grid gap-4 md:grid-cols-2">
                     <div class="rounded-xl bg-slate-50 p-4">
                         <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">
                             表示名
                         </dt>
                         <dd class="mt-1 font-semibold text-slate-900">
-                            {{ $user->profile->display_name }}
+                            {{ $profile->display_name ?? '未設定' }}
                         </dd>
                     </div>
 
@@ -52,7 +87,7 @@
                             職種
                         </dt>
                         <dd class="mt-1 font-semibold text-slate-900">
-                            {{ $user->profile->job_type ?? '未設定' }}
+                            {{ $profile->job_type ?? '未設定' }}
                         </dd>
                     </div>
 
@@ -61,7 +96,7 @@
                             都道府県
                         </dt>
                         <dd class="mt-1 font-semibold text-slate-900">
-                            {{ $user->profile?->prefecture?->name ?? '未設定' }}
+                            {{ $profile?->prefecture?->name ?? '未設定' }}
                         </dd>
                     </div>
 
@@ -70,7 +105,7 @@
                             利用目的
                         </dt>
                         <dd class="mt-1 font-semibold text-slate-900">
-                            {{ $user->profile->purpose ?? '未設定' }}
+                            {{ $profile->purpose ?? '未設定' }}
                         </dd>
                     </div>
 
@@ -79,7 +114,16 @@
                             スキル
                         </dt>
                         <dd class="mt-1 leading-7 text-slate-900">
-                            {!! nl2br(e($user->profile->skills ?? '未設定')) !!}
+                            {!! nl2br(e($profile->skills ?? '未設定')) !!}
+                        </dd>
+                    </div>
+
+                    <div class="rounded-xl bg-slate-50 p-4 md:col-span-2">
+                        <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                            自己紹介
+                        </dt>
+                        <dd class="mt-1 leading-7 text-slate-900">
+                            {!! nl2br(e($profile->bio ?? '未設定')) !!}
                         </dd>
                     </div>
 
@@ -88,7 +132,7 @@
                             希望作業スタイル
                         </dt>
                         <dd class="mt-1 leading-7 text-slate-900">
-                            {{ $user->profile->work_style ?? '未設定' }}
+                            {{ $profile->work_style ?? '未設定' }}
                         </dd>
                     </div>
                 </div>
@@ -224,7 +268,7 @@
                             @if ($application->status === 2)
                                 <div class="mt-4">
                                     <a
-                                        href="{{ route('messages.show', [$application->workPost, $application->workPost->user]) }}"
+                                        href="{{ route('messages.users.show', $application->workPost->user) }}"
                                         class="text-sm font-bold text-indigo-600 hover:text-indigo-700"
                                     >
                                         メッセージする →
@@ -272,7 +316,7 @@
 
                             <div class="mt-4">
                                 <a
-                                    href="{{ route('messages.show', [$application->workPost, $application->workPost->user]) }}"
+                                    href="{{ route('messages.users.show', $application->workPost->user) }}"
                                     class="text-sm font-bold text-indigo-600 hover:text-indigo-700"
                                 >
                                     メッセージする →
@@ -309,45 +353,71 @@
                 <div class="space-y-4">
                     @forelse ($messages as $message)
                         @php
-                            $partner = $message->sender_id === auth()->id()
+                            $loginUserId = auth()->id();
+
+                            $partner = $message->sender_id === $loginUserId
                                 ? $message->receiver
                                 : $message->sender;
+
+                            $partnerProfile = $partner?->profile;
+                            $displayName = $partnerProfile?->display_name ?? $partner?->name ?? 'ユーザー';
+                            $jobType = $partnerProfile?->job_type ?? '職種未設定';
+
+                            $avatarPath = $partnerProfile?->avatar_path;
+                            $avatarUrl = $avatarPath
+                                ? asset('storage/' . $avatarPath)
+                                : asset('images/default-avatar.png');
                         @endphp
 
-                        <article class="rounded-xl border border-slate-200 p-4">
-                            <h3 class="font-bold text-slate-900">
-                                {{ $message->workPost->title }}
-                            </h3>
+                        @if ($partner)
+                            <article class="rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50">
+                                <a href="{{ route('messages.users.show', $partner) }}" class="block">
+                                    <div class="flex items-start gap-3">
+                                        <img
+                                            src="{{ $avatarUrl }}"
+                                            alt="{{ $displayName }}のプロフィール画像"
+                                            class="h-12 w-12 flex-shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+                                        >
 
-                            <p class="mt-2 text-sm text-slate-600">
-                                相手：
-                                <span class="font-semibold text-slate-800">
-                                    {{ $partner->profile->display_name ?? $partner->name }}
-                                </span>
-                            </p>
+                                        <div class="min-w-0 flex-1">
+                                            <h3 class="font-bold text-slate-900">
+                                                {{ $displayName }} さんとのメッセージ
+                                            </h3>
 
-                            <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
-                                {{ $message->body }}
-                            </p>
+                                            <p class="mt-1 text-sm text-slate-500">
+                                                {{ $jobType }}
+                                            </p>
 
-                            <p class="mt-2 text-xs text-slate-400">
-                                {{ $message->created_at->format('Y/m/d H:i') }}
-                            </p>
+                                            <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+                                                @if ($message->sender_id === $loginUserId)
+                                                    <span class="font-semibold text-slate-500">あなた：</span>
+                                                @else
+                                                    <span class="font-semibold text-indigo-600">{{ $displayName }}：</span>
+                                                @endif
 
-                            <div class="mt-4">
-                                <a
-                                    href="{{ route('messages.show', [$message->workPost, $partner]) }}"
-                                    class="text-sm font-bold text-indigo-600 hover:text-indigo-700"
-                                >
-                                    メッセージを見る →
+                                                {{ $message->body }}
+                                            </p>
+
+                                            <p class="mt-2 text-xs text-slate-400">
+                                                {{ optional($message->created_at)->format('Y/m/d H:i') }}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </a>
-                            </div>
-                        </article>
+                            </article>
+                        @endif
                     @empty
                         <div class="rounded-xl bg-slate-50 p-5 text-center">
                             <p class="text-sm text-slate-600">
                                 メッセージはありません。
                             </p>
+
+                            <a
+                                href="{{ route('trainings.ranking') }}"
+                                class="mt-4 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700"
+                            >
+                                ランキングからユーザーを探す
+                            </a>
                         </div>
                     @endforelse
                 </div>
