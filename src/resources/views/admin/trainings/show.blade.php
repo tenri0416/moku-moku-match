@@ -137,19 +137,19 @@
             今日のチャレンジ
         </a>
 
-        <a href="{{ route('admin.trainings.summary.create') }}" data-ai-question-loading class="px-5 py-2 bg-purple-600 text-white rounded">
+        <a href="{{ route('admin.trainings.summary.create') }}" class="px-5 py-2 bg-purple-600 text-white rounded">
             要約力
         </a>
 
-        <a href="{{ route('admin.trainings.verbalization.create') }}" data-ai-question-loading class="px-5 py-2 bg-indigo-600 text-white rounded">
+        <a href="{{ route('admin.trainings.verbalization.create') }}" class="px-5 py-2 bg-indigo-600 text-white rounded">
             言語化力
         </a>
 
-        <a href="{{ route('admin.trainings.abstraction.create') }}" data-ai-question-loading class="px-5 py-2 bg-pink-600 text-white rounded">
+        <a href="{{ route('admin.trainings.abstraction.create') }}"  class="px-5 py-2 bg-pink-600 text-white rounded">
             抽象化力
         </a>
 
-        <a href="{{ route('admin.trainings.concretization.create') }}" data-ai-question-loading class="px-5 py-2 bg-orange-600 text-white rounded">
+        <a href="{{ route('admin.trainings.concretization.create') }}" class="px-5 py-2 bg-orange-600 text-white rounded">
             具体化力
         </a>
     </div>
