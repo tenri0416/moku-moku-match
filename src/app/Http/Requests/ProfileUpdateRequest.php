@@ -23,7 +23,7 @@ class ProfileUpdateRequest extends FormRequest
             'skills' => ['nullable', 'string'],
             'purpose' => ['nullable', 'string'],
             'work_style' => ['nullable', 'string'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'prefecture_id' => ['nullable', 'integer', 'exists:prefectures,id'],
         ];
     }
