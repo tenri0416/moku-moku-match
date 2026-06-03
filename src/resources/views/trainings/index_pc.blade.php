@@ -61,11 +61,19 @@
                                   {{ $myTotalPoints }} <span class="text-[20px]">pt</span>
                               </p>
                               <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-white/25">
-                                  <div class="h-full w-[64%] rounded-full bg-orange-300"></div>
-                              </div>
-                              <p class="mt-3 text-[15px] font-bold text-blue-50">
-                                  目標まであと720pt！
-                              </p>
+                                <div
+                                    class="h-full rounded-full bg-orange-300"
+                                    style="width: {{ $trainingProgressPercent }}%;"
+                                ></div>
+                            </div>
+                            
+                            <p class="mt-3 text-[15px] font-bold text-blue-50">
+                                @if ($nextGoalRemainingPoints > 0)
+                                    次の難易度まであと{{ $nextGoalRemainingPoints }}pt！
+                                @else
+                                    難易度Maxに到達しています！
+                                @endif
+                            </p>
                           </div>
                       </div>
 
@@ -77,8 +85,12 @@
                                   {{ $completedTodayCount }} <span class="text-[24px]">/ 6</span>
                               </p>
                               <p class="mt-4 text-[15px] font-bold text-blue-50">
-                                  あと{{ max(0, 6 - $completedTodayCount) }}つでボーナス！
-                              </p>
+                                @if ($completedTodayCount >= 6)
+                                    本日のトレーニングはすべて完了です！
+                                @else
+                                    あと{{ max(0, 6 - $completedTodayCount) }}つ実施できます
+                                @endif
+                            </p>
                           </div>
                       </div>
 
@@ -90,8 +102,12 @@
                                   {{ $historyCount }} <span class="text-[24px]">件</span>
                               </p>
                               <p class="mt-4 text-[15px] font-bold text-blue-50">
-                                  記録更新中！
-                              </p>
+                                @if ($historyCount > 0)
+                                    これまでの実施履歴です
+                                @else
+                                    まだ履歴はありません
+                                @endif
+                            </p>
                           </div>
                       </div>
                   </div>

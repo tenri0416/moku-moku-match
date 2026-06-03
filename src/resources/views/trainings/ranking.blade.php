@@ -49,8 +49,8 @@
     $myMonthlyPoints = $myMonthlyRanking?->total_points ?? 0;
     $myMonthlyTrainingCount = $myMonthlyRanking?->training_count ?? 0;
 
-    $continuousDays = $continuousDays ?? 7;
-    $monthlyRank = $myMonthlyRank ?? 12;
+    $continuousDays = $continuousDays ?? 0;
+    $monthlyRank = $myMonthlyRank;
 
     $buildMobileRows = function ($rankings) use ($authUserId) {
         $rows = collect();

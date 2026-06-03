@@ -32,9 +32,9 @@ class TrainingController extends Controller
                 'type' => $request->type,
             ]
         );
-
+    
         $userId = auth()->id();
-
+    
         $trainings = collect()
             ->merge($this->mapTrainings(UserDiaryTraining::where('user_id', $userId)->get(), UserDiaryTraining::TYPE))
             ->merge($this->mapTrainings(UserChallengeTraining::where('user_id', $userId)->get(), UserChallengeTraining::TYPE))
@@ -42,48 +42,37 @@ class TrainingController extends Controller
             ->merge($this->mapTrainings(UserVerbalizationTraining::where('user_id', $userId)->get(), UserVerbalizationTraining::TYPE))
             ->merge($this->mapTrainings(UserAbstractionTraining::where('user_id', $userId)->get(), UserAbstractionTraining::TYPE))
             ->merge($this->mapTrainings(UserConcretizationTraining::where('user_id', $userId)->get(), UserConcretizationTraining::TYPE))
-            ->when($request->type, fn(Collection $items) => $items->where('type', $request->type))
+            ->when($request->type, fn (Collection $items) => $items->where('type', $request->type))
             ->sortByDesc('training_date')
             ->values();
-
-        $todayStatuses = [
-            'diary' => UserDiaryTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->exists(),
-
-            'challenge' => UserChallengeTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->exists(),
-
-            'summary' => UserSummaryTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->whereNotNull('answer_body')
-                ->exists(),
-
-            'verbalization' => UserVerbalizationTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->whereNotNull('answer_body')
-                ->exists(),
-
-            'abstraction' => UserAbstractionTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->whereNotNull('answer_body')
-                ->exists(),
-
-            'concretization' => UserConcretizationTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->whereNotNull('answer_body')
-                ->exists(),
-        ];
-
-        $myTotalPoints = UserTrainingPointHistory::where('user_id', $userId)->sum('points');
+    
+        $todayStatuses = $this->todayTrainingStatuses($userId);
+    
+        $myTotalPoints = $this->myTotalTrainingPoints();
         $myTrainingDifficulty = $this->calculateTrainingDifficulty((int) $myTotalPoints);
-
+    
+        $completedTodayCount = collect($todayStatuses)->filter()->count();
+        $historyCount = $trainings->count();
+        $continuousDays = $this->calculateContinuousDays($userId);
+        $monthlyRank = $this->calculateMyMonthlyRank($userId);
+    
+        $nextGoalRemainingPoints = $this->calculateNextGoalRemainingPoints((int) $myTotalPoints);
+        $trainingProgressPercent = $this->calculateTrainingProgressPercent((int) $myTotalPoints);
+    
+        $trainingCards = $this->trainingCards();
+    
         return view('trainings.index', compact(
             'trainings',
             'todayStatuses',
             'myTotalPoints',
-            'myTrainingDifficulty'
+            'myTrainingDifficulty',
+            'completedTodayCount',
+            'historyCount',
+            'continuousDays',
+            'monthlyRank',
+            'nextGoalRemainingPoints',
+            'trainingProgressPercent',
+            'trainingCards'
         ));
     }
 
@@ -96,17 +85,14 @@ class TrainingController extends Controller
                 'user_id' => auth()->id(),
             ]
         );
-
+    
         if ($this->alreadyDoneToday(UserDiaryTraining::class)) {
             return redirect()
                 ->route('trainings.index')
                 ->with('error', '本日の日記トレーニングは実施済みです。');
         }
-
-        $myTotalPoints = $this->myTotalTrainingPoints();
-        $myTrainingDifficulty = $this->calculateTrainingDifficulty($myTotalPoints);
-
-        return view('trainings.diary-create', compact('myTotalPoints', 'myTrainingDifficulty'));
+    
+        return view('trainings.diary-create', $this->trainingCommonViewData());
     }
 
     public function storeDiary(Request $request, TrainingAiScoringService $scoringService): RedirectResponse
@@ -214,17 +200,14 @@ class TrainingController extends Controller
                 'user_id' => auth()->id(),
             ]
         );
-
+    
         if ($this->alreadyDoneToday(UserChallengeTraining::class)) {
             return redirect()
                 ->route('trainings.index')
                 ->with('error', '本日の今日のチャレンジは実施済みです。');
         }
-
-        $myTotalPoints = $this->myTotalTrainingPoints();
-        $myTrainingDifficulty = $this->calculateTrainingDifficulty($myTotalPoints);
-
-        return view('trainings.challenge-create', compact('myTotalPoints', 'myTrainingDifficulty'));
+    
+        return view('trainings.challenge-create', $this->trainingCommonViewData());
     }
 
     public function storeChallenge(Request $request, TrainingAiScoringService $scoringService): RedirectResponse
@@ -473,12 +456,16 @@ class TrainingController extends Controller
                 'training_id' => $id,
             ]
         );
-
+    
         $training = $this->findTraining($type, $id);
-
+    
         abort_unless($training->user_id === auth()->id(), 403);
-
-        return view('trainings.show', compact('training', 'type'));
+    
+        return view('trainings.show', [
+            'training' => $training,
+            'type' => $type,
+            ...$this->trainingCommonViewData(),
+        ]);
     }
 
     public function ranking(): View
@@ -607,8 +594,10 @@ class TrainingController extends Controller
             'typeLabel' => $training->typeLabel(),
             'scoreLabels' => $training->scoreLabels(),
             'storeRoute' => route($this->storeRouteNameByType($type), $training),
-            'myTotalPoints' => $this->myTotalTrainingPoints(),
-            'myTrainingDifficulty' => $this->currentTrainingDifficulty(),
+            'questionTitle' => $training->question_title,
+            'questionBody' => $training->question_body,
+            'answerMaxLength' => 5000,
+            ...$this->trainingCommonViewData(),
         ]);
     }
 
@@ -825,4 +814,275 @@ class TrainingController extends Controller
             default => throw new RuntimeException('不正なトレーニング種別です。'),
         };
     }
+
+    /**
+ * トレーニング画面共通の表示データを作成する
+ */
+private function trainingCommonViewData(): array
+{
+    $userId = auth()->id();
+
+    $myTotalPoints = $this->myTotalTrainingPoints();
+    $myTrainingDifficulty = $this->calculateTrainingDifficulty((int) $myTotalPoints);
+
+    return [
+        'myTotalPoints' => $myTotalPoints,
+        'myTrainingDifficulty' => $myTrainingDifficulty,
+        'continuousDays' => $this->calculateContinuousDays($userId),
+        'monthlyRank' => $this->calculateMyMonthlyRank($userId),
+        'nextGoalRemainingPoints' => $this->calculateNextGoalRemainingPoints((int) $myTotalPoints),
+        'trainingProgressPercent' => $this->calculateTrainingProgressPercent((int) $myTotalPoints),
+    ];
+}
+
+/**
+ * 今日の各トレーニング実施状況を取得する
+ */
+private function todayTrainingStatuses(int $userId): array
+{
+    return [
+        'diary' => UserDiaryTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->exists(),
+
+        'challenge' => UserChallengeTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->exists(),
+
+        'summary' => UserSummaryTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->whereNotNull('answer_body')
+            ->exists(),
+
+        'verbalization' => UserVerbalizationTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->whereNotNull('answer_body')
+            ->exists(),
+
+        'abstraction' => UserAbstractionTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->whereNotNull('answer_body')
+            ->exists(),
+
+        'concretization' => UserConcretizationTraining::where('user_id', $userId)
+            ->whereDate('training_date', today())
+            ->whereNotNull('answer_body')
+            ->exists(),
+    ];
+}
+
+/**
+ * トレーニングカードの表示情報
+ *
+ * DBから取る必要のないUI定義だけをControllerに寄せる。
+ */
+private function trainingCards(): array
+{
+    return [
+        [
+            'key' => 'diary',
+            'label' => '日記トレーニング',
+            'short_label' => '日記',
+            'description' => '今日の出来事を書く',
+            'pc_description' => '今日の出来事を<br>書いて振り返る',
+            'route' => route('trainings.diary.create'),
+            'points' => '最大10pt',
+            'emoji' => '📝',
+            'bg' => 'bg-blue-100',
+            'loading' => true,
+        ],
+        [
+            'key' => 'challenge',
+            'label' => '今日のチャレンジ',
+            'short_label' => '今日のチャレンジ',
+            'description' => '挑戦を振り返る',
+            'pc_description' => '挑戦を振り返り<br>気づきを得る',
+            'route' => route('trainings.challenge.create'),
+            'points' => '最大10pt',
+            'emoji' => '🔥',
+            'bg' => 'bg-orange-100',
+            'loading' => true,
+        ],
+        [
+            'key' => 'summary',
+            'label' => '要約力',
+            'short_label' => '要約力',
+            'description' => '文章を短くまとめる',
+            'pc_description' => '文章を短くまとめて<br>要点をつかむ',
+            'route' => route('trainings.summary.create'),
+            'points' => '最大10pt',
+            'emoji' => '📖',
+            'bg' => 'bg-purple-100',
+            'loading' => false,
+        ],
+        [
+            'key' => 'verbalization',
+            'label' => '言語化力',
+            'short_label' => '言語化力',
+            'description' => '考えを言葉にする',
+            'pc_description' => '考えを言葉にして<br>伝える力を鍛える',
+            'route' => route('trainings.verbalization.create'),
+            'points' => '最大10pt',
+            'emoji' => '💬',
+            'bg' => 'bg-emerald-100',
+            'loading' => true,
+        ],
+        [
+            'key' => 'abstraction',
+            'label' => '抽象化力',
+            'short_label' => '抽象化力',
+            'description' => '本質を見つける',
+            'pc_description' => '共通点を見つけて<br>本質を捉える',
+            'route' => route('trainings.abstraction.create'),
+            'points' => '最大10pt',
+            'emoji' => '🧠',
+            'bg' => 'bg-pink-100',
+            'loading' => true,
+        ],
+        [
+            'key' => 'concretization',
+            'label' => '具体化力',
+            'short_label' => '具体化力',
+            'description' => '行動に落とし込む',
+            'pc_description' => 'アイデアを行動に<br>落とし込む',
+            'route' => route('trainings.concretization.create'),
+            'points' => '最大10pt',
+            'emoji' => '🎯',
+            'bg' => 'bg-orange-100',
+            'loading' => true,
+        ],
+    ];
+}
+
+/**
+ * 連続実施日数を算出する
+ */
+private function calculateContinuousDays(int $userId): int
+{
+    $earnedDates = UserTrainingPointHistory::query()
+        ->where('user_id', $userId)
+        ->where('point_type', 'training')
+        ->select('earned_on')
+        ->distinct()
+        ->orderByDesc('earned_on')
+        ->pluck('earned_on')
+        ->map(fn ($date) => \Carbon\Carbon::parse($date)->toDateString())
+        ->flip();
+
+    if ($earnedDates->isEmpty()) {
+        return 0;
+    }
+
+    $continuousDays = 0;
+    $targetDate = today();
+
+    while ($earnedDates->has($targetDate->toDateString())) {
+        $continuousDays++;
+        $targetDate = $targetDate->copy()->subDay();
+    }
+
+    return $continuousDays;
+}
+
+/**
+ * 自分の月間順位を算出する
+ */
+private function calculateMyMonthlyRank(int $userId): ?int
+{
+    $rankings = UserTrainingPointHistory::query()
+        ->select('user_id')
+        ->selectRaw('SUM(points) as total_points')
+        ->where('point_type', 'training')
+        ->whereBetween('earned_on', [
+            now()->startOfMonth()->toDateString(),
+            now()->endOfMonth()->toDateString(),
+        ])
+        ->groupBy('user_id')
+        ->orderByDesc('total_points')
+        ->get()
+        ->values();
+
+    $index = $rankings->search(fn ($ranking) => (int) $ranking->user_id === (int) $userId);
+
+    return $index === false ? null : $index + 1;
+}
+
+/**
+ * 次の難易度までの残りポイントを算出する
+ */
+private function calculateNextGoalRemainingPoints(int $totalPoints): int
+{
+    $nextGoal = $this->nextTrainingGoalPoint($totalPoints);
+
+    if ($nextGoal === null) {
+        return 0;
+    }
+
+    return max(0, $nextGoal - $totalPoints);
+}
+
+/**
+ * 次の難易度までの進捗率を算出する
+ */
+private function calculateTrainingProgressPercent(int $totalPoints): int
+{
+    $currentBase = $this->currentTrainingBasePoint($totalPoints);
+    $nextGoal = $this->nextTrainingGoalPoint($totalPoints);
+
+    if ($nextGoal === null) {
+        return 100;
+    }
+
+    $range = $nextGoal - $currentBase;
+
+    if ($range <= 0) {
+        return 0;
+    }
+
+    $progress = (($totalPoints - $currentBase) / $range) * 100;
+
+    return (int) max(0, min(100, round($progress)));
+}
+
+/**
+ * 現在の難易度帯の開始ポイント
+ */
+private function currentTrainingBasePoint(int $totalPoints): int
+{
+    return match (true) {
+        $totalPoints < 100 => 0,
+        $totalPoints < 200 => 100,
+        $totalPoints < 300 => 200,
+        $totalPoints < 400 => 300,
+        $totalPoints < 500 => 400,
+        $totalPoints < 600 => 500,
+        $totalPoints < 800 => 600,
+        $totalPoints < 1000 => 800,
+        $totalPoints < 1100 => 1000,
+        $totalPoints < 1200 => 1100,
+        $totalPoints < 1300 => 1200,
+        default => 1300,
+    };
+}
+
+/**
+ * 次の難易度に必要なポイント
+ */
+private function nextTrainingGoalPoint(int $totalPoints): ?int
+{
+    return match (true) {
+        $totalPoints < 100 => 100,
+        $totalPoints < 200 => 200,
+        $totalPoints < 300 => 300,
+        $totalPoints < 400 => 400,
+        $totalPoints < 500 => 500,
+        $totalPoints < 600 => 600,
+        $totalPoints < 800 => 800,
+        $totalPoints < 1000 => 1000,
+        $totalPoints < 1100 => 1100,
+        $totalPoints < 1200 => 1200,
+        $totalPoints < 1300 => 1300,
+        default => null,
+    };
+}
 }

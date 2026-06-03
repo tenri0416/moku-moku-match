@@ -214,7 +214,7 @@
                               <div class="text-[32px]">🔥</div>
                               <p class="mt-2 text-[14px] font-black text-[#334155]">連続</p>
                               <p class="mt-1 text-[28px] font-black leading-none text-[#071433]">
-                                  {{ $continuousDays ?? 7 }}<span class="text-[14px]">日</span>
+                                  {{ $continuousDays}}<span class="text-[14px]">日</span>
                               </p>
                           </div>
 
@@ -222,7 +222,7 @@
                               <div class="text-[32px]">🏅</div>
                               <p class="mt-2 text-[14px] font-black text-[#334155]">総pt</p>
                               <p class="mt-1 text-[25px] font-black leading-none text-[#071433]">
-                                  {{ $totalPoints ?? 1280 }}<span class="text-[13px]">pt</span>
+                                  {{ $totalPoints }}<span class="text-[13px]">pt</span>
                               </p>
                           </div>
 
@@ -230,7 +230,7 @@
                               <div class="text-[32px]">🏅</div>
                               <p class="mt-2 text-[14px] font-black text-[#334155]">月間</p>
                               <p class="mt-1 text-[28px] font-black leading-none text-[#071433]">
-                                  {{ $monthlyRank ?? 12 }}<span class="text-[14px]">位</span>
+                                  {{ $monthlyRank }}<span class="text-[14px]">位</span>
                               </p>
                           </div>
                       </div>
