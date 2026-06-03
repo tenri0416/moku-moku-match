@@ -1,6 +1,6 @@
 {{-- SP版：resources/views/trainings/challenge-create_sp.blade.php --}}
 <div class="block md:hidden min-h-screen w-full overflow-x-hidden bg-[#F8FAFF] text-[#071433]">
-  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-4 pb-28 pt-4">
+  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-3 pb-28 pt-4">
 
       {{-- 上部ナビ --}}
       <div class="mb-6 grid grid-cols-[88px_1fr_60px] items-center gap-2">

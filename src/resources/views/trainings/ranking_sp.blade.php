@@ -1,6 +1,6 @@
 {{-- SP版：resources/views/trainings/ranking_sp.blade.php --}}
 <div class="block md:hidden min-h-screen w-full overflow-x-hidden bg-[#F8FAFF] text-[#071433]">
-  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-4 pb-28 pt-4">
+  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-3 pb-28 pt-4">
 
       {{-- ヒーロー --}}
       <section class="mb-5 overflow-hidden rounded-[18px] bg-gradient-to-br from-[#1D66F3] to-[#0648D8] text-white shadow-[0_14px_28px_rgba(13,79,232,0.28)]">

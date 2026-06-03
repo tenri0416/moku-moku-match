@@ -1,6 +1,6 @@
 {{-- SP版：resources/views/home_sp.blade.php --}}
 <div class="block md:hidden min-h-screen w-full overflow-x-hidden bg-[#F8FAFF] text-[#071433]">
-    <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-4 pb-24 pt-4">
+    <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-3 pb-24 pt-4">
 
         {{-- メインビジュアル --}}
         {{-- メインビジュアル --}}

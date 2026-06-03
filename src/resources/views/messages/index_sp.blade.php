@@ -1,6 +1,6 @@
 {{-- SP版：resources/views/messages/index_sp.blade.php --}}
 <div class="block md:hidden min-h-screen w-full overflow-x-hidden bg-[#F8FAFF] text-[#071433]">
-  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-4 pb-24 pt-6">
+  <div class="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-[#F8FAFF] px-3 pb-24 pt-6">
 
       @if (session('success'))
           <div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-bold text-emerald-700">

@@ -1,6 +1,6 @@
 {{-- SP版：resources/views/messages/user-show_sp.blade.php --}}
 <div class="block md:hidden min-h-screen w-full overflow-x-hidden bg-[#F8FAFF] text-[#071433]">
-  <div class="mx-auto flex min-h-screen w-full max-w-[430px] flex-col overflow-x-hidden bg-[#F8FAFF] px-4 pb-5 pt-4">
+  <div class="mx-auto flex min-h-screen w-full max-w-[430px] flex-col overflow-x-hidden bg-[#F8FAFF] px-3 pb-5 pt-4">
 
       {{-- 上部 --}}
       <header class="mb-4">
