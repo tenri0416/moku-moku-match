@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserTrainingPointHistory;
+use App\Support\ApiActionLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -15,7 +16,15 @@ class UserProfileController extends Controller
      */
     public function show(User $user): View
     {
-      
+        ApiActionLogger::info(
+            methodName: 'UserProfileController::show',
+            message: 'ユーザー自己紹介ページにアクセス',
+            params: [
+                'login_user_id' => Auth::id(),
+                'target_user_id' => $user->id,
+            ]
+        );
+
         $user->loadMissing('profile');
 
         $totalPoints = UserTrainingPointHistory::query()

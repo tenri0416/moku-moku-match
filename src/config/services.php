@@ -52,4 +52,8 @@ return [
         'api_key' => env('GROQ_API_KEY'),
         'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
     ],
+    'ai' => [
+    // 出力トークンを増やしたくないため、全AI共通で低めに固定
+    'max_output_tokens' => env('AI_MAX_OUTPUT_TOKENS', 350),
+],
 ];

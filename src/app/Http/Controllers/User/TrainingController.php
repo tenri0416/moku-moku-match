@@ -10,7 +10,8 @@ use App\Models\UserDiaryTraining;
 use App\Models\UserSummaryTraining;
 use App\Models\UserTrainingPointHistory;
 use App\Models\UserVerbalizationTraining;
-use App\Services\GoogleAiScoringService;
+use App\Services\Trainings\Ai\TrainingAiScoringService;
+use App\Support\ApiActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -23,6 +24,15 @@ class TrainingController extends Controller
 {
     public function index(Request $request): View
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::index',
+            message: 'トレーニング一覧ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'type' => $request->type,
+            ]
+        );
+
         $userId = auth()->id();
 
         $trainings = collect()
@@ -37,22 +47,56 @@ class TrainingController extends Controller
             ->values();
 
         $todayStatuses = [
-            'diary' => UserDiaryTraining::where('user_id', $userId)->whereDate('training_date', today())->exists(),
-            'challenge' => UserChallengeTraining::where('user_id', $userId)->whereDate('training_date', today())->exists(),
-            'summary' => UserSummaryTraining::where('user_id', $userId)->whereDate('training_date', today())->whereNotNull('answer_body')->exists(),
-            'verbalization' => UserVerbalizationTraining::where('user_id', $userId)->whereDate('training_date', today())->whereNotNull('answer_body')->exists(),
-            'abstraction' => UserAbstractionTraining::where('user_id', $userId)->whereDate('training_date', today())->whereNotNull('answer_body')->exists(),
-            'concretization' => UserConcretizationTraining::where('user_id', $userId)->whereDate('training_date', today())->whereNotNull('answer_body')->exists(),
+            'diary' => UserDiaryTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->exists(),
+
+            'challenge' => UserChallengeTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->exists(),
+
+            'summary' => UserSummaryTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->whereNotNull('answer_body')
+                ->exists(),
+
+            'verbalization' => UserVerbalizationTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->whereNotNull('answer_body')
+                ->exists(),
+
+            'abstraction' => UserAbstractionTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->whereNotNull('answer_body')
+                ->exists(),
+
+            'concretization' => UserConcretizationTraining::where('user_id', $userId)
+                ->whereDate('training_date', today())
+                ->whereNotNull('answer_body')
+                ->exists(),
         ];
 
         $myTotalPoints = UserTrainingPointHistory::where('user_id', $userId)->sum('points');
         $myTrainingDifficulty = $this->calculateTrainingDifficulty((int) $myTotalPoints);
 
-        return view('trainings.index', compact('trainings', 'todayStatuses', 'myTotalPoints', 'myTrainingDifficulty'));
+        return view('trainings.index', compact(
+            'trainings',
+            'todayStatuses',
+            'myTotalPoints',
+            'myTrainingDifficulty'
+        ));
     }
 
     public function createDiary(): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createDiary',
+            message: '日記トレーニング作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         if ($this->alreadyDoneToday(UserDiaryTraining::class)) {
             return redirect()
                 ->route('trainings.index')
@@ -65,8 +109,18 @@ class TrainingController extends Controller
         return view('trainings.diary-create', compact('myTotalPoints', 'myTrainingDifficulty'));
     }
 
-    public function storeDiary(Request $request, GoogleAiScoringService $scoringService): RedirectResponse
+    public function storeDiary(Request $request, TrainingAiScoringService $scoringService): RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeDiary',
+            message: '日記トレーニング保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_date' => $request->input('training_date'),
+                'diary_body_length' => mb_strlen((string) $request->input('diary_body')),
+            ]
+        );
+
         $validated = $request->validate([
             'training_date' => ['required', 'date'],
             'diary_body' => ['required', 'string', 'max:5000'],
@@ -77,6 +131,15 @@ class TrainingController extends Controller
         ]);
 
         if ($this->alreadyDoneOnDate(UserDiaryTraining::class, $validated['training_date'])) {
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeDiary',
+                message: '日記トレーニングは指定日に実施済みのため保存中止',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_date' => $validated['training_date'],
+                ]
+            );
+
             return back()
                 ->withInput()
                 ->with('error', 'この日の日記トレーニングはすでに実施済みです。');
@@ -89,6 +152,16 @@ class TrainingController extends Controller
             );
         } catch (Throwable $e) {
             report($e);
+
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeDiary',
+                message: '日記トレーニングAI採点に失敗',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_date' => $validated['training_date'],
+                    'error_message' => $e->getMessage(),
+                ]
+            );
 
             return back()
                 ->withInput()
@@ -108,6 +181,23 @@ class TrainingController extends Controller
 
             $this->storePoint($training, UserDiaryTraining::TYPE, $points, $validated['training_date']);
 
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeDiary',
+                message: '日記トレーニングを保存しました',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_id' => $training->id,
+                    'training_type' => UserDiaryTraining::TYPE,
+                    'training_date' => $validated['training_date'],
+                    'total_score' => $score['total_score'] ?? null,
+                    'earned_points' => $points,
+                    'ai_provider' => $score['ai_provider'] ?? null,
+                    'ai_model' => $score['ai_model'] ?? null,
+                    'is_fallback' => $score['is_fallback'] ?? null,
+                    'ai_attempts' => $score['ai_attempts'] ?? null,
+                ]
+            );
+
             return redirect()
                 ->route('trainings.show', ['type' => UserDiaryTraining::TYPE, 'id' => $training->id])
                 ->with('success', '日記トレーニングを保存しました。');
@@ -116,6 +206,14 @@ class TrainingController extends Controller
 
     public function createChallenge(): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createChallenge',
+            message: '今日のチャレンジ作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         if ($this->alreadyDoneToday(UserChallengeTraining::class)) {
             return redirect()
                 ->route('trainings.index')
@@ -128,8 +226,21 @@ class TrainingController extends Controller
         return view('trainings.challenge-create', compact('myTotalPoints', 'myTrainingDifficulty'));
     }
 
-    public function storeChallenge(Request $request, GoogleAiScoringService $scoringService): RedirectResponse
+    public function storeChallenge(Request $request, TrainingAiScoringService $scoringService): RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeChallenge',
+            message: '今日のチャレンジ保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_date' => $request->input('training_date'),
+                'challenged_thing_length' => mb_strlen((string) $request->input('challenged_thing')),
+                'completed_thing_length' => mb_strlen((string) $request->input('completed_thing')),
+                'difficult_thing_length' => mb_strlen((string) $request->input('difficult_thing')),
+                'next_improvement_length' => mb_strlen((string) $request->input('next_improvement')),
+            ]
+        );
+
         $validated = $request->validate([
             'training_date' => ['required', 'date'],
             'challenged_thing' => ['required', 'string', 'max:3000'],
@@ -145,6 +256,15 @@ class TrainingController extends Controller
         ]);
 
         if ($this->alreadyDoneOnDate(UserChallengeTraining::class, $validated['training_date'])) {
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeChallenge',
+                message: '今日のチャレンジは指定日に実施済みのため保存中止',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_date' => $validated['training_date'],
+                ]
+            );
+
             return back()
                 ->withInput()
                 ->with('error', 'この日の今日のチャレンジはすでに実施済みです。');
@@ -157,6 +277,16 @@ class TrainingController extends Controller
             );
         } catch (Throwable $e) {
             report($e);
+
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeChallenge',
+                message: '今日のチャレンジAI採点に失敗',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_date' => $validated['training_date'],
+                    'error_message' => $e->getMessage(),
+                ]
+            );
 
             return back()
                 ->withInput()
@@ -175,54 +305,173 @@ class TrainingController extends Controller
 
             $this->storePoint($training, UserChallengeTraining::TYPE, $points, $validated['training_date']);
 
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeChallenge',
+                message: '今日のチャレンジを保存しました',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_id' => $training->id,
+                    'training_type' => UserChallengeTraining::TYPE,
+                    'training_date' => $validated['training_date'],
+                    'total_score' => $score['total_score'] ?? null,
+                    'earned_points' => $points,
+                    'ai_provider' => $score['ai_provider'] ?? null,
+                    'ai_model' => $score['ai_model'] ?? null,
+                    'is_fallback' => $score['is_fallback'] ?? null,
+                    'ai_attempts' => $score['ai_attempts'] ?? null,
+                ]
+            );
+
             return redirect()
                 ->route('trainings.show', ['type' => UserChallengeTraining::TYPE, 'id' => $training->id])
                 ->with('success', '今日のチャレンジを保存しました。');
         });
     }
 
-    public function createSummary(GoogleAiScoringService $scoringService): View|RedirectResponse
+    public function createSummary(TrainingAiScoringService $scoringService): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createSummary',
+            message: '要約力トレーニング作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'training_type' => UserSummaryTraining::TYPE,
+            ]
+        );
+
         return $this->createAiTraining(UserSummaryTraining::TYPE, UserSummaryTraining::class, $scoringService);
     }
 
-    public function storeSummary(Request $request, UserSummaryTraining $training, GoogleAiScoringService $scoringService): RedirectResponse
-    {
+    public function storeSummary(
+        Request $request,
+        UserSummaryTraining $training,
+        TrainingAiScoringService $scoringService
+    ): RedirectResponse {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeSummary',
+            message: '要約力トレーニング回答保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_id' => $training->id,
+                'training_type' => UserSummaryTraining::TYPE,
+                'answer_body_length' => mb_strlen((string) $request->input('answer_body')),
+            ]
+        );
+
         return $this->storeAiTraining($request, $training, UserSummaryTraining::TYPE, $scoringService);
     }
 
-    public function createVerbalization(GoogleAiScoringService $scoringService): View|RedirectResponse
+    public function createVerbalization(TrainingAiScoringService $scoringService): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createVerbalization',
+            message: '言語化力トレーニング作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'training_type' => UserVerbalizationTraining::TYPE,
+            ]
+        );
+
         return $this->createAiTraining(UserVerbalizationTraining::TYPE, UserVerbalizationTraining::class, $scoringService);
     }
 
-    public function storeVerbalization(Request $request, UserVerbalizationTraining $training, GoogleAiScoringService $scoringService): RedirectResponse
-    {
+    public function storeVerbalization(
+        Request $request,
+        UserVerbalizationTraining $training,
+        TrainingAiScoringService $scoringService
+    ): RedirectResponse {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeVerbalization',
+            message: '言語化力トレーニング回答保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_id' => $training->id,
+                'training_type' => UserVerbalizationTraining::TYPE,
+                'answer_body_length' => mb_strlen((string) $request->input('answer_body')),
+            ]
+        );
+
         return $this->storeAiTraining($request, $training, UserVerbalizationTraining::TYPE, $scoringService);
     }
 
-    public function createAbstraction(GoogleAiScoringService $scoringService): View|RedirectResponse
+    public function createAbstraction(TrainingAiScoringService $scoringService): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createAbstraction',
+            message: '抽象化力トレーニング作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'training_type' => UserAbstractionTraining::TYPE,
+            ]
+        );
+
         return $this->createAiTraining(UserAbstractionTraining::TYPE, UserAbstractionTraining::class, $scoringService);
     }
 
-    public function storeAbstraction(Request $request, UserAbstractionTraining $training, GoogleAiScoringService $scoringService): RedirectResponse
-    {
+    public function storeAbstraction(
+        Request $request,
+        UserAbstractionTraining $training,
+        TrainingAiScoringService $scoringService
+    ): RedirectResponse {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeAbstraction',
+            message: '抽象化力トレーニング回答保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_id' => $training->id,
+                'training_type' => UserAbstractionTraining::TYPE,
+                'answer_body_length' => mb_strlen((string) $request->input('answer_body')),
+            ]
+        );
+
         return $this->storeAiTraining($request, $training, UserAbstractionTraining::TYPE, $scoringService);
     }
 
-    public function createConcretization(GoogleAiScoringService $scoringService): View|RedirectResponse
+    public function createConcretization(TrainingAiScoringService $scoringService): View|RedirectResponse
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::createConcretization',
+            message: '具体化力トレーニング作成ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'training_type' => UserConcretizationTraining::TYPE,
+            ]
+        );
+
         return $this->createAiTraining(UserConcretizationTraining::TYPE, UserConcretizationTraining::class, $scoringService);
     }
 
-    public function storeConcretization(Request $request, UserConcretizationTraining $training, GoogleAiScoringService $scoringService): RedirectResponse
-    {
+    public function storeConcretization(
+        Request $request,
+        UserConcretizationTraining $training,
+        TrainingAiScoringService $scoringService
+    ): RedirectResponse {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::storeConcretization',
+            message: '具体化力トレーニング回答保存処理を開始',
+            params: [
+                'user_id' => auth()->id(),
+                'training_id' => $training->id,
+                'training_type' => UserConcretizationTraining::TYPE,
+                'answer_body_length' => mb_strlen((string) $request->input('answer_body')),
+            ]
+        );
+
         return $this->storeAiTraining($request, $training, UserConcretizationTraining::TYPE, $scoringService);
     }
 
     public function show(string $type, int $id): View
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::show',
+            message: 'トレーニング詳細ページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+                'training_type' => $type,
+                'training_id' => $id,
+            ]
+        );
+
         $training = $this->findTraining($type, $id);
 
         abort_unless($training->user_id === auth()->id(), 403);
@@ -232,11 +481,22 @@ class TrainingController extends Controller
 
     public function ranking(): View
     {
+        ApiActionLogger::info(
+            methodName: 'TrainingController::ranking',
+            message: 'トレーニングランキングページにアクセス',
+            params: [
+                'user_id' => auth()->id(),
+            ]
+        );
+
         $monthlyRankings = UserTrainingPointHistory::query()
             ->select('user_id')
             ->selectRaw('SUM(points) as total_points')
             ->selectRaw('COUNT(*) as training_count')
-            ->whereBetween('earned_on', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+            ->whereBetween('earned_on', [
+                now()->startOfMonth()->toDateString(),
+                now()->endOfMonth()->toDateString(),
+            ])
             ->with('user.profile')
             ->groupBy('user_id')
             ->orderByDesc('total_points')
@@ -256,8 +516,11 @@ class TrainingController extends Controller
         return view('trainings.ranking', compact('monthlyRankings', 'totalRankings'));
     }
 
-    private function createAiTraining(string $type, string $modelClass, GoogleAiScoringService $scoringService): View|RedirectResponse
-    {
+    private function createAiTraining(
+        string $type,
+        string $modelClass,
+        TrainingAiScoringService $scoringService
+    ): View|RedirectResponse {
         $today = now()->toDateString();
 
         $training = $modelClass::query()
@@ -266,6 +529,16 @@ class TrainingController extends Controller
             ->first();
 
         if ($training && filled($training->answer_body)) {
+            ApiActionLogger::info(
+                methodName: 'TrainingController::createAiTraining',
+                message: 'AI出題型トレーニングは本日回答済みのため詳細へリダイレクト',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_type' => $type,
+                    'training_id' => $training->id,
+                ]
+            );
+
             return redirect()
                 ->route('trainings.show', ['type' => $type, 'id' => $training->id])
                 ->with('error', '本日の' . $training->typeLabel() . 'は実施済みです。');
@@ -280,6 +553,16 @@ class TrainingController extends Controller
             } catch (Throwable $e) {
                 report($e);
 
+                ApiActionLogger::info(
+                    methodName: 'TrainingController::createAiTraining',
+                    message: 'AI出題型トレーニングの問題生成に失敗',
+                    params: [
+                        'user_id' => auth()->id(),
+                        'training_type' => $type,
+                        'error_message' => $e->getMessage(),
+                    ]
+                );
+
                 return redirect()
                     ->route('trainings.index')
                     ->with('error', $e->getMessage());
@@ -290,7 +573,30 @@ class TrainingController extends Controller
                 'training_date' => $today,
                 'question_title' => $question['question_title'],
                 'question_body' => $question['question_body'],
+
+                // AI履歴
+                'ai_provider' => $question['ai_provider'] ?? null,
+                'ai_model' => $question['ai_model'] ?? null,
+                'ai_status' => $question['ai_status'] ?? null,
+                'ai_error_message' => $question['ai_error_message'] ?? null,
+                'is_fallback' => $question['is_fallback'] ?? false,
+                'ai_attempts' => $question['ai_attempts'] ?? 1,
             ]);
+
+            ApiActionLogger::info(
+                methodName: 'TrainingController::createAiTraining',
+                message: 'AI出題型トレーニングの問題を作成しました',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_type' => $type,
+                    'training_id' => $training->id,
+                    'training_date' => $today,
+                    'ai_provider' => $question['ai_provider'] ?? null,
+                    'ai_model' => $question['ai_model'] ?? null,
+                    'is_fallback' => $question['is_fallback'] ?? null,
+                    'ai_attempts' => $question['ai_attempts'] ?? null,
+                ]
+            );
         }
 
         return view('trainings.ai-create', [
@@ -308,11 +614,21 @@ class TrainingController extends Controller
         Request $request,
         mixed $training,
         string $type,
-        GoogleAiScoringService $scoringService
+        TrainingAiScoringService $scoringService
     ): RedirectResponse {
         abort_unless($training->user_id === auth()->id(), 403);
 
         if (filled($training->answer_body)) {
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeAiTraining',
+                message: 'AI出題型トレーニングは回答済みのため保存中止',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_type' => $type,
+                    'training_id' => $training->id,
+                ]
+            );
+
             return redirect()
                 ->route('trainings.show', ['type' => $type, 'id' => $training->id])
                 ->with('error', '本日の' . $training->typeLabel() . 'は実施済みです。');
@@ -336,6 +652,17 @@ class TrainingController extends Controller
         } catch (Throwable $e) {
             report($e);
 
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeAiTraining',
+                message: 'AI出題型トレーニングの採点に失敗',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_type' => $type,
+                    'training_id' => $training->id,
+                    'error_message' => $e->getMessage(),
+                ]
+            );
+
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -352,12 +679,28 @@ class TrainingController extends Controller
 
             $this->storePoint($training->fresh(), $type, $points, $training->training_date->toDateString());
 
+            ApiActionLogger::info(
+                methodName: 'TrainingController::storeAiTraining',
+                message: 'AI出題型トレーニングを保存しました',
+                params: [
+                    'user_id' => auth()->id(),
+                    'training_type' => $type,
+                    'training_id' => $training->id,
+                    'training_date' => $training->training_date->toDateString(),
+                    'total_score' => $score['total_score'] ?? null,
+                    'earned_points' => $points,
+                    'ai_provider' => $score['ai_provider'] ?? null,
+                    'ai_model' => $score['ai_model'] ?? null,
+                    'is_fallback' => $score['is_fallback'] ?? null,
+                    'ai_attempts' => $score['ai_attempts'] ?? null,
+                ]
+            );
+
             return redirect()
                 ->route('trainings.show', ['type' => $type, 'id' => $training->id])
                 ->with('success', $training->typeLabel() . 'を保存しました。');
         });
     }
-
 
     /**
      * 現在ログイン中ユーザーの総獲得ポイントを取得する
@@ -396,21 +739,20 @@ class TrainingController extends Controller
         };
     }
 
-
     /**
      * 採点結果に応じて獲得ポイントを計算する
      */
     private function calculatePoints(string $type, int $totalScore): int
-{
-    return match (true) {
-        $totalScore === 100 => 10,
-        $totalScore >= 90 => 9,
-        $totalScore >= 80 => 8,
-        $totalScore >= 70 => 7,
-        $totalScore >= 60 => 6,
-        default => 1,
-    };
-}
+    {
+        return match (true) {
+            $totalScore === 100 => 10,
+            $totalScore >= 90 => 9,
+            $totalScore >= 80 => 8,
+            $totalScore >= 70 => 7,
+            $totalScore >= 60 => 6,
+            default => 1,
+        };
+    }
 
     private function storePoint(mixed $training, string $type, int $points, string $earnedOn): void
     {
