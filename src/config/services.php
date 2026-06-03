@@ -53,7 +53,16 @@ return [
         'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
     ],
     'ai' => [
-    // 出力トークンを増やしたくないため、全AI共通で低めに固定
-    'max_output_tokens' => env('AI_MAX_OUTPUT_TOKENS', 350),
-],
+        // 出力トークンを増やしたくないため、全AI共通で低めに固定
+        'max_output_tokens' => env('AI_MAX_OUTPUT_TOKENS', 350),
+    ],
+    /**
+     * 各AIの1日あたりの推定上限
+     * 実際のAPI残数ではなく、アプリ内の試行ログをもとに推定する
+     */
+    'provider_daily_limits' => [
+        'google' => env('AI_GOOGLE_DAILY_LIMIT', 20),
+        'openrouter' => env('AI_OPENROUTER_DAILY_LIMIT', 50),
+        'groq' => env('AI_GROQ_DAILY_LIMIT', 100),
+    ],
 ];

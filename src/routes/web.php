@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminTrainingController;
 use App\Http\Controllers\User\TrainingController;
 use App\Http\Controllers\User\UserProfileController;
+use App\Http\Controllers\Admin\AiUsageDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -301,6 +302,8 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
+            Route::get('/ai-usage', [AiUsageDashboardController::class, 'index'])
+            ->name('ai-usage.index');
         /*
         |--------------------------------------------------------------------------
         | 管理者通知

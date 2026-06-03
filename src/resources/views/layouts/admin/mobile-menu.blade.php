@@ -75,10 +75,10 @@
                 <span>記事閲覧数</span>
                 <span class="text-slate-400">›</span>
             </a>
-            <a href="{{ route('admin.trainings.index') }}"
+            <a href="{{ route('admin.ai-usage.index') }}"
                 class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
-    {{ request()->routeIs('admin.trainings.index.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}">
-                <span>トレーニング</span>
+    {{ request()->routeIs('admin.ai-usage.index.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <span>AI利用状況</span>
                 <span class="text-slate-400">›</span>
             </a>
             <div class="my-2 border-t border-slate-100"></div>

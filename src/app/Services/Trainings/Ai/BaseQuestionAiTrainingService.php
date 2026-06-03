@@ -41,6 +41,7 @@ abstract class BaseQuestionAiTrainingService extends BaseAiTrainingService
         $result = $this->aiProviderManager->requestJson(
             prompt: $this->questionPrompt($difficulty),
             temperature: 0.7,
+            actionName: $this->typeLabel() . '問題生成',
         );
 
         if ($result['success']) {

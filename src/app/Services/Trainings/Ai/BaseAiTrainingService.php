@@ -26,6 +26,7 @@ abstract class BaseAiTrainingService
         $result = $this->aiProviderManager->requestJson(
             prompt: $prompt,
             temperature: $temperature,
+            actionName: $actionName,
         );
 
         if ($result['success']) {

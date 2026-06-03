@@ -3,6 +3,7 @@
 namespace App\Services\Ai;
 
 use App\Models\Admin;
+use App\Models\AiProviderAttemptLog;
 use App\Notifications\AiRetryFailedNotification;
 use App\Services\Ai\Providers\GoogleAiService;
 use App\Services\Ai\Providers\GroqAiService;
@@ -19,7 +20,7 @@ class AiProviderManager
     ) {
     }
 
-    public function requestJson(string $prompt, float $temperature = 0.2): array
+    public function requestJson(string $prompt, float $temperature = 0.2, ?string $actionName = null): array
     {
         $attempts = 0;
         $lastErrorMessage = null;
@@ -32,6 +33,16 @@ class AiProviderManager
                     'provider' => $provider->providerName(),
                     'model' => $provider->modelName(),
                     'reason' => 'APIキーが未設定、またはconfigが読み込めていません。',
+                ]);
+
+                $this->storeAttemptLog([
+                    'provider' => $provider->providerName(),
+                    'model' => $provider->modelName(),
+                    'status' => 'skipped',
+                    'error_message' => 'APIキーが未設定、またはconfigが読み込めていません。',
+                    'attempt' => null,
+                    'is_fallback' => false,
+                    'action_name' => $actionName,
                 ]);
 
                 continue;
@@ -52,6 +63,17 @@ class AiProviderManager
                     'model' => $result->model,
                     'attempt' => $attempts,
                     'is_fallback' => $attempts > 1,
+                    'action_name' => $actionName,
+                ]);
+
+                $this->storeAttemptLog([
+                    'provider' => $result->provider,
+                    'model' => $result->model,
+                    'status' => 'success',
+                    'status_code' => $result->statusCode,
+                    'attempt' => $attempts,
+                    'is_fallback' => $attempts > 1,
+                    'action_name' => $actionName,
                 ]);
 
                 return [
@@ -66,6 +88,10 @@ class AiProviderManager
             }
 
             $lastErrorMessage = $result->errorMessage;
+
+            $retryAvailableAt = $result->retryAfterSeconds !== null
+                ? now()->addSeconds($result->retryAfterSeconds)
+                : null;
 
             $failedProviders[] = [
                 'provider' => $result->provider,
@@ -84,6 +110,20 @@ class AiProviderManager
                 'retry_after_seconds' => $result->retryAfterSeconds,
                 'retry_after_minutes' => $this->secondsToMinutes($result->retryAfterSeconds),
                 'attempt' => $attempts,
+                'action_name' => $actionName,
+            ]);
+
+            $this->storeAttemptLog([
+                'provider' => $result->provider,
+                'model' => $result->model,
+                'status' => 'failed',
+                'status_code' => $result->statusCode,
+                'error_message' => $result->errorMessage,
+                'retry_after_seconds' => $result->retryAfterSeconds,
+                'retry_available_at' => $retryAvailableAt,
+                'attempt' => $attempts,
+                'is_fallback' => $attempts > 1,
+                'action_name' => $actionName,
             ]);
         }
 
@@ -92,6 +132,7 @@ class AiProviderManager
 
             Log::warning('利用可能なAIプロバイダーがありません。', [
                 'message' => $lastErrorMessage,
+                'action_name' => $actionName,
             ]);
         }
 
@@ -117,6 +158,30 @@ class AiProviderManager
         ];
     }
 
+    private function storeAttemptLog(array $data): void
+    {
+        try {
+            AiProviderAttemptLog::create([
+                'provider' => $data['provider'],
+                'model' => $data['model'] ?? null,
+                'status' => $data['status'],
+                'status_code' => $data['status_code'] ?? null,
+                'error_message' => $data['error_message'] ?? null,
+                'retry_after_seconds' => $data['retry_after_seconds'] ?? null,
+                'retry_available_at' => $data['retry_available_at'] ?? null,
+                'attempt' => $data['attempt'] ?? null,
+                'is_fallback' => $data['is_fallback'] ?? false,
+                'action_name' => $data['action_name'] ?? null,
+                'attempted_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('AI試行ログの保存に失敗しました。', [
+                'message' => $e->getMessage(),
+                'data' => $data,
+            ]);
+        }
+    }
+
     private function secondsToMinutes(?int $seconds): ?int
     {
         if ($seconds === null) {
@@ -132,9 +197,6 @@ class AiProviderManager
             return;
         }
 
-        /**
-         * 通知が大量に飛ばないように、10分に1回までに制限
-         */
         $cacheKey = 'ai-retry-failed-notified';
 
         if (Cache::has($cacheKey)) {
