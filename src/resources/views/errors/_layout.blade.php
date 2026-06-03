@@ -1,14 +1,23 @@
-@props([
-    'code' => '500',
-    'title' => 'エラーが発生しました',
-    'message' => '申し訳ありません。処理中に問題が発生しました。',
-    'detail' => null,
-    'illustration' => '☕',
-    'primaryLabel' => 'トップページへ戻る',
-    'primaryUrl' => url('/'),
-    'secondaryLabel' => 'マイページへ戻る',
-    'secondaryUrl' => route('mypage'),
-])
+@php
+    $code = $code ?? '500';
+    $title = $title ?? 'エラーが発生しました';
+    $message = $message ?? '申し訳ありません。処理中に問題が発生しました。';
+    $detail = $detail ?? null;
+    $illustration = $illustration ?? '☕';
+
+    $primaryLabel = $primaryLabel ?? 'トップページへ戻る';
+    $primaryUrl = $primaryUrl ?? url('/');
+
+    $secondaryLabel = $secondaryLabel ?? 'マイページへ戻る';
+
+    if (!empty($secondaryUrl)) {
+        $resolvedSecondaryUrl = $secondaryUrl;
+    } elseif (auth()->check() && Route::has('mypage')) {
+        $resolvedSecondaryUrl = route('mypage');
+    } else {
+        $resolvedSecondaryUrl = url('/');
+    }
+@endphp
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -41,7 +50,7 @@
                         {{ $message }}
                     </p>
 
-                    @if ($detail)
+                    @if (!empty($detail))
                         <div class="mt-5 mb-7 rounded-2xl bg-orange-50 border border-orange-100 px-4 py-4 text-left">
                             <p class="text-sm text-gray-700 leading-7">
                                 {{ $detail }}
@@ -55,22 +64,11 @@
                             {{ $primaryLabel }}
                         </a>
 
-                        @if ($secondaryUrl)
-                            <a href="{{ $secondaryUrl }}"
-                               class="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-bold text-orange-600 border border-orange-200 hover:bg-orange-50 transition">
-                                {{ $secondaryLabel }}
-                            </a>
-                        @endif
+                        <a href="{{ $resolvedSecondaryUrl }}"
+                           class="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-bold text-orange-600 border border-orange-200 hover:bg-orange-50 transition">
+                            {{ $secondaryLabel }}
+                        </a>
                     </div>
-
-                    @auth
-                        <div class="mt-5">
-                            <a href="{{ route('mypage') }}"
-                               class="text-sm text-gray-500 hover:text-orange-600 underline underline-offset-4">
-                                マイページへ戻る
-                            </a>
-                        </div>
-                    @endauth
                 </div>
 
                 <div class="bg-orange-50 px-6 py-4 text-center">

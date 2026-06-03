@@ -1,20 +1,23 @@
 @php
-    $message = $exception->getMessage();
+    $exceptionMessage = isset($exception) ? $exception->getMessage() : null;
 
-    $displayMessage = filled($message) && $message !== 'Not Found'
-        ? $message
+    $displayMessage = filled($exceptionMessage) && $exceptionMessage !== 'Not Found'
+        ? $exceptionMessage
         : 'お探しのページは見つかりませんでした。URLが間違っているか、ページが削除された可能性があります。';
+
+    $myPageUrl = auth()->check() && Route::has('mypage')
+        ? route('mypage')
+        : url('/');
 @endphp
 
-<x-dynamic-component
-    component="errors.layout"
-    code="404"
-    title="ページが見つかりません"
-    message="{{ $displayMessage }}"
-    detail="募集や記事は、公開終了・削除・URL変更により表示できない場合があります。"
-    illustration="🧭"
-    primaryLabel="トップページへ戻る"
-    primaryUrl="{{ url('/') }}"
-    secondaryLabel="マイページへ戻る"
-    secondaryUrl="{{ route('mypage') }}"
-/>
+@include('errors._layout', [
+    'code' => '404',
+    'title' => 'ページが見つかりません',
+    'message' => $displayMessage,
+    'detail' => 'ページが削除された、またはURLが変更された可能性があります。',
+    'illustration' => '🧭',
+    'primaryLabel' => 'トップページへ戻る',
+    'primaryUrl' => url('/'),
+    'secondaryLabel' => 'マイページへ戻る',
+    'secondaryUrl' => $myPageUrl,
+])

@@ -1,24 +1,23 @@
 @php
-    $message = $exception->getMessage();
+    $exceptionMessage = isset($exception) ? $exception->getMessage() : null;
 
-    $title = 'このページを表示できません';
+    $displayMessage = filled($exceptionMessage) && $exceptionMessage !== 'Forbidden'
+        ? $exceptionMessage
+        : 'このページを表示する権限がないか、ログイン中のアカウントでは操作できません。';
 
-    $defaultMessage = 'このページを表示する権限がないか、ログイン中のアカウントでは操作できません。';
-
-    $displayMessage = filled($message) && $message !== 'Forbidden'
-        ? $message
-        : $defaultMessage;
+    $myPageUrl = auth()->check() && Route::has('mypage')
+        ? route('mypage')
+        : url('/');
 @endphp
 
-<x-dynamic-component
-    component="errors.layout"
-    code="403"
-    title="{{ $title }}"
-    message="{{ $displayMessage }}"
-    detail="募集、メッセージ、トレーニング結果などは、本人または関係するユーザーだけが確認できる場合があります。"
-    illustration="🔒"
-    primaryLabel="トップページへ戻る"
-    primaryUrl="{{ url('/') }}"
-    secondaryLabel="マイページへ戻る"
-    secondaryUrl="{{ route('mypage') }}"
-/>
+@include('errors._layout', [
+    'code' => '403',
+    'title' => 'このページを表示できません',
+    'message' => $displayMessage,
+    'detail' => '募集、メッセージ、トレーニング結果などは、本人または関係するユーザーだけが確認できる場合があります。',
+    'illustration' => '🔒',
+    'primaryLabel' => 'トップページへ戻る',
+    'primaryUrl' => url('/'),
+    'secondaryLabel' => 'マイページへ戻る',
+    'secondaryUrl' => $myPageUrl,
+])
