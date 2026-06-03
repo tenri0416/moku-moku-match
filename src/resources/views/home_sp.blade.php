@@ -161,36 +161,20 @@
                 </a>
             </div>
 
-            @if ($topRankingUser)
-            @php
-            $rankUser = $topRankingUser->user;
-            @endphp
-
-            <div class="grid grid-cols-[54px_54px_1fr_92px] items-center gap-3">
-                <div class="text-[40px]">🥇</div>
-
-                <img src="{{ $avatarUrl($rankUser) }}" alt="{{ $displayName($rankUser) }}のプロフィール画像"
-                    class="h-[54px] w-[54px] rounded-full border border-[#DDE6F5] bg-blue-50 object-cover">
-
-                <p class="truncate text-[19px] font-black text-[#071433]">
-                    {{ $displayName($rankUser) }}
-                </p>
-
-                <p class="text-right text-[21px] font-black text-[#071433]">
-                    {{ number_format($topRankingUser->total_points) }}pt
-                </p>
-            </div>
-
+            @include('home._training-ranking-list', [
+                'rankingUsers' => $homeRankingUsers,
+                'limit' => 10,
+                'avatarSizeClass' => 'h-[46px] w-[46px]',
+                'nameTextClass' => 'text-[15px]',
+                'pointTextClass' => 'text-[15px]',
+                'showJobType' => false,
+            ])
+            
             <a href="{{ route('trainings.ranking') }}"
                 class="mt-5 flex items-center justify-center gap-2 text-[16px] font-black text-[#0D4FE8]">
                 ランキングを見る
                 <span class="text-[22px]">›</span>
             </a>
-            @else
-            <p class="text-center text-[15px] font-bold text-[#64748B]">
-                まだランキングデータがありません。
-            </p>
-            @endif
         </section>
     </div>
 </div>

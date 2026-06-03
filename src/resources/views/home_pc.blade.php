@@ -300,44 +300,14 @@
             </a>
           </div>
 
-          <div class="space-y-4">
-            @forelse ($homeRankingUsers->take(5) as $index => $ranking)
-            @php
-            $rankUser = $ranking->user;
-            $rank = $index + 1;
-            @endphp
-
-            <a href="{{ route('users.show', $rankUser) }}"
-              class="grid grid-cols-[34px_42px_1fr_76px] items-center gap-3">
-              <div class="text-center">
-                @if ($rank === 1)
-                <span class="text-[26px]">🥇</span>
-                @elseif ($rank === 2)
-                <span class="text-[26px]">🥈</span>
-                @elseif ($rank === 3)
-                <span class="text-[26px]">🥉</span>
-                @else
-                <span class="text-[15px] font-black text-[#071433]">{{ $rank }}</span>
-                @endif
-              </div>
-
-              <img src="{{ $avatarUrl($rankUser) }}" alt="{{ $displayName($rankUser) }}のプロフィール画像"
-                class="h-[42px] w-[42px] rounded-full border border-[#DDE6F5] bg-blue-50 object-cover">
-
-              <p class="truncate text-[14px] font-black text-[#071433]">
-                {{ $displayName($rankUser) }}
-              </p>
-
-              <p class="text-right text-[15px] font-black text-[#071433]">
-                {{ number_format($ranking->total_points) }}pt
-              </p>
-            </a>
-            @empty
-            <p class="text-center text-[13px] font-bold text-[#64748B]">
-              まだランキングデータがありません。
-            </p>
-            @endforelse
-          </div>
+          @include('home._training-ranking-list', [
+            'rankingUsers' => $homeRankingUsers,
+            'limit' => 5,
+            'avatarSizeClass' => 'h-[42px] w-[42px]',
+            'nameTextClass' => 'text-[14px]',
+            'pointTextClass' => 'text-[15px]',
+            'showJobType' => false,
+        ])
 
           <div class="mt-5 text-right">
             <a href="{{ route('trainings.ranking') }}"
