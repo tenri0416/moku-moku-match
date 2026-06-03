@@ -181,8 +181,7 @@
                       良い点
                   </h2>
 
-                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                      {{ trim($training->good_point ?? '') ?: '未採点です。' }}
+                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->good_point ?? '') ?: '未採点です。' }}
                   </p>
               </div>
           </div>
@@ -200,8 +199,7 @@
                       改善点
                   </h2>
 
-                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                      {{ trim($training->improvement_point ?? '') ?: '未採点です。' }}
+                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->improvement_point ?? '') ?: '未採点です。' }}
                   </p>
               </div>
           </div>
@@ -219,8 +217,7 @@
                       次回の課題
                   </h2>
 
-                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                      {{ trim($training->next_task ?? '') ?: '未採点です。' }}
+                  <p class="mt-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->next_task ?? '') ?: '未採点です。' }}
                   </p>
               </div>
           </div>
@@ -247,8 +244,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           問題本文
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ $questionBody }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($questionBody) }}
                       </p>
                   </div>
 
@@ -256,8 +252,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           回答
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ $answerBody }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($answerBody) }}
                       </p>
                   </div>
               </div>
@@ -267,8 +262,7 @@
                       📘
                   </div>
 
-                  <p class="min-w-0 flex-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                      {{ $diaryBody }}
+                  <p class="min-w-0 flex-1 whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($diaryBody) }}
                   </p>
               </div>
           @elseif ($type === 'challenge')
@@ -277,8 +271,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           今日チャレンジしたこと
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ trim($training->challenged_thing ?? '') }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->challenged_thing ?? '') }}
                       </p>
                   </div>
 
@@ -286,8 +279,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           できたこと
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ trim($training->completed_thing ?? '') }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->completed_thing ?? '') }}
                       </p>
                   </div>
 
@@ -295,8 +287,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           難しかったこと
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ trim($training->difficult_thing ?? '') }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->difficult_thing ?? '') }}
                       </p>
                   </div>
 
@@ -304,8 +295,7 @@
                       <h3 class="mb-1 text-[14px] font-black text-[#0D4FE8]">
                           次に改善したいこと
                       </h3>
-                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">
-                          {{ trim($training->next_improvement ?? '') }}
+                      <p class="whitespace-pre-wrap break-words text-[14px] font-bold leading-7 text-[#1B2540]">{{ trim($training->next_improvement ?? '') }}
                       </p>
                   </div>
               </div>

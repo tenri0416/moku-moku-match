@@ -64,10 +64,6 @@
 
           <div class="max-h-[260px] overflow-y-auto whitespace-pre-wrap rounded-[14px] border border-[#CBD7EA] bg-[#F9FBFF] px-4 py-4 text-[18px] font-bold leading-[2] text-[#1B2540]">{{ $questionBody }}</div>
 
-          <div class="max-h-[260px] overflow-y-auto whitespace-pre-wrap rounded-[14px] border border-[#CBD7EA] bg-[#F9FBFF] px-4 py-4 text-[18px] font-bold leading-[2] text-[#1B2540]">
-              {{ $questionBody }}
-          </div>
-
           <p class="mt-4 text-[15px] font-bold leading-relaxed text-[#334155]">
               ※ 問題文が長い場合は、この枠内で確認できます。
           </p>

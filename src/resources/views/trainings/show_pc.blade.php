@@ -21,7 +21,7 @@
                           📘
                       </div>
                       <div>
-                          <h1 class="text-[38px] font-black leading-tight tracking-[0.01em] text-[#071433]">
+                          <h1 class="text-[34px] font-black leading-tight tracking-[0.01em] text-[#071433]">
                               {{ $training->typeLabel() }} 詳細
                           </h1>
                           <div class="mt-7 flex items-center gap-3 text-[18px] font-black text-[#46516B]">
@@ -34,7 +34,7 @@
                       </div>
                   </div>
 
-                  <div class="relative hidden min-h-[178px] w-[360px] shrink-0 overflow-hidden lg:block">
+                  <div class="relative hidden min-h-[178px] w-[270px] shrink-0 overflow-hidden lg:block">
                     <img
                         src="{{ asset('images/training-top.png') }}"
                         alt="トレーニング"
@@ -127,9 +127,9 @@
                       <a href="{{ route('trainings.index') }}" class="group flex items-center gap-5 rounded-[16px] border border-[#DDE6F5] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                           <div class="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-orange-100 text-[38px]">🔥</div>
                           <div class="min-w-0 flex-1">
-                              <h3 class="text-[18px] font-black text-[#071433]">今日のチャレンジ</h3>
+                              <h3 class="text-[16px] font-black text-[#071433]">今日のチャレンジ</h3>
                               <p class="mt-1 text-[14px] font-bold leading-relaxed text-[#46516B]">挑戦・改善したことを振り返り、成長の一歩を記録しましょう。</p>
-                              <span class="mt-3 inline-flex w-[220px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
+                              <span class="mt-3 inline-flex w-[160px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
                           </div>
                           <span class="text-[34px] font-light text-[#334155]">›</span>
                       </a>
@@ -137,9 +137,9 @@
                       <a href="{{ route('trainings.index') }}" class="group flex items-center gap-5 rounded-[16px] border border-[#DDE6F5] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                           <div class="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-purple-100 text-[38px]">📖</div>
                           <div class="min-w-0 flex-1">
-                              <h3 class="text-[18px] font-black text-[#071433]">要約力トレーニング</h3>
+                              <h3 class="text-[16px] font-black text-[#071433]">要約力トレーニング</h3>
                               <p class="mt-1 text-[14px] font-bold leading-relaxed text-[#46516B]">文章を要約してまとめる力をさらに伸ばしましょう。</p>
-                              <span class="mt-3 inline-flex w-[220px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
+                              <span class="mt-3 inline-flex w-[160px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
                           </div>
                           <span class="text-[34px] font-light text-[#334155]">›</span>
                       </a>

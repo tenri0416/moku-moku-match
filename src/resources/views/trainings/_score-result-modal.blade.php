@@ -115,8 +115,7 @@
                     </h3>
                 </div>
 
-                <p class="whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                    {{ $modalGoodPoint ?: '最後まで取り組めていて、とても良いです。' }}
+                <p class="whitespace-pre-wrap text-sm leading-7 text-slate-700">{{ $modalGoodPoint ?: '最後まで取り組めていて、とても良いです。' }}
                 </p>
             </div>
 
@@ -129,8 +128,7 @@
                     </h3>
                 </div>
 
-                <p class="whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                    {{ $modalImprovementPoint ?: ($modalNextTask ?: '次回は、理由や具体例を少し足すとさらに良くなります。') }}
+                <p class="whitespace-pre-wrap text-sm leading-7 text-slate-700">{{ $modalImprovementPoint ?: ($modalNextTask ?: '次回は、理由や具体例を少し足すとさらに良くなります。') }}
                 </p>
             </div>
 

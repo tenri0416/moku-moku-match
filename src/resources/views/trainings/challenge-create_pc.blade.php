@@ -31,7 +31,7 @@
                                       🔥
                                   </div>
 
-                                  <h1 class="text-[52px] font-black leading-tight tracking-[0.01em] text-[#071433]">
+                                  <h1 class="text-[48px] font-black leading-tight tracking-[0.01em] text-[#071433]">
                                       今日のチャレンジ
                                   </h1>
                               </div>
@@ -50,7 +50,7 @@
                               <img
                                   src="{{ asset('images/training-top.png') }}"
                                   alt="今日のチャレンジ"
-                                  class="h-[220px] w-full max-w-[430px] object-contain"
+                                  class="h-[200px] w-full max-w-[360px] object-contain"
                                   loading="eager"
                               >
                           </div>
