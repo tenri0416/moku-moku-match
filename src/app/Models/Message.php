@@ -10,7 +10,6 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
-        'work_post_id',
         'sender_id',
         'receiver_id',
         'body',

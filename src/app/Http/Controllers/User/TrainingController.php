@@ -42,7 +42,7 @@ class TrainingController extends Controller
             ->merge($this->mapTrainings(UserVerbalizationTraining::where('user_id', $userId)->get(), UserVerbalizationTraining::TYPE))
             ->merge($this->mapTrainings(UserAbstractionTraining::where('user_id', $userId)->get(), UserAbstractionTraining::TYPE))
             ->merge($this->mapTrainings(UserConcretizationTraining::where('user_id', $userId)->get(), UserConcretizationTraining::TYPE))
-            ->when($request->type, fn (Collection $items) => $items->where('type', $request->type))
+            ->when($request->type, fn(Collection $items) => $items->where('type', $request->type))
             ->sortByDesc('training_date')
             ->values();
 
@@ -200,7 +200,8 @@ class TrainingController extends Controller
 
             return redirect()
                 ->route('trainings.show', ['type' => UserDiaryTraining::TYPE, 'id' => $training->id])
-                ->with('success', '日記トレーニングを保存しました。');
+                ->with('success', '日記トレーニングを保存しました。')
+                ->with('show_score_modal', true);
         });
     }
 
@@ -324,7 +325,8 @@ class TrainingController extends Controller
 
             return redirect()
                 ->route('trainings.show', ['type' => UserChallengeTraining::TYPE, 'id' => $training->id])
-                ->with('success', '今日のチャレンジを保存しました。');
+                ->with('success', '今日のチャレンジを保存しました。')
+                ->with('show_score_modal', true);
         });
     }
 
@@ -631,7 +633,8 @@ class TrainingController extends Controller
 
             return redirect()
                 ->route('trainings.show', ['type' => $type, 'id' => $training->id])
-                ->with('error', '本日の' . $training->typeLabel() . 'は実施済みです。');
+                ->with('success', $training->typeLabel() . 'を保存しました。')
+                ->with('show_score_modal', true);
         }
 
         $validated = $request->validate([

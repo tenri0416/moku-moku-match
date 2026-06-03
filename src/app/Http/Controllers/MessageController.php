@@ -9,7 +9,9 @@ use App\Notifications\MessageReceivedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class MessageController extends Controller
@@ -17,12 +19,16 @@ class MessageController extends Controller
     /**
      * 自分に関係するメッセージ一覧を表示する
      *
-     * messages テーブルから work_post_id を削除したため、
+     * 要件定義書に合わせて、messages は募集に紐づけず、
      * sender_id / receiver_id のみで会話相手ごとに一覧化する。
      */
     public function index(): View
     {
-        $loginUserId = Auth::id();
+        $loginUser = Auth::user();
+
+        abort_unless($loginUser, 403);
+
+        $loginUserId = $loginUser->id;
 
         $allMessages = Message::query()
             ->with(['sender.profile', 'receiver.profile'])
@@ -33,18 +39,77 @@ class MessageController extends Controller
             ->latest()
             ->get();
 
-        $messages = $allMessages
+        $latestMessages = $allMessages
             ->groupBy(function (Message $message) use ($loginUserId) {
-                return $message->sender_id === $loginUserId
+                return (int) $message->sender_id === (int) $loginUserId
                     ? $message->receiver_id
                     : $message->sender_id;
             })
-            ->map(function ($group) {
+            ->map(function (Collection $group) {
                 return $group->first();
             })
             ->values();
 
-        return view('messages.index', compact('messages'));
+        $unreadCountsByPartner = Message::query()
+            ->selectRaw('sender_id, COUNT(*) as unread_count')
+            ->where('receiver_id', $loginUserId)
+            ->whereNull('read_at')
+            ->groupBy('sender_id')
+            ->pluck('unread_count', 'sender_id');
+
+        $messageItems = $latestMessages
+            ->map(function (Message $message) use ($loginUserId, $unreadCountsByPartner) {
+                $partner = (int) $message->sender_id === (int) $loginUserId
+                    ? $message->receiver
+                    : $message->sender;
+
+                if (! $partner) {
+                    return null;
+                }
+
+                $profile = $partner->profile;
+
+                $avatarPath = $profile?->avatar_path;
+                $avatarUrl = $avatarPath
+                    ? asset('storage/' . ltrim($avatarPath, '/'))
+                    : asset('images/default-avatar.png');
+
+                $displayName = $profile?->display_name
+                    ?? $partner->name
+                    ?? 'ユーザー';
+
+                $jobType = $profile?->job_type
+                    ?? '職種未設定';
+
+                $isMine = (int) $message->sender_id === (int) $loginUserId;
+
+                return [
+                    'message' => $message,
+                    'partner' => $partner,
+                    'profile' => $profile,
+                    'display_name' => $displayName,
+                    'job_type' => $jobType,
+                    'avatar_url' => $avatarUrl,
+                    'unread_count' => (int) ($unreadCountsByPartner[$partner->id] ?? 0),
+                    'is_mine' => $isMine,
+                    'last_body' => Str::limit($message->body, 80),
+                    'pc_time' => optional($message->created_at)->format('Y/m/d H:i'),
+                    'sp_time' => $this->formatSpMessageTime($message),
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $conversationCount = $messageItems->count();
+        $totalUnreadCount = $messageItems->sum('unread_count');
+        $replyRate = $this->calculateReplyRate($loginUserId);
+
+        return view('messages.index', compact(
+            'messageItems',
+            'conversationCount',
+            'totalUnreadCount',
+            'replyRate'
+        ));
     }
 
     /**
@@ -89,8 +154,8 @@ class MessageController extends Controller
 
         abort_unless($loginUser, 403);
 
-        // 自分自身とのメッセージ画面は開けないようにする
-        abort_if($loginUser->id === $user->id, 404);
+        // 自分自身とのメッセージ画面は開けない
+        abort_if((int) $loginUser->id === (int) $user->id, 404);
 
         $messages = Message::query()
             ->with(['sender.profile', 'receiver.profile'])
@@ -117,10 +182,46 @@ class MessageController extends Controller
 
         $latestMessageId = $messages->last()?->id ?? 0;
 
+        $partnerProfile = $user->profile;
+
+        $avatarPath = $partnerProfile?->avatar_path;
+        $partnerAvatarUrl = $avatarPath
+            ? asset('storage/' . ltrim($avatarPath, '/'))
+            : asset('images/default-avatar.png');
+
+        $partnerDisplayName = $partnerProfile?->display_name
+            ?? $user->name
+            ?? 'ユーザー';
+
+        $partnerJobType = $partnerProfile?->job_type
+            ?? '職種未設定';
+
+        $totalMessagesCount = $messages->count();
+
+        $receivedMessagesCount = $messages
+            ->where('sender_id', $user->id)
+            ->where('receiver_id', $loginUser->id)
+            ->count();
+
+        $sentMessagesCount = $messages
+            ->where('sender_id', $loginUser->id)
+            ->where('receiver_id', $user->id)
+            ->count();
+
+        $lastMessageAt = optional($messages->last()?->created_at)->format('Y/m/d H:i');
+
         return view('messages.user-show', [
             'user' => $user,
             'messages' => $messages,
             'latestMessageId' => $latestMessageId,
+            'partnerProfile' => $partnerProfile,
+            'partnerAvatarUrl' => $partnerAvatarUrl,
+            'partnerDisplayName' => $partnerDisplayName,
+            'partnerJobType' => $partnerJobType,
+            'totalMessagesCount' => $totalMessagesCount,
+            'receivedMessagesCount' => $receivedMessagesCount,
+            'sentMessagesCount' => $sentMessagesCount,
+            'lastMessageAt' => $lastMessageAt,
         ]);
     }
 
@@ -132,7 +233,7 @@ class MessageController extends Controller
         abort_unless(Auth::check(), 403);
 
         // 自分自身には送れない
-        abort_if(Auth::id() === $user->id, 403);
+        abort_if((int) Auth::id() === (int) $user->id, 403);
 
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
@@ -156,15 +257,20 @@ class MessageController extends Controller
         }
 
         if ($request->expectsJson()) {
+            $senderProfile = $message->sender?->profile;
+
             return response()->json([
                 'message' => [
                     'id' => $message->id,
                     'body' => $message->body,
                     'sender_id' => $message->sender_id,
-                    'sender_name' => Auth::user()->profile->display_name
-                        ?? Auth::user()->name,
+                    'sender_name' => $senderProfile?->display_name
+                        ?? $message->sender?->name
+                        ?? 'ユーザー',
                     'is_mine' => true,
                     'created_at' => $message->created_at->format('Y/m/d H:i'),
+                    'created_time' => $message->created_at->format('H:i'),
+                    'read_label' => $message->read_at ? '既読' : '未読',
                 ],
             ]);
         }
@@ -182,7 +288,7 @@ class MessageController extends Controller
         abort_unless(Auth::check(), 403);
 
         // 自分自身とのメッセージ取得は不可
-        abort_if(Auth::id() === $user->id, 403);
+        abort_if((int) Auth::id() === (int) $user->id, 403);
 
         $afterId = (int) $request->query('after_id', 0);
 
@@ -201,13 +307,13 @@ class MessageController extends Controller
             ->oldest('id')
             ->get();
 
-        $messageIds = $messages
+        $receivedMessageIds = $messages
             ->where('receiver_id', Auth::id())
             ->pluck('id');
 
-        if ($messageIds->isNotEmpty()) {
+        if ($receivedMessageIds->isNotEmpty()) {
             Message::query()
-                ->whereIn('id', $messageIds)
+                ->whereIn('id', $receivedMessageIds)
                 ->whereNull('read_at')
                 ->update([
                     'read_at' => now(),
@@ -216,14 +322,25 @@ class MessageController extends Controller
 
         return response()->json([
             'messages' => $messages->map(function (Message $message) {
+                $senderProfile = $message->sender?->profile;
+
+                $senderAvatarPath = $senderProfile?->avatar_path;
+                $senderAvatarUrl = $senderAvatarPath
+                    ? asset('storage/' . ltrim($senderAvatarPath, '/'))
+                    : asset('images/default-avatar.png');
+
                 return [
                     'id' => $message->id,
                     'body' => $message->body,
                     'sender_id' => $message->sender_id,
-                    'sender_name' => $message->sender->profile->display_name
-                        ?? $message->sender->name,
-                    'is_mine' => $message->sender_id === Auth::id(),
+                    'sender_name' => $senderProfile?->display_name
+                        ?? $message->sender?->name
+                        ?? 'ユーザー',
+                    'sender_avatar_url' => $senderAvatarUrl,
+                    'is_mine' => (int) $message->sender_id === (int) Auth::id(),
                     'created_at' => $message->created_at->format('Y/m/d H:i'),
+                    'created_time' => $message->created_at->format('H:i'),
+                    'read_label' => $message->read_at ? '既読' : '未読',
                 ];
             })->values(),
         ]);
@@ -248,7 +365,7 @@ class MessageController extends Controller
             'receiver_id.exists' => '送信先ユーザーが存在しません。',
         ]);
 
-        abort_if((int) $validated['receiver_id'] === Auth::id(), 403);
+        abort_if((int) $validated['receiver_id'] === (int) Auth::id(), 403);
 
         $receiver = User::findOrFail($validated['receiver_id']);
 
@@ -267,5 +384,53 @@ class MessageController extends Controller
         return redirect()
             ->route('messages.users.show', $receiver)
             ->with('success', '返信しました。');
+    }
+
+    /**
+     * スマホ表示用の時刻表記
+     */
+    private function formatSpMessageTime(Message $message): string
+    {
+        if (! $message->created_at) {
+            return '';
+        }
+
+        if ($message->created_at->isToday()) {
+            return $message->created_at->format('H:i');
+        }
+
+        if ($message->created_at->isYesterday()) {
+            return '昨日';
+        }
+
+        return $message->created_at->format('n/j');
+    }
+
+    /**
+     * 返信率を実データから算出する
+     *
+     * 自分がメッセージを送った会話のうち、
+     * 相手から1件以上返信がある会話の割合。
+     */
+    private function calculateReplyRate(int $loginUserId): int
+    {
+        $sentPartnerIds = Message::query()
+            ->where('sender_id', $loginUserId)
+            ->distinct()
+            ->pluck('receiver_id');
+
+        $sentConversationCount = $sentPartnerIds->count();
+
+        if ($sentConversationCount === 0) {
+            return 0;
+        }
+
+        $repliedConversationCount = Message::query()
+            ->where('receiver_id', $loginUserId)
+            ->whereIn('sender_id', $sentPartnerIds)
+            ->distinct()
+            ->count('sender_id');
+
+        return (int) round(($repliedConversationCount / $sentConversationCount) * 100);
     }
 }

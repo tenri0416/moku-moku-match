@@ -2,70 +2,75 @@
 
 @section('content')
 @php
+    if (!isset($scoreLabels)) {
+        $scoreLabels = [];
+    }
+
+    $questionTitle = preg_replace('/^[\s　]+|[\s　]+$/u', '', $training->question_title ?? '');
+
     $questionBody = collect(preg_split("/\r\n|\n|\r/", $training->question_body ?? ''))
-        ->map(fn ($line) => trim($line))
+        ->map(function ($line) {
+            // 前後の半角スペース・全角スペース・タブを削除
+            $line = preg_replace('/^[\s　]+|[\s　]+$/u', '', $line);
+
+            // 文中の連続スペース・タブ・全角スペースを1つにする
+            $line = preg_replace('/[ \t　]+/u', ' ', $line);
+
+            return $line;
+        })
+        ->filter(fn ($line) => $line !== '')
         ->implode(PHP_EOL);
+
+    $questionBody = trim($questionBody);
+
+    $isSummaryTraining = str_contains($typeLabel ?? '', '要約');
+    $isVerbalizationTraining = str_contains($typeLabel ?? '', '言語化');
+
+    $answerMaxLength = $isVerbalizationTraining ? 300 : 120;
+
+    $trainingThemeLabel = $isSummaryTraining ? '要約力を高めるコツ' : '言語化力を高めるコツ';
+
+    $tips = $isSummaryTraining
+        ? [
+            '重要な要点を残す',
+            '短くても意味が伝わるように書く',
+            '主題→要点→結論でまとめる',
+        ]
+        : [
+            '結論だけでなく理由も添える',
+            '感じたことを具体的な言葉で表す',
+            '相手に伝わる順番で書く',
+        ];
+
+    $supportMessageTitle = $isSummaryTraining
+        ? '短い文章でも、伝わる力は大きな武器になります！'
+        : '言葉にすることで、考えが整理され、伝わる力が育ちます！';
+
+    $supportMessageBody = '今日も一歩ずつ、あなたの言葉を磨いていきましょう。';
 @endphp
 
-<div class="max-w-5xl mx-auto p-6">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold">{{ $typeLabel }}</h1>
-        <p class="text-sm text-gray-500">
-            AIが作成した問題に回答してください。回答後、AIが採点します。
-        </p>
-    </div>
+@include('trainings.ai-create_sp')
+@include('trainings.ai-create_pc')
 
-    @if (session('error'))
-        <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">
-            {{ session('error') }}
-        </div>
-    @endif
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const textareas = document.querySelectorAll('[data-ai-answer-textarea]');
 
-    <div class="bg-white rounded shadow p-5 mb-6">
-        <h2 class="text-lg font-bold mb-3">本日の問題</h2>
+        textareas.forEach(function (textarea) {
+            const targetId = textarea.dataset.countTarget;
+            const counter = document.getElementById(targetId);
 
-        <div class="mb-4">
-            <h3 class="font-bold text-blue-700">{{ trim($training->question_title) }}</h3>
-        </div>
+            if (!counter) {
+                return;
+            }
 
-        <div class="whitespace-pre-wrap leading-relaxed border rounded p-4 bg-gray-50">{{ $questionBody }}</div>
-    </div>
+            const updateCount = function () {
+                counter.textContent = textarea.value.length;
+            };
 
-    <form method="POST" action="{{ $storeRoute }}" data-ai-loading="true" data-ai-loading-type="score" class="bg-white rounded shadow p-5">
-        @csrf
-
-        <div class="mb-4">
-            <label class="block font-bold mb-2">回答</label>
-            <textarea
-                name="answer_body"
-                rows="12"
-                class="w-full border rounded p-3"
-                placeholder="ここに回答を入力してください。"
-            >{{ old('answer_body', $training->answer_body) }}</textarea>
-
-            @error('answer_body')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-
-        <div class="mb-5 bg-gray-50 border rounded p-4">
-            <h3 class="font-bold mb-2">採点項目</h3>
-            <ul class="list-disc pl-5 text-sm text-gray-700">
-                @foreach ($scoreLabels as $label)
-                    <li>{{ $label }}：25点</li>
-                @endforeach
-            </ul>
-        </div>
-
-        <div class="flex gap-2">
-            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded">
-                保存してAI採点する
-            </button>
-
-            <a href="{{ route('trainings.index') }}" class="px-5 py-2 border rounded">
-                一覧に戻る
-            </a>
-        </div>
-    </form>
-</div>
+            updateCount();
+            textarea.addEventListener('input', updateCount);
+        });
+    });
+</script>
 @endsection
