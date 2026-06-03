@@ -1,8 +1,8 @@
 {{-- PC版：resources/views/trainings/ranking_pc.blade.php --}}
 <div class="hidden md:block min-h-screen bg-[#F8FAFF] text-[#071433]">
-  <div class="mx-auto w-full max-w-[1440px] px-8 py-8">
-
-      <div class="grid grid-cols-[1fr_380px] gap-8">
+    <div class="mx-auto w-full max-w-[1440px] px-4 py-8 xl:px-6 2xl:px-8">
+  
+        <div class="grid grid-cols-1 gap-8 2xl:grid-cols-[minmax(0,1fr)_380px]">
           {{-- 左側 --}}
           <main>
               {{-- ヒーロー --}}
