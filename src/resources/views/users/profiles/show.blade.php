@@ -77,7 +77,7 @@
             <div class="bg-blue-50 rounded-xl p-5 text-center">
                 <div class="text-sm text-blue-600 font-semibold">総ポイント</div>
                 <div class="text-3xl font-bold text-gray-900 mt-2">
-                    {{ $totalPoints ?? 0 }} pt
+                    {{ $myTotalPoints ?? 0 }} pt
                 </div>
             </div>
 

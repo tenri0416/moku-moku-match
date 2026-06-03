@@ -60,9 +60,9 @@
 
     // 現時点では画面崩れを避けるため固定値表示です。
     // 後でController側から渡す場合は、同名変数をcompactしてください。
-    $continuousDays = $continuousDays ?? 7;
-    $monthlyRank = $monthlyRank ?? 12;
-    $totalPoints = $totalPoints ?? 1280;
+    $continuousDays = $continuousDays;
+    $monthlyRank = $monthlyRank ;
+    $myTotalPoints = $myTotalPoints;
 @endphp
 
 @include('trainings._score-result-modal')

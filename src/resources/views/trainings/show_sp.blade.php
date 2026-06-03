@@ -116,7 +116,7 @@
                   <div class="min-w-0">
                       <p class="text-[11px] font-black leading-none">総pt</p>
                       <p class="mt-1 text-[20px] font-black leading-none">
-                          {{ $totalPoints ?? 0 }}<span class="text-[11px]">pt</span>
+                          {{ $myTotalPoints ?? 0 }}<span class="text-[11px]">pt</span>
                       </p>
                   </div>
               </div>

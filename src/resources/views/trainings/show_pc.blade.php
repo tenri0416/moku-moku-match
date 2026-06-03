@@ -185,7 +185,7 @@
                       </div>
                       <div class="flex items-center justify-center gap-3">
                           <span class="text-[38px]">🪙</span>
-                          <div><p class="text-[14px] font-black text-[#0D4FE8]">総pt</p><p class="text-[28px] font-black">{{ $totalPoints }}<span class="text-[15px]">pt</span></p></div>
+                          <div><p class="text-[14px] font-black text-[#0D4FE8]">総pt</p><p class="text-[28px] font-black">{{ $myTotalPoints }}<span class="text-[15px]">pt</span></p></div>
                       </div>
                   </div>
               </section>
