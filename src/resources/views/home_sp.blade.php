@@ -69,14 +69,9 @@
         <section class="mb-5">
             <div class="mb-3 flex items-center justify-between">
                 <h2 class="text-[23px] font-black text-[#071433]">
-                    新着の募集
+                    募集一覧
                 </h2>
 
-                <a href="{{ route('work-posts.index') }}"
-                    class="flex items-center gap-1 text-[15px] font-black text-[#0D4FE8]">
-                    すべて見る
-                    <span class="text-[22px]">›</span>
-                </a>
             </div>
 
             <div class="space-y-3">
