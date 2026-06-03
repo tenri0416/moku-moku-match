@@ -36,7 +36,7 @@
                                   </h1>
                               </div>
 
-                              <p class="mt-5 text-[18px] font-bold leading-relaxed text-[#334155]">
+                              <p class="mt-5 text-[16px] font-bold leading-relaxed text-[#334155]">
                                   今日の出来事を短く書いて、文章力と振り返る力を育てます。
                               </p>
 

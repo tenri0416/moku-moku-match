@@ -32,7 +32,7 @@
               <img
                   src="{{ asset('images/training-top.png') }}"
                   alt="自己成長トレーニング"
-                  class="absolute bottom-3 right-0 h-[112px] w-[176px] object-contain"
+                  class="absolute bottom-3 right-0 h-[90px] w-[140px] object-contain"
                   loading="eager"
               >
           </div>
