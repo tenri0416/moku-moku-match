@@ -18,11 +18,20 @@
 
 <details class="relative md:hidden">
     <summary
-        class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full text-[32px] text-[#071433] transition hover:bg-[#F4F8FF]"
-        aria-label="メニューを開く"
-    >
-        ☰
-    </summary>
+    class="relative flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full text-[32px] text-[#071433] transition hover:bg-[#F4F8FF]"
+    aria-label="メニューを開く"
+>
+    ☰
+
+    @auth
+        <span
+            data-header-message-count
+            class="{{ $unreadMessageCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 inline-flex min-h-[20px] min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-black leading-none text-white shadow-[0_4px_10px_rgba(225,29,72,0.35)] ring-2 ring-white"
+        >
+            {{ $unreadMessageCount > 99 ? '99+' : $unreadMessageCount }}
+        </span>
+    @endauth
+</summary>
 
     <div class="fixed left-4 right-4 top-[84px] z-[80] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl border border-[#DDE6F5] bg-white shadow-[0_18px_48px_rgba(15,43,95,0.22)]">
         <div class="border-b border-[#E5ECF7] px-4 py-4">
