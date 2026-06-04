@@ -38,14 +38,6 @@
                       </span>
                   @endif
               </div>
-
-              <button
-                  type="button"
-                  class="flex h-[54px] w-[128px] items-center justify-center gap-2 rounded-[14px] border border-[#DDE6F5] bg-white text-[19px] font-bold text-[#64748B] shadow-[0_8px_18px_rgba(15,43,95,0.06)]">
-                  <span class="text-[27px]">⌕</span>
-                  検索
-              </button>
-          </div>
       </section>
 
       {{-- メッセージ一覧 --}}
