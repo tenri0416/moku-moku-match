@@ -43,12 +43,12 @@ $loginUserName = auth()->check()
         class="relative rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
         メッセージ
 
-        @if ($unreadMessageCount > 0)
         <span
-            class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white">
-            {{ $unreadMessageCount > 99 ? '99+' : $unreadMessageCount }}
-        </span>
-        @endif
+        data-header-message-count
+        class="{{ $unreadMessageCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
+    >
+        {{ $unreadMessageCount > 99 ? '99+' : $unreadMessageCount }}
+    </span>
     </a>
     @endif
 

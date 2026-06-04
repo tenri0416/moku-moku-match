@@ -251,11 +251,6 @@ class MessageController extends Controller
 
         $message->load(['sender.profile', 'receiver.profile']);
 
-        if (class_exists(MessageReceivedNotification::class)) {
-            $message->receiver->notify(
-                new MessageReceivedNotification($message)
-            );
-        }
 
         if ($request->expectsJson()) {
             $senderProfile = $message->sender?->profile;

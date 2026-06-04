@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\TrainingController;
 use App\Http\Controllers\User\UserProfileController;
-
+use App\Http\Controllers\HeaderStatusController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -73,6 +73,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('mypage');
     })->name('dashboard');
+
+    Route::get('/header/status', [HeaderStatusController::class, 'show'])
+    ->name('header.status');
+
 
     Route::get('/mypage', [MyPageController::class, 'index'])
         ->name('mypage');
