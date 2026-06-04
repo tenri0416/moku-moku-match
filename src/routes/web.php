@@ -214,6 +214,9 @@ Route::middleware('auth')->group(function () {
     
         Route::get('/messages/users/{user}/latest', [MessageController::class, 'latestUser'])
             ->name('messages.users.latest');
+
+        Route::get('/messages/latest', [MessageController::class, 'latestIndex'])
+            ->name('messages.index.latest');
         
     });
 });

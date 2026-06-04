@@ -447,4 +447,98 @@ class MessageController extends Controller
 
         return (int) round(($repliedConversationCount / $sentConversationCount) * 100);
     }
+
+    /**
+ * メッセージ一覧の最新状態を取得する
+ */
+public function latestIndex(Request $request): JsonResponse
+{
+    $loginUser = $request->user();
+
+    if (! $loginUser) {
+        return response()->json([
+            'items' => [],
+            'total_unread_count' => 0,
+            'error' => 'ログインが必要です。',
+        ], 401);
+    }
+
+    $loginUserId = $loginUser->id;
+
+    $allMessages = Message::query()
+        ->with(['sender.profile', 'receiver.profile'])
+        ->where(function ($query) use ($loginUserId) {
+            $query->where('sender_id', $loginUserId)
+                ->orWhere('receiver_id', $loginUserId);
+        })
+        ->latest('id')
+        ->get();
+
+    $latestMessages = $allMessages
+        ->groupBy(function (Message $message) use ($loginUserId) {
+            return (int) $message->sender_id === (int) $loginUserId
+                ? $message->receiver_id
+                : $message->sender_id;
+        })
+        ->map(function ($group) {
+            return $group->first();
+        })
+        ->values();
+
+    $unreadCountsByPartner = Message::query()
+        ->selectRaw('sender_id, COUNT(*) as unread_count')
+        ->where('receiver_id', $loginUserId)
+        ->whereNull('read_at')
+        ->groupBy('sender_id')
+        ->pluck('unread_count', 'sender_id');
+
+    $items = $latestMessages
+        ->map(function (Message $message) use ($loginUserId, $unreadCountsByPartner) {
+            $partner = (int) $message->sender_id === (int) $loginUserId
+                ? $message->receiver
+                : $message->sender;
+
+            if (! $partner) {
+                return null;
+            }
+
+            $profile = $partner->profile;
+
+            $avatarPath = $profile?->avatar_path;
+            $avatarUrl = $avatarPath
+                ? asset('storage/' . ltrim($avatarPath, '/'))
+                : asset('images/default-avatar.png');
+
+            $displayName = $profile?->display_name
+                ?? $partner->name
+                ?? 'ユーザー';
+
+            $jobType = $profile?->job_type
+                ?? '職種未設定';
+
+            $isMine = (int) $message->sender_id === (int) $loginUserId;
+
+            return [
+                'partner_id' => $partner->id,
+                'show_url' => route('messages.users.show', $partner),
+                'latest_message_id' => $message->id,
+                'display_name' => $displayName,
+                'job_type' => $jobType,
+                'avatar_url' => $avatarUrl,
+                'unread_count' => (int) ($unreadCountsByPartner[$partner->id] ?? 0),
+                'is_mine' => $isMine,
+                'last_body' => \Illuminate\Support\Str::limit($message->body, 80),
+                'pc_time' => optional($message->created_at)->format('Y/m/d H:i') ?? '',
+                'sp_time' => optional($message->created_at)->format('H:i') ?? '',
+            ];
+        })
+        ->filter()
+        ->values();
+
+    return response()->json([
+        'items' => $items,
+        'total_unread_count' => $items->sum('unread_count'),
+        'latest_message_id' => $latestMessages->max('id') ?? 0,
+    ]);
+}
 }
