@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\TrainingController;
 use App\Http\Controllers\User\UserProfileController;
 use App\Http\Controllers\HeaderStatusController;
+use App\Http\Controllers\SatisfactionSurveyController;
+
+
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -99,6 +102,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
 
+
+    Route::post('/satisfaction-surveys', [SatisfactionSurveyController::class, 'store'])
+        ->name('satisfaction-surveys.store');
+
+    Route::post('/satisfaction-surveys/skip', [SatisfactionSurveyController::class, 'skip'])
+        ->name('satisfaction-surveys.skip');
     /*
     |--------------------------------------------------------------------------
     | メッセージ

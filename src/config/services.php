@@ -65,4 +65,9 @@ return [
         'openrouter' => env('AI_OPENROUTER_DAILY_LIMIT', 50),
         'groq' => env('AI_GROQ_DAILY_LIMIT', 100),
     ],
+    
+    'line' => [
+    'access_token' => env('LINE_ACCESS_TOKEN'),
+    'admin_to' => env('LINE_ADMIN_TO'),
+],
 ];

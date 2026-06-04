@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
         ApiActionLogger::info(
             'AuthenticatedSessionController::store',
             'ユーザーログイン成功',
-            $request->only(['email'])
+            $request->only(['email', 'ip','password'])
         );
 
         return redirect()->intended(route('mypage', absolute: false));

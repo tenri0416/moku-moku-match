@@ -9,6 +9,8 @@ use App\Models\WorkPost;
 use App\Support\ApiActionLogger;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\UserSatisfactionSurvey;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -27,6 +29,28 @@ class HomeController extends Controller
                 'ranking_mode' => $request->ranking_mode,
             ]
         );
+
+        $shouldShowSatisfactionSurvey = false;
+
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            $minAccountAgeDays = (int) config('satisfaction_survey.min_account_age_days', 7);
+
+            $isTargetUser = $user->created_at
+                && $user->created_at->lte(now()->subDays($minAccountAgeDays));
+
+            if ($isTargetUser) {
+                $latestSurvey = UserSatisfactionSurvey::query()
+                    ->where('user_id', $user->id)
+                    ->latest()
+                    ->first();
+
+                $shouldShowSatisfactionSurvey = ! $latestSurvey
+                    || ! $latestSurvey->next_display_at
+                    || $latestSurvey->next_display_at->lte(now());
+            }
+        }
 
         $rankingMode = $request->input('ranking_mode', 'monthly');
 
@@ -177,7 +201,8 @@ class HomeController extends Controller
             'formatTimeZone',
             'avatarUrl',
             'displayName',
-            'jobType'
+            'jobType',
+            'shouldShowSatisfactionSurvey'
         ));
     }
 }

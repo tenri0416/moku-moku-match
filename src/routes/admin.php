@@ -11,6 +11,8 @@ use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWorkPostController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserSatisfactionSurveyController;
+
 
 Route::get('/admin/login', [AdminAuthController::class, 'index'])
     ->name('admin.login');
@@ -104,4 +106,8 @@ Route::prefix('admin')
 
         Route::get('/article-views', [ArticleViewController::class, 'index'])
             ->name('article-views.index');
+
+        Route::get('/satisfaction-surveys', [UserSatisfactionSurveyController::class, 'index'])
+            ->name('satisfaction-surveys.index');
+
     });

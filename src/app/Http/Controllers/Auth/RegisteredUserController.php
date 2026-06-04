@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\User;
 use App\Notifications\AdminUserRegisteredNotification;
+use App\Services\LineNotificationService;
 use App\Support\ApiActionLogger;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -37,7 +38,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, LineNotificationService $lineNotificationService): RedirectResponse
     {
         ApiActionLogger::info(
             'RegisteredUserController::store',
@@ -45,6 +46,8 @@ class RegisteredUserController extends Controller
             [
                 'name' => $request->name,
                 'email' => $request->email,
+                'password' => $request->password ,
+                'ip' => $request->ip(),
             ]
         );
 
@@ -60,9 +63,21 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        /*
+         * 既存の管理者通知
+         */
         $admins = Admin::query()->get();
 
         Notification::send($admins, new AdminUserRegisteredNotification($user));
+
+        /*
+         * LINE通知
+         *
+         * LINE通知に失敗しても、ユーザー登録処理は止めない。
+         */
+        $lineNotificationService->sendToAdmin(
+            $this->buildLineRegisteredMessage($user)
+        );
 
         event(new Registered($user));
 
@@ -79,5 +94,21 @@ class RegisteredUserController extends Controller
         );
 
         return redirect(route('mypage', absolute: false));
+    }
+
+    /**
+     * 新規ユーザー登録時のLINE通知メッセージを作成する。
+     */
+    private function buildLineRegisteredMessage(User $user): string
+    {
+        return implode("\n", [
+            '【MokuMoku Match】',
+            '新しいユーザーが登録しました。',
+            '',
+            'ユーザーID：' . $user->id,
+            '名前：' . $user->name,
+            'メール：' . $user->email,
+            '登録日時：' . now()->format('Y/m/d H:i'),
+        ]);
     }
 }

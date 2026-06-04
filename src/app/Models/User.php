@@ -11,6 +11,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -129,5 +131,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailNotification());
+    }
+
+    /**
+     * 満足度調査アンケート一覧を取得する。
+     */
+    public function satisfactionSurveys(): HasMany
+    {
+        return $this->hasMany(\App\Models\UserSatisfactionSurvey::class);
+    }
+
+    /**
+     * 最新の満足度調査アンケートを取得する。
+     */
+    public function latestSatisfactionSurvey(): HasOne
+    {
+        return $this->hasOne(\App\Models\UserSatisfactionSurvey::class)->latestOfMany();
     }
 }
