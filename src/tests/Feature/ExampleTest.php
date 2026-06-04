@@ -2,18 +2,23 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
+    use RefreshDatabase;
+
+    #[Test]
+    public function トップページへアクセスした時_正常に表示される(): void
     {
+        // Arrange
+
+        // Act
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // Assert
+        $response->assertOk();
     }
 }

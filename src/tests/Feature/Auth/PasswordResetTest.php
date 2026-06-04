@@ -5,67 +5,94 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+
 
 class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_reset_password_link_screen_can_be_rendered(): void
+    #[Test]
+    public function パスワード再設定リンク申請画面へアクセスした時_正常に表示される(): void
     {
+        // Arrange
+
+        // Act
         $response = $this->get('/forgot-password');
 
-        $response->assertStatus(200);
+        // Assert
+        $response->assertOk();
     }
 
-    public function test_reset_password_link_can_be_requested(): void
+    #[Test]
+    public function パスワード再設定リンクを申請した時_通知が送信される(): void
     {
+        // Arrange
         Notification::fake();
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        // Act
+        $this->post('/forgot-password', [
+            'email' => $user->email,
+        ]);
 
+        // Assert
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
-    public function test_reset_password_screen_can_be_rendered(): void
+    #[Test]
+    public function パスワード再設定URLへアクセスした時_再設定画面が表示される(): void
     {
+        // Arrange
         Notification::fake();
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', [
+            'email' => $user->email,
+        ]);
 
+        // Act & Assert
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+            $response = $this->get('/reset-password/' . $notification->token);
 
-            $response->assertStatus(200);
+            $response->assertOk();
 
             return true;
         });
     }
 
-    public function test_password_can_be_reset_with_valid_token(): void
+    #[Test]
+    public function 正しいトークンでパスワード再設定した時_パスワードが更新されログイン画面へ遷移する(): void
     {
+        // Arrange
         Notification::fake();
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', [
+            'email' => $user->email,
+        ]);
 
+        // Act & Assert
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
             $response = $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
             $response
                 ->assertSessionHasNoErrors()
                 ->assertRedirect(route('login'));
+
+            $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
 
             return true;
         });

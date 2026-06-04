@@ -8,22 +8,32 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class EmailVerificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_email_verification_screen_can_be_rendered(): void
+    #[Test]
+    public function メール認証案内画面へアクセスした時_正常に表示される(): void
     {
+        // Arrange
         $user = User::factory()->unverified()->create();
 
-        $response = $this->actingAs($user)->get('/verify-email');
+        // Act
+        $response = $this
+            ->actingAs($user)
+            ->get('/verify-email');
 
-        $response->assertStatus(200);
+        // Assert
+        $response->assertOk();
     }
 
-    public function test_email_can_be_verified(): void
+    #[Test]
+    public function 正しい認証URLへアクセスした時_メール認証が完了してマイページへ遷移する(): void
     {
+        // Arrange
         $user = User::factory()->unverified()->create();
 
         Event::fake();
@@ -31,28 +41,44 @@ class EmailVerificationTest extends TestCase
         $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1($user->email)]
+            [
+                'id' => $user->id,
+                'hash' => sha1($user->email),
+            ]
         );
 
-        $response = $this->actingAs($user)->get($verificationUrl);
+        // Act
+        $response = $this
+            ->actingAs($user)
+            ->get($verificationUrl);
 
+        // Assert
         Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+        $response->assertRedirect('/mypage');
     }
 
-    public function test_email_is_not_verified_with_invalid_hash(): void
+    #[Test]
+    public function 不正なハッシュの認証URLへアクセスした時_メール認証は完了しない(): void
     {
+        // Arrange
         $user = User::factory()->unverified()->create();
 
         $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1('wrong-email')]
+            [
+                'id' => $user->id,
+                'hash' => sha1('wrong-email'),
+            ]
         );
 
-        $this->actingAs($user)->get($verificationUrl);
+        // Act
+        $this
+            ->actingAs($user)
+            ->get($verificationUrl);
 
+        // Assert
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
 }

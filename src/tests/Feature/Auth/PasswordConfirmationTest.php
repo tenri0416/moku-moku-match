@@ -5,40 +5,61 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+
 
 class PasswordConfirmationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_confirm_password_screen_can_be_rendered(): void
+    #[Test]
+    public function パスワード確認画面へアクセスした時_正常に表示される(): void
     {
+        // Arrange
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/confirm-password');
+        // Act
+        $response = $this
+            ->actingAs($user)
+            ->get('/confirm-password');
 
-        $response->assertStatus(200);
+        // Assert
+        $response->assertOk();
     }
 
-    public function test_password_can_be_confirmed(): void
+    #[Test]
+    public function パスワード確認で正しいパスワードを送信した時_確認が成功する(): void
     {
+        // Arrange
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'password',
-        ]);
+        // Act
+        $response = $this
+            ->actingAs($user)
+            ->post('/confirm-password', [
+                'password' => 'password',
+            ]);
 
+        // Assert
         $response->assertRedirect();
         $response->assertSessionHasNoErrors();
     }
 
-    public function test_password_is_not_confirmed_with_invalid_password(): void
+    #[Test]
+    public function パスワード確認で誤ったパスワードを送信した時_バリデーションエラーになる(): void
     {
+        // Arrange
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'wrong-password',
-        ]);
+        // Act
+        $response = $this
+            ->actingAs($user)
+            ->post('/confirm-password', [
+                'password' => 'wrong-password',
+            ]);
 
+        // Assert
         $response->assertSessionHasErrors();
     }
 }

@@ -2,22 +2,35 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
+
 
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    #[Test]
+    public function 会員登録画面へアクセスした時_正常に表示される(): void
     {
+        // Arrange
+
+        // Act
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        // Assert
+        $response->assertOk();
     }
 
-    public function test_new_users_can_register(): void
+    #[Test]
+    public function 会員登録で正しい情報を送信した時_ユーザー登録されマイページへ遷移する(): void
     {
+        // Arrange
+
+        // Act
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
@@ -25,7 +38,16 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
+        // Assert
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->assertSame(1, User::where('email', 'test@example.com')->count());
+
+        $response->assertRedirect('/mypage');
     }
 }

@@ -1,12 +1,5 @@
 <?php
 
-use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\AdminDatabaseController;
-use App\Http\Controllers\AdminLogController;
-use App\Http\Controllers\AdminReportController;
-use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\AdminWorkPostController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\HomeController;
@@ -16,14 +9,11 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WorkPostController;
-use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\AdminTrainingController;
 use App\Http\Controllers\User\TrainingController;
 use App\Http\Controllers\User\UserProfileController;
-use App\Http\Controllers\Admin\AiUsageDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -268,182 +258,6 @@ Route::get('/work-posts/{workPost}', [WorkPostController::class, 'show'])
     ->whereNumber('workPost')
     ->name('work-posts.show');
 
-/*
-|--------------------------------------------------------------------------
-| 管理者ログイン
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/admin/login', [AdminAuthController::class, 'index'])
-    ->name('admin.login');
-
-Route::post('/admin/login', [AdminAuthController::class, 'login'])
-    ->name('admin.login.store');
-
-Route::get('/admin/login/verify', [AdminAuthController::class, 'showVerify'])
-    ->name('admin.login.verify');
-
-Route::post('/admin/login/verify', [AdminAuthController::class, 'verify'])
-    ->name('admin.login.verify.store');
-
-Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
-    ->name('admin.logout');
-
-/*
-|--------------------------------------------------------------------------
-| 管理者画面
-|--------------------------------------------------------------------------
-*/
-
-Route::prefix('admin')
-    ->name('admin.')
-    ->middleware('auth:admin')
-    ->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-            ->name('dashboard');
-
-            Route::get('/ai-usage', [AiUsageDashboardController::class, 'index'])
-            ->name('ai-usage.index');
-        /*
-        |--------------------------------------------------------------------------
-        | 管理者通知
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/notifications/unread', [AdminNotificationController::class, 'unread'])
-            ->name('notifications.unread');
-
-        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllAsRead'])
-            ->name('notifications.read-all');
-
-        /*
-        |--------------------------------------------------------------------------
-        | ユーザー管理
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/users', [AdminUserController::class, 'index'])
-            ->name('users.index');
-
-        Route::get('/users/{user}', [AdminUserController::class, 'show'])
-            ->whereNumber('user')
-            ->name('users.show');
-
-        Route::patch('/users/{user}/suspend', [AdminDashboardController::class, 'suspend'])
-            ->whereNumber('user')
-            ->name('users.suspend');
-
-        Route::patch('/users/{user}/activate', [AdminDashboardController::class, 'activate'])
-            ->whereNumber('user')
-            ->name('users.activate');
-
-        /*
-        |--------------------------------------------------------------------------
-        | 募集管理
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/work-posts', [AdminWorkPostController::class, 'index'])
-            ->name('work-posts.index');
-
-        Route::get('/work-posts/{workPost}', [AdminWorkPostController::class, 'show'])
-            ->whereNumber('workPost')
-            ->name('work-posts.show');
-
-        Route::patch('/work-posts/{workPost}/private', [AdminWorkPostController::class, 'private'])
-            ->whereNumber('workPost')
-            ->name('work-posts.private');
-
-        Route::patch('/work-posts/{workPost}/open', [AdminWorkPostController::class, 'open'])
-            ->whereNumber('workPost')
-            ->name('work-posts.open');
-
-        /*
-        |--------------------------------------------------------------------------
-        | 通報管理
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/reports', [AdminReportController::class, 'index'])
-            ->name('reports.index');
-
-        Route::get('/reports/{report}', [AdminReportController::class, 'show'])
-            ->whereNumber('report')
-            ->name('reports.show');
-
-        Route::patch('/reports/{report}/in-progress', [AdminReportController::class, 'inProgress'])
-            ->whereNumber('report')
-            ->name('reports.in-progress');
-
-        Route::patch('/reports/{report}/close', [AdminReportController::class, 'close'])
-            ->whereNumber('report')
-            ->name('reports.close');
-
-        /*
-        |--------------------------------------------------------------------------
-        | DB閲覧
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/database', [AdminDatabaseController::class, 'index'])
-            ->name('database.index');
-
-        Route::get('/database/{table}', [AdminDatabaseController::class, 'show'])
-            ->where('table', '[A-Za-z0-9_]+')
-            ->name('database.show');
-
-        /*
-        |--------------------------------------------------------------------------
-        | ログ閲覧
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/logs', [AdminLogController::class, 'index'])
-            ->name('logs.index');
-
-        Route::get('/logs/{file}', [AdminLogController::class, 'show'])
-            ->where('file', 'laravel(\-\d{4}\-\d{2}\-\d{2})?\.log')
-            ->name('logs.show');
-
-
-        Route::get('/trainings', [AdminTrainingController::class, 'index'])->name('trainings.index');
-
-        Route::get('/trainings/diary/create', [AdminTrainingController::class, 'createDiary'])->name('trainings.diary.create');
-        Route::post('/trainings/diary', [AdminTrainingController::class, 'storeDiary'])->name('trainings.diary.store');
-
-        Route::get('/trainings/challenge/create', [AdminTrainingController::class, 'createChallenge'])->name('trainings.challenge.create');
-        Route::post('/trainings/challenge', [AdminTrainingController::class, 'storeChallenge'])->name('trainings.challenge.store');
-
-
-
-        Route::get('/trainings/summary/create', [AdminTrainingController::class, 'createSummary'])
-            ->name('trainings.summary.create');
-
-        Route::post('/trainings/summary/{training}', [AdminTrainingController::class, 'storeSummary'])
-            ->name('trainings.summary.store');
-
-        Route::get('/trainings/verbalization/create', [AdminTrainingController::class, 'createVerbalization'])
-            ->name('trainings.verbalization.create');
-
-        Route::post('/trainings/verbalization/{training}', [AdminTrainingController::class, 'storeVerbalization'])
-            ->name('trainings.verbalization.store');
-
-        Route::get('/trainings/abstraction/create', [AdminTrainingController::class, 'createAbstraction'])
-            ->name('trainings.abstraction.create');
-
-        Route::post('/trainings/abstraction/{training}', [AdminTrainingController::class, 'storeAbstraction'])
-            ->name('trainings.abstraction.store');
-
-        Route::get('/trainings/concretization/create', [AdminTrainingController::class, 'createConcretization'])
-            ->name('trainings.concretization.create');
-
-        Route::post('/trainings/concretization/{training}', [AdminTrainingController::class, 'storeConcretization'])
-            ->name('trainings.concretization.store');
-
-
-
-        Route::get('/trainings/{training}', [AdminTrainingController::class, 'show'])->name('trainings.show');
-    });
 
 /*
 |--------------------------------------------------------------------------
@@ -477,14 +291,27 @@ Route::prefix('site')->group(function () {
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| サイトマップ
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/sitemap.xml', function () {
     $workPosts = \App\Models\WorkPost::query()
         ->where('status', '!=', \App\Models\WorkPost::STATUS_PRIVATE)
         ->latest('updated_at')
         ->get();
 
+    $articles = \App\Models\Article::query()
+        ->where('status', \App\Models\Article::STATUS_PUBLIC)
+        ->whereNotNull('published_at')
+        ->where('published_at', '<=', now())
+        ->latest('updated_at')
+        ->get();
+
     return response()
-        ->view('sitemap', compact('workPosts'))
+        ->view('sitemap', compact('workPosts', 'articles'))
         ->header('Content-Type', 'application/xml');
 })->name('sitemap');
 
@@ -505,3 +332,10 @@ require __DIR__ . '/auth.php';
 
 require __DIR__ . '/articles.php';
 require __DIR__ . '/admin_articles.php';
+/*
+|--------------------------------------------------------------------------
+| 管理者ルート
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__ . '/admin.php';

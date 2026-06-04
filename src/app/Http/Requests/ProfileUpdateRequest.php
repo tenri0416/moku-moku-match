@@ -25,6 +25,7 @@ class ProfileUpdateRequest extends FormRequest
             'work_style' => ['nullable', 'string'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'prefecture_id' => ['nullable', 'integer', 'exists:prefectures,id'],
+            'bio' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
