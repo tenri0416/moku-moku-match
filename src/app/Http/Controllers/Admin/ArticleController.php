@@ -13,6 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use App\Services\ArticleSeoKeywordSuggestionService;
+
 
 class ArticleController extends Controller
 {
@@ -136,7 +138,10 @@ class ArticleController extends Controller
     /**
      * 記事詳細
      */
-    public function show(Article $article): View
+    /**
+     * 記事詳細
+     */
+    public function show(Article $article, ArticleSeoKeywordSuggestionService $seoKeywordSuggestionService): View
     {
         ApiActionLogger::info(
             'Admin\ArticleController::show',
@@ -150,9 +155,11 @@ class ArticleController extends Controller
             ]
         );
 
-        $article->load(['admin', 'prefecture']);
+        $article->load(['admin', 'prefecture', 'category', 'tags']);
 
-        return view('admin.articles.show', compact('article'));
+        $seoKeywordSuggestions = $seoKeywordSuggestionService->make($article);
+
+        return view('admin.articles.show', compact('article', 'seoKeywordSuggestions'));
     }
 
     /**

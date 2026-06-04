@@ -406,6 +406,92 @@
                 </div>
 
                 <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">
+                                検索確認キーワード候補
+                            </h3>
+                
+                            <p class="mt-2 text-sm leading-6 text-slate-600">
+                                Google検索で記事を確認するときに使いやすいキーワード候補です。
+                                上にあるほど確認しやすく、下にいくほど一般検索に近い候補です。
+                            </p>
+                        </div>
+                
+                        <span class="shrink-0 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                            SEO確認用
+                        </span>
+                    </div>
+                
+                    <div class="mt-5 space-y-3">
+                        @forelse (($seoKeywordSuggestions ?? []) as $index => $suggestion)
+                            @php
+                                $keyword = $suggestion['keyword'] ?? '';
+                                $googleSearchUrl = 'https://www.google.com/search?q=' . urlencode($keyword);
+                
+                                $strengthClass = match ($suggestion['strength'] ?? '') {
+                                    '高' => 'bg-emerald-50 text-emerald-700',
+                                    '中' => 'bg-amber-50 text-amber-700',
+                                    '低' => 'bg-slate-100 text-slate-600',
+                                    default => 'bg-slate-100 text-slate-600',
+                                };
+                            @endphp
+                
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-black text-white">
+                                                {{ $index + 1 }}
+                                            </span>
+                
+                                            <span class="text-sm font-bold text-slate-900">
+                                                {{ $suggestion['label'] ?? '検索候補' }}
+                                            </span>
+                
+                                            <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $strengthClass }}">
+                                                {{ $suggestion['strength'] ?? '-' }}
+                                            </span>
+                                        </div>
+                
+                                        <p class="mt-3 break-all rounded-xl bg-white px-3 py-2 text-sm font-bold leading-6 text-indigo-700 ring-1 ring-slate-200">
+                                            {{ $keyword }}
+                                        </p>
+                
+                                        <p class="mt-2 text-xs leading-5 text-slate-500">
+                                            {{ $suggestion['note'] ?? '' }}
+                                        </p>
+                                    </div>
+                
+                                    <a
+                                        href="{{ $googleSearchUrl }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-700"
+                                    >
+                                        検索
+                                    </a>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
+                                キーワード候補を作成できませんでした。
+                            </p>
+                        @endforelse
+                    </div>
+                
+                    <div class="mt-5 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-800">
+                        <p class="font-bold">
+                            注意
+                        </p>
+                        <p class="mt-1">
+                            ここに表示されるキーワードは、Google検索で確認しやすくするための候補です。
+                            検索結果への表示や上位表示を保証するものではありません。
+                            公開直後は、Google Search ConsoleのURL検査でインデックス状況を確認してください。
+                        </p>
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                     <h3 class="text-lg font-bold text-rose-700">
                         削除
                     </h3>
