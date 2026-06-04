@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AiUsageDashboardController;
 use App\Http\Controllers\Admin\ArticleViewController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
-use App\Http\Controllers\Admin\AdminTrainingController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminDatabaseController;
@@ -102,53 +101,6 @@ Route::prefix('admin')
         Route::get('/logs/{file}', [AdminLogController::class, 'show'])
             ->where('file', '.*')
             ->name('logs.show');
-
-        Route::get('/trainings', [AdminTrainingController::class, 'index'])
-            ->name('trainings.index');
-
-        Route::get('/trainings/diary/create', [AdminTrainingController::class, 'createDiary'])
-            ->name('trainings.diary.create');
-
-        Route::post('/trainings/diary', [AdminTrainingController::class, 'storeDiary'])
-            ->name('trainings.diary.store');
-
-        Route::get('/trainings/challenge/create', [AdminTrainingController::class, 'createChallenge'])
-            ->name('trainings.challenge.create');
-
-        Route::post('/trainings/challenge', [AdminTrainingController::class, 'storeChallenge'])
-            ->name('trainings.challenge.store');
-
-        Route::get('/trainings/summary/create', [AdminTrainingController::class, 'createSummary'])
-            ->name('trainings.summary.create');
-
-        Route::post('/trainings/summary/{training}', [AdminTrainingController::class, 'storeSummary'])
-            ->whereNumber('training')
-            ->name('trainings.summary.store');
-
-        Route::get('/trainings/verbalization/create', [AdminTrainingController::class, 'createVerbalization'])
-            ->name('trainings.verbalization.create');
-
-        Route::post('/trainings/verbalization/{training}', [AdminTrainingController::class, 'storeVerbalization'])
-            ->whereNumber('training')
-            ->name('trainings.verbalization.store');
-
-        Route::get('/trainings/abstraction/create', [AdminTrainingController::class, 'createAbstraction'])
-            ->name('trainings.abstraction.create');
-
-        Route::post('/trainings/abstraction/{training}', [AdminTrainingController::class, 'storeAbstraction'])
-            ->whereNumber('training')
-            ->name('trainings.abstraction.store');
-
-        Route::get('/trainings/concretization/create', [AdminTrainingController::class, 'createConcretization'])
-            ->name('trainings.concretization.create');
-
-        Route::post('/trainings/concretization/{training}', [AdminTrainingController::class, 'storeConcretization'])
-            ->whereNumber('training')
-            ->name('trainings.concretization.store');
-
-        Route::get('/trainings/{training}', [AdminTrainingController::class, 'show'])
-            ->whereNumber('training')
-            ->name('trainings.show');
 
         Route::get('/article-views', [ArticleViewController::class, 'index'])
             ->name('article-views.index');

@@ -221,6 +221,13 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/messages/latest', [MessageController::class, 'latestIndex'])
             ->name('messages.index.latest');
+
+
+        Route::post('/users/{user}/block', [BlockController::class, 'store'])
+            ->name('users.block');
+    
+        Route::delete('/users/{user}/block', [BlockController::class, 'destroy'])
+            ->name('users.unblock');
         
     });
 });

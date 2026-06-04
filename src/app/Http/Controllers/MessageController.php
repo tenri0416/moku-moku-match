@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Block;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\WorkPost;
-use App\Notifications\MessageReceivedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +19,7 @@ class MessageController extends Controller
     /**
      * 自分に関係するメッセージ一覧を表示する
      *
-     * 要件定義書に合わせて、messages は募集に紐づけず、
+     * messages は募集に紐づけず、
      * sender_id / receiver_id のみで会話相手ごとに一覧化する。
      */
     public function index(): View
@@ -36,7 +36,7 @@ class MessageController extends Controller
                 $query->where('sender_id', $loginUserId)
                     ->orWhere('receiver_id', $loginUserId);
             })
-            ->latest()
+            ->latest('id')
             ->get();
 
         $latestMessages = $allMessages
@@ -114,9 +114,6 @@ class MessageController extends Controller
 
     /**
      * 旧URL互換用
-     *
-     * 以前の /messages/{workPost}/{user} にアクセスされた場合も、
-     * 募集なしDM画面へ流す。
      */
     public function show(WorkPost $workPost, User $user): View
     {
@@ -125,9 +122,6 @@ class MessageController extends Controller
 
     /**
      * 旧URL互換用
-     *
-     * 以前の /messages/{workPost}/{user} へPOSTされた場合も、
-     * 募集なしDMとして保存する。
      */
     public function store(Request $request, WorkPost $workPost, User $user): RedirectResponse|JsonResponse
     {
@@ -136,9 +130,6 @@ class MessageController extends Controller
 
     /**
      * 旧URL互換用
-     *
-     * 以前の /messages/{workPost}/{user}/latest にアクセスされた場合も、
-     * 募集なしDMの新着取得として扱う。
      */
     public function latest(Request $request, WorkPost $workPost, User $user): JsonResponse
     {
@@ -156,6 +147,10 @@ class MessageController extends Controller
 
         // 自分自身とのメッセージ画面は開けない
         abort_if((int) $loginUser->id === (int) $user->id, 404);
+
+        $hasBlocked = $this->hasBlocked($loginUser, $user);
+        $isBlockedByTarget = $this->isBlockedBy($loginUser, $user);
+        $hasBlockRelation = $hasBlocked || $isBlockedByTarget;
 
         $messages = Message::query()
             ->with(['sender.profile', 'receiver.profile'])
@@ -179,6 +174,8 @@ class MessageController extends Controller
             ->update([
                 'read_at' => now(),
             ]);
+
+        // 過去仕様のメッセージ通知が残っている場合に備えて既読化する
         $this->markMessageNotificationsAsRead($loginUser, $user);
 
         $latestMessageId = $messages->last()?->id ?? 0;
@@ -223,6 +220,9 @@ class MessageController extends Controller
             'receivedMessagesCount' => $receivedMessagesCount,
             'sentMessagesCount' => $sentMessagesCount,
             'lastMessageAt' => $lastMessageAt,
+            'hasBlocked' => $hasBlocked,
+            'isBlockedByTarget' => $isBlockedByTarget,
+            'hasBlockRelation' => $hasBlockRelation,
         ]);
     }
 
@@ -231,10 +231,12 @@ class MessageController extends Controller
      */
     public function storeUser(Request $request, User $user): RedirectResponse|JsonResponse
     {
-        abort_unless(Auth::check(), 403);
+        $loginUser = $request->user();
+
+        abort_unless($loginUser, 403);
 
         // 自分自身には送れない
-        abort_if((int) Auth::id() === (int) $user->id, 403);
+        abort_if((int) $loginUser->id === (int) $user->id, 403);
 
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
@@ -243,17 +245,28 @@ class MessageController extends Controller
             'body.max' => 'メッセージは2000文字以内で入力してください。',
         ]);
 
+        $blockErrorResponse = $this->blockErrorResponseIfNeeded($request, $loginUser, $user);
+
+        if ($blockErrorResponse) {
+            return $blockErrorResponse;
+        }
+
         $message = Message::create([
-            'sender_id' => Auth::id(),
+            'sender_id' => $loginUser->id,
             'receiver_id' => $user->id,
             'body' => $validated['body'],
         ]);
 
         $message->load(['sender.profile', 'receiver.profile']);
 
-
         if ($request->expectsJson()) {
-            $senderProfile = $message->sender?->profile;
+            $sender = $message->sender;
+            $senderProfile = $sender?->profile;
+
+            $senderAvatarPath = $senderProfile?->avatar_path;
+            $senderAvatarUrl = $senderAvatarPath
+                ? asset('storage/' . ltrim($senderAvatarPath, '/'))
+                : asset('images/default-avatar.png');
 
             return response()->json([
                 'message' => [
@@ -261,11 +274,12 @@ class MessageController extends Controller
                     'body' => $message->body,
                     'sender_id' => $message->sender_id,
                     'sender_name' => $senderProfile?->display_name
-                        ?? $message->sender?->name
+                        ?? $sender?->name
                         ?? 'ユーザー',
+                    'sender_avatar_url' => $senderAvatarUrl,
                     'is_mine' => true,
-                    'created_at' => $message->created_at->format('Y/m/d H:i'),
-                    'created_time' => $message->created_at->format('H:i'),
+                    'created_at' => optional($message->created_at)->format('Y/m/d H:i') ?? '',
+                    'created_time' => optional($message->created_at)->format('H:i') ?? '',
                     'read_label' => $message->read_at ? '既読' : '未読',
                 ],
             ]);
@@ -326,8 +340,9 @@ class MessageController extends Controller
                 ->update([
                     'read_at' => now(),
                 ]);
-            // 開いている会話の新着通知も既読にする
-        $this->markMessageNotificationsAsRead($loginUser, $user);
+
+            // 過去仕様のメッセージ通知が残っている場合に備えて既読化する
+            $this->markMessageNotificationsAsRead($loginUser, $user);
         }
 
         return response()->json([
@@ -365,7 +380,9 @@ class MessageController extends Controller
      */
     public function reply(Request $request, WorkPost $workPost): RedirectResponse
     {
-        abort_unless(Auth::check(), 403);
+        $loginUser = $request->user();
+
+        abort_unless($loginUser, 403);
 
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
@@ -377,25 +394,127 @@ class MessageController extends Controller
             'receiver_id.exists' => '送信先ユーザーが存在しません。',
         ]);
 
-        abort_if((int) $validated['receiver_id'] === (int) Auth::id(), 403);
+        abort_if((int) $validated['receiver_id'] === (int) $loginUser->id, 403);
 
         $receiver = User::findOrFail($validated['receiver_id']);
 
-        $message = Message::create([
-            'sender_id' => Auth::id(),
+        if ($this->hasBlocked($loginUser, $receiver)) {
+            return back()->with(
+                'error',
+                'このユーザーをブロック中のため、メッセージを送信できません。プロフィール画面からブロックを解除してください。'
+            );
+        }
+
+        if ($this->isBlockedBy($loginUser, $receiver)) {
+            return back()->with(
+                'error',
+                '現在、このユーザーにはメッセージを送信できません。'
+            );
+        }
+
+        Message::create([
+            'sender_id' => $loginUser->id,
             'receiver_id' => $receiver->id,
             'body' => $validated['body'],
         ]);
 
-        if (class_exists(MessageReceivedNotification::class)) {
-            $message->receiver->notify(
-                new MessageReceivedNotification($message)
-            );
-        }
-
         return redirect()
             ->route('messages.users.show', $receiver)
             ->with('success', '返信しました。');
+    }
+
+    /**
+     * メッセージ一覧の最新状態を取得する
+     */
+    public function latestIndex(Request $request): JsonResponse
+    {
+        $loginUser = $request->user();
+
+        if (! $loginUser) {
+            return response()->json([
+                'items' => [],
+                'total_unread_count' => 0,
+                'error' => 'ログインが必要です。',
+            ], 401);
+        }
+
+        $loginUserId = $loginUser->id;
+
+        $allMessages = Message::query()
+            ->with(['sender.profile', 'receiver.profile'])
+            ->where(function ($query) use ($loginUserId) {
+                $query->where('sender_id', $loginUserId)
+                    ->orWhere('receiver_id', $loginUserId);
+            })
+            ->latest('id')
+            ->get();
+
+        $latestMessages = $allMessages
+            ->groupBy(function (Message $message) use ($loginUserId) {
+                return (int) $message->sender_id === (int) $loginUserId
+                    ? $message->receiver_id
+                    : $message->sender_id;
+            })
+            ->map(function (Collection $group) {
+                return $group->first();
+            })
+            ->values();
+
+        $unreadCountsByPartner = Message::query()
+            ->selectRaw('sender_id, COUNT(*) as unread_count')
+            ->where('receiver_id', $loginUserId)
+            ->whereNull('read_at')
+            ->groupBy('sender_id')
+            ->pluck('unread_count', 'sender_id');
+
+        $items = $latestMessages
+            ->map(function (Message $message) use ($loginUserId, $unreadCountsByPartner) {
+                $partner = (int) $message->sender_id === (int) $loginUserId
+                    ? $message->receiver
+                    : $message->sender;
+
+                if (! $partner) {
+                    return null;
+                }
+
+                $profile = $partner->profile;
+
+                $avatarPath = $profile?->avatar_path;
+                $avatarUrl = $avatarPath
+                    ? asset('storage/' . ltrim($avatarPath, '/'))
+                    : asset('images/default-avatar.png');
+
+                $displayName = $profile?->display_name
+                    ?? $partner->name
+                    ?? 'ユーザー';
+
+                $jobType = $profile?->job_type
+                    ?? '職種未設定';
+
+                $isMine = (int) $message->sender_id === (int) $loginUserId;
+
+                return [
+                    'partner_id' => $partner->id,
+                    'show_url' => route('messages.users.show', $partner),
+                    'latest_message_id' => $message->id,
+                    'display_name' => $displayName,
+                    'job_type' => $jobType,
+                    'avatar_url' => $avatarUrl,
+                    'unread_count' => (int) ($unreadCountsByPartner[$partner->id] ?? 0),
+                    'is_mine' => $isMine,
+                    'last_body' => Str::limit($message->body, 80),
+                    'pc_time' => optional($message->created_at)->format('Y/m/d H:i') ?? '',
+                    'sp_time' => $this->formatSpMessageTime($message),
+                ];
+            })
+            ->filter()
+            ->values();
+
+        return response()->json([
+            'items' => $items,
+            'total_unread_count' => $items->sum('unread_count'),
+            'latest_message_id' => $latestMessages->max('id') ?? 0,
+        ]);
     }
 
     /**
@@ -447,102 +566,67 @@ class MessageController extends Controller
     }
 
     /**
-     * メッセージ一覧の最新状態を取得する
+     * 自分が対象ユーザーをブロックしているか
      */
-    public function latestIndex(Request $request): JsonResponse
+    private function hasBlocked(User $loginUser, User $targetUser): bool
     {
-        $loginUser = $request->user();
-
-        if (! $loginUser) {
-            return response()->json([
-                'items' => [],
-                'total_unread_count' => 0,
-                'error' => 'ログインが必要です。',
-            ], 401);
-        }
-
-        $loginUserId = $loginUser->id;
-
-        $allMessages = Message::query()
-            ->with(['sender.profile', 'receiver.profile'])
-            ->where(function ($query) use ($loginUserId) {
-                $query->where('sender_id', $loginUserId)
-                    ->orWhere('receiver_id', $loginUserId);
-            })
-            ->latest('id')
-            ->get();
-
-        $latestMessages = $allMessages
-            ->groupBy(function (Message $message) use ($loginUserId) {
-                return (int) $message->sender_id === (int) $loginUserId
-                    ? $message->receiver_id
-                    : $message->sender_id;
-            })
-            ->map(function ($group) {
-                return $group->first();
-            })
-            ->values();
-
-        $unreadCountsByPartner = Message::query()
-            ->selectRaw('sender_id, COUNT(*) as unread_count')
-            ->where('receiver_id', $loginUserId)
-            ->whereNull('read_at')
-            ->groupBy('sender_id')
-            ->pluck('unread_count', 'sender_id');
-
-        $items = $latestMessages
-            ->map(function (Message $message) use ($loginUserId, $unreadCountsByPartner) {
-                $partner = (int) $message->sender_id === (int) $loginUserId
-                    ? $message->receiver
-                    : $message->sender;
-
-                if (! $partner) {
-                    return null;
-                }
-
-                $profile = $partner->profile;
-
-                $avatarPath = $profile?->avatar_path;
-                $avatarUrl = $avatarPath
-                    ? asset('storage/' . ltrim($avatarPath, '/'))
-                    : asset('images/default-avatar.png');
-
-                $displayName = $profile?->display_name
-                    ?? $partner->name
-                    ?? 'ユーザー';
-
-                $jobType = $profile?->job_type
-                    ?? '職種未設定';
-
-                $isMine = (int) $message->sender_id === (int) $loginUserId;
-
-                return [
-                    'partner_id' => $partner->id,
-                    'show_url' => route('messages.users.show', $partner),
-                    'latest_message_id' => $message->id,
-                    'display_name' => $displayName,
-                    'job_type' => $jobType,
-                    'avatar_url' => $avatarUrl,
-                    'unread_count' => (int) ($unreadCountsByPartner[$partner->id] ?? 0),
-                    'is_mine' => $isMine,
-                    'last_body' => \Illuminate\Support\Str::limit($message->body, 80),
-                    'pc_time' => optional($message->created_at)->format('Y/m/d H:i') ?? '',
-                    'sp_time' => optional($message->created_at)->format('H:i') ?? '',
-                ];
-            })
-            ->filter()
-            ->values();
-
-        return response()->json([
-            'items' => $items,
-            'total_unread_count' => $items->sum('unread_count'),
-            'latest_message_id' => $latestMessages->max('id') ?? 0,
-        ]);
+        return Block::query()
+            ->where('blocker_id', $loginUser->id)
+            ->where('blocked_user_id', $targetUser->id)
+            ->exists();
     }
 
+    /**
+     * 対象ユーザーから自分がブロックされているか
+     */
+    private function isBlockedBy(User $loginUser, User $targetUser): bool
+    {
+        return Block::query()
+            ->where('blocker_id', $targetUser->id)
+            ->where('blocked_user_id', $loginUser->id)
+            ->exists();
+    }
+
+    /**
+     * ブロック関係がある場合の送信エラーを返す
+     */
+    private function blockErrorResponseIfNeeded(
+        Request $request,
+        User $loginUser,
+        User $targetUser
+    ): RedirectResponse|JsonResponse|null {
+        if ($this->hasBlocked($loginUser, $targetUser)) {
+            $message = 'このユーザーをブロック中のため、メッセージを送信できません。プロフィール画面からブロックを解除してください。';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], 403);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        if ($this->isBlockedBy($loginUser, $targetUser)) {
+            $message = '現在、このユーザーにはメッセージを送信できません。';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], 403);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        return null;
+    }
 
     /**
      * 対象ユーザーとのメッセージ通知を既読にする
+     *
+     * 現在はメッセージ通知を作成しない方針だが、
+     * 過去データが残っている場合に備えて既読化する。
      */
     private function markMessageNotificationsAsRead(User $loginUser, User $partnerUser): void
     {

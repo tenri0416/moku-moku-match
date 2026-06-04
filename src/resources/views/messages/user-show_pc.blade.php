@@ -1,10 +1,26 @@
 {{-- PC版：resources/views/messages/user-show_pc.blade.php --}}
+@php
+    $hasBlocked = $hasBlocked ?? false;
+    $isBlockedByTarget = $isBlockedByTarget ?? false;
+    $hasBlockRelation = $hasBlockRelation ?? ($hasBlocked || $isBlockedByTarget);
+
+    $profileUrl = Route::has('users.show')
+        ? route('users.show', $user)
+        : '#';
+@endphp
+
 <div class="hidden md:block min-h-screen bg-[#F8FAFF] text-[#071433]">
   <div class="mx-auto w-full max-w-[1180px] px-8 py-10">
 
       @if (session('success'))
           <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">
               {{ session('success') }}
+          </div>
+      @endif
+
+      @if (session('error'))
+          <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-[15px] font-bold text-red-700">
+              {{ session('error') }}
           </div>
       @endif
 
@@ -21,13 +37,16 @@
               <section class="mb-6 rounded-[18px] border border-[#DDE6F5] bg-white px-6 py-5 shadow-[0_8px_22px_rgba(15,43,95,0.06)]">
                   <div class="flex items-center justify-between gap-6">
                       <div class="flex min-w-0 items-center gap-4">
-                          <div class="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full bg-blue-50">
+                          <a
+                              href="{{ $profileUrl }}"
+                              class="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full bg-blue-50 transition hover:opacity-80"
+                          >
                               <img
                                   src="{{ $partnerAvatarUrl }}"
                                   alt="{{ $partnerDisplayName }}のプロフィール画像"
                                   class="h-full w-full object-cover"
                               >
-                          </div>
+                          </a>
 
                           <div class="min-w-0">
                               <p class="text-[13px] font-black tracking-[0.2em] text-[#0D4FE8]">
@@ -41,11 +60,21 @@
                               <p class="mt-1 truncate text-[15px] font-bold text-[#46516B]">
                                   {{ $partnerJobType }}
                               </p>
+
+                              @if ($hasBlocked)
+                                  <p class="mt-3 inline-flex rounded-full bg-rose-50 px-3 py-1 text-[13px] font-black text-rose-700">
+                                      このユーザーをブロック中です
+                                  </p>
+                              @elseif ($isBlockedByTarget)
+                                  <p class="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-[13px] font-black text-slate-600">
+                                      現在、このユーザーにはメッセージを送信できません
+                                  </p>
+                              @endif
                           </div>
                       </div>
 
                       <div class="flex shrink-0 gap-3">
-                          <a href="{{ route('users.show', $user) }}"
+                          <a href="{{ $profileUrl }}"
                               class="flex h-[44px] items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white px-5 text-[14px] font-black text-[#071433]">
                               プロフィールへ戻る
                           </a>
@@ -61,7 +90,7 @@
               {{-- メッセージエリア --}}
               <section class="overflow-hidden rounded-[18px] border border-[#DDE6F5] bg-white shadow-[0_8px_22px_rgba(15,43,95,0.06)]">
                   <div
-                      id="message-list"
+                      id="message-list-pc"
                       class="h-[560px] space-y-5 overflow-y-auto px-6 py-6"
                       data-message-list
                   >
@@ -78,7 +107,8 @@
                                   : asset('images/default-avatar.png');
                           @endphp
 
-<div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">                              <div class="flex max-w-[72%] gap-3 {{ $isMine ? 'flex-row-reverse' : '' }}">
+                          <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">
+                              <div class="flex max-w-[72%] gap-3 {{ $isMine ? 'flex-row-reverse' : '' }}">
                                   @unless ($isMine)
                                       <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-blue-50">
                                           <img
@@ -96,18 +126,24 @@
                                           </span>
 
                                           <span class="text-[12px] font-bold text-[#94A3B8]">
-                                              {{ $message->created_at->format('Y/m/d H:i') }}
+                                              {{ optional($message->created_at)->format('Y/m/d H:i') }}
                                           </span>
                                       </div>
 
                                       <div class="{{ $isMine ? 'rounded-br-[6px] bg-[#0D4FE8] text-white' : 'rounded-bl-[6px] bg-[#F1F5F9] text-[#071433]' }} rounded-[18px] px-5 py-3 text-[15px] font-bold leading-7 shadow-sm">
                                           {!! nl2br(e($message->body)) !!}
                                       </div>
+
+                                      @if ($isMine)
+                                          <div class="mt-1 text-right text-[12px] font-bold text-[#94A3B8]">
+                                              {{ $message->read_at ? '既読' : '未読' }}
+                                          </div>
+                                      @endif
                                   </div>
                               </div>
                           </div>
                       @empty
-                          <div class="flex h-full items-center justify-center text-center">
+                          <div class="flex h-full items-center justify-center text-center" data-empty-message>
                               <div>
                                   <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-[34px]">
                                       💬
@@ -127,45 +163,100 @@
 
                   {{-- 送信フォーム --}}
                   <div class="border-t border-[#DDE6F5] bg-[#FBFCFF] px-6 py-5">
-                      <form
-                          method="POST"
-                          action="{{ route('messages.users.store', $user) }}"
-                          id="message-form"
-                          data-message-form
-                      >
-                          @csrf
+                      @if ($hasBlocked)
+                          <div class="rounded-[14px] border border-rose-200 bg-rose-50 px-5 py-5">
+                              <p class="text-[15px] font-black text-rose-700">
+                                  このユーザーをブロック中のため、メッセージを送信できません。
+                              </p>
 
-                          <label for="body-user-pc" class="mb-2 block text-[15px] font-black text-[#071433]">
-                              メッセージ本文
-                          </label>
+                              <p class="mt-2 text-[14px] font-bold leading-6 text-rose-600">
+                                  メッセージを再開する場合は、プロフィール画面からブロックを解除してください。
+                              </p>
 
-                          <textarea
-                              id="body-user-pc"
-                              name="body"
-                              rows="4"
-                              required
-                              maxlength="2000"
-                              placeholder="メッセージを入力してください"
-                              class="block w-full resize-none rounded-[14px] border border-[#CBD7EA] bg-white px-4 py-3 text-[15px] font-bold leading-7 text-[#071433] outline-none placeholder:text-[#94A3B8] focus:border-[#0D4FE8] focus:ring-4 focus:ring-blue-100"
-                              data-message-body
-                          >{{ old('body') }}</textarea>
+                              <div class="mt-4 flex items-center justify-end gap-3">
+                                  <a href="{{ route('messages.index') }}"
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white px-6 text-[15px] font-black text-[#071433]">
+                                      メッセージ一覧へ戻る
+                                  </a>
 
-                          <div class="mt-4 flex items-center justify-end gap-3">
-                              <a href="{{ route('messages.index') }}"
-                                  class="flex h-[48px] items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white px-6 text-[15px] font-black text-[#071433]">
-                                  メッセージ一覧へ戻る
-                              </a>
+                                  <a href="{{ $profileUrl }}"
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] bg-white px-6 text-[15px] font-black text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50">
+                                      ブロックを解除する
+                                  </a>
 
-                              <button
-                                  type="submit"
-                                  id="message-submit-button"
-                                  class="flex h-[48px] items-center justify-center rounded-[12px] bg-[#0D4FE8] px-8 text-[15px] font-black text-white shadow-[0_8px_16px_rgba(13,79,232,0.22)] disabled:cursor-not-allowed disabled:opacity-60"
-                                  data-message-submit
-                              >
-                                  送信する
-                              </button>
+                                  <button
+                                      type="button"
+                                      disabled
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] bg-slate-300 px-8 text-[15px] font-black text-slate-600 cursor-not-allowed"
+                                  >
+                                      ブロック中
+                                  </button>
+                              </div>
                           </div>
-                      </form>
+                      @elseif ($isBlockedByTarget)
+                          <div class="rounded-[14px] border border-slate-200 bg-slate-100 px-5 py-5">
+                              <p class="text-[15px] font-black text-slate-700">
+                                  現在、このユーザーにはメッセージを送信できません。
+                              </p>
+
+                              <p class="mt-2 text-[14px] font-bold leading-6 text-slate-600">
+                                  過去のメッセージは確認できますが、新しいメッセージは送信できません。
+                              </p>
+
+                              <div class="mt-4 flex items-center justify-end gap-3">
+                                  <a href="{{ route('messages.index') }}"
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white px-6 text-[15px] font-black text-[#071433]">
+                                      メッセージ一覧へ戻る
+                                  </a>
+
+                                  <button
+                                      type="button"
+                                      disabled
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] bg-slate-300 px-8 text-[15px] font-black text-slate-600 cursor-not-allowed"
+                                  >
+                                      送信できません
+                                  </button>
+                              </div>
+                          </div>
+                      @else
+                          <form
+                              method="POST"
+                              action="{{ route('messages.users.store', $user) }}"
+                              data-message-form
+                          >
+                              @csrf
+
+                              <label for="body-user-pc" class="mb-2 block text-[15px] font-black text-[#071433]">
+                                  メッセージ本文
+                              </label>
+
+                              <textarea
+                                  id="body-user-pc"
+                                  name="body"
+                                  rows="4"
+                                  required
+                                  maxlength="2000"
+                                  placeholder="メッセージを入力してください"
+                                  class="block w-full resize-none rounded-[14px] border border-[#CBD7EA] bg-white px-4 py-3 text-[15px] font-bold leading-7 text-[#071433] outline-none placeholder:text-[#94A3B8] focus:border-[#0D4FE8] focus:ring-4 focus:ring-blue-100"
+                                  data-message-body
+                              >{{ old('body') }}</textarea>
+
+                              <div class="mt-4 flex items-center justify-end gap-3">
+                                  <a href="{{ route('messages.index') }}"
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white px-6 text-[15px] font-black text-[#071433]">
+                                      メッセージ一覧へ戻る
+                                  </a>
+
+                                  <button
+                                      type="submit"
+                                      class="flex h-[48px] items-center justify-center rounded-[12px] bg-[#0D4FE8] px-8 text-[15px] font-black text-white shadow-[0_8px_16px_rgba(13,79,232,0.22)] disabled:cursor-not-allowed disabled:opacity-60"
+                                      data-message-submit
+                                  >
+                                      送信する
+                                  </button>
+                              </div>
+                          </form>
+                      @endif
                   </div>
               </section>
           </main>

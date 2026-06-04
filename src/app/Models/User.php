@@ -80,6 +80,39 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Block::class, 'blocker_id');
     }
 
+    public function blockedBy()
+    {
+        return $this->hasMany(Block::class, 'blocked_user_id');
+    }
+
+    /**
+     * 自分が対象ユーザーをブロックしているか
+     */
+    public function hasBlocked(User $user): bool
+    {
+        return Block::where('blocker_id', $this->id)
+            ->where('blocked_user_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * 対象ユーザーから自分がブロックされているか
+     */
+    public function isBlockedBy(User $user): bool
+    {
+        return Block::where('blocker_id', $user->id)
+            ->where('blocked_user_id', $this->id)
+            ->exists();
+    }
+
+    /**
+     * どちらかがブロックしているか
+     */
+    public function hasBlockRelationWith(User $user): bool
+    {
+        return $this->hasBlocked($user) || $this->isBlockedBy($user);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
