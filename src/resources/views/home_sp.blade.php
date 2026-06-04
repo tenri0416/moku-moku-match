@@ -135,10 +135,63 @@
             </div>
 
             @if ($homeWorkPosts->hasPages())
-                <div class="mt-5">
-                    {{ $homeWorkPosts->links() }}
+            <div class="mt-5 rounded-[16px] border border-[#DDE6F5] bg-white px-4 py-4 shadow-[0_8px_22px_rgba(15,43,95,0.06)]">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[13px] font-bold text-[#64748B]">
+                            募集一覧ページ
+                        </p>
+        
+                        <p class="mt-1 text-[18px] font-black text-[#071433]">
+                            現在 {{ $homeWorkPosts->currentPage() }} / {{ $homeWorkPosts->lastPage() }} ページ
+                        </p>
+                    </div>
+        
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[15px] font-black text-[#0D4FE8]">
+                        {{ $homeWorkPosts->currentPage() }}
+                    </div>
                 </div>
-            @endif
+        
+                <div class="mb-4 h-2 overflow-hidden rounded-full bg-[#E5ECF7]">
+                    <div
+                        class="h-full rounded-full bg-[#0D4FE8]"
+                        style="width: {{ max(5, ($homeWorkPosts->currentPage() / max(1, $homeWorkPosts->lastPage())) * 100) }}%;"
+                    ></div>
+                </div>
+        
+                <div class="flex items-center justify-between gap-3">
+                    @if ($homeWorkPosts->onFirstPage())
+                        <span class="flex h-[46px] flex-1 items-center justify-center rounded-[12px] bg-slate-100 text-[15px] font-black text-slate-400">
+                            前へ
+                        </span>
+                    @else
+                        <a
+                            href="{{ $homeWorkPosts->previousPageUrl() }}"
+                            class="flex h-[46px] flex-1 items-center justify-center rounded-[12px] border border-[#CBD7EA] bg-white text-[15px] font-black text-[#071433]"
+                        >
+                            前へ
+                        </a>
+                    @endif
+        
+                    <span class="flex h-[46px] min-w-[96px] items-center justify-center rounded-[12px] bg-[#F4F8FF] px-3 text-[15px] font-black text-[#0D4FE8]">
+                        {{ $homeWorkPosts->currentPage() }} / {{ $homeWorkPosts->lastPage() }}
+                    </span>
+        
+                    @if ($homeWorkPosts->hasMorePages())
+                        <a
+                            href="{{ $homeWorkPosts->nextPageUrl() }}"
+                            class="flex h-[46px] flex-1 items-center justify-center rounded-[12px] bg-[#0D4FE8] text-[15px] font-black text-white shadow-[0_10px_18px_rgba(13,79,232,0.24)]"
+                        >
+                            次へ
+                        </a>
+                    @else
+                        <span class="flex h-[46px] flex-1 items-center justify-center rounded-[12px] bg-slate-100 text-[15px] font-black text-slate-400">
+                            次へ
+                        </span>
+                    @endif
+                </div>
+            </div>
+        @endif
         </section>
         </section>
 

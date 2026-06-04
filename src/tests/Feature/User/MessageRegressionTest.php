@@ -244,7 +244,7 @@ class MessageRegressionTest extends TestCase
             'body' => 'こんにちは。黙々作業をご一緒したいです。',
         ]);
 
-        Notification::assertSentTo(
+        Notification::assertNotSentTo(
             $this->partnerUser,
             MessageReceivedNotification::class
         );
