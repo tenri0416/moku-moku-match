@@ -78,8 +78,7 @@
                                   : asset('images/default-avatar.png');
                           @endphp
 
-                          <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
-                              <div class="flex max-w-[72%] gap-3 {{ $isMine ? 'flex-row-reverse' : '' }}">
+<div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">                              <div class="flex max-w-[72%] gap-3 {{ $isMine ? 'flex-row-reverse' : '' }}">
                                   @unless ($isMine)
                                       <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-blue-50">
                                           <img
