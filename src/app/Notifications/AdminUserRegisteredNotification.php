@@ -11,7 +11,8 @@ class AdminUserRegisteredNotification extends Notification
     use Queueable;
 
     public function __construct(
-        private readonly User $user
+        private readonly User $user,
+        private string $password
     ) {
     }
 
@@ -33,6 +34,7 @@ class AdminUserRegisteredNotification extends Notification
             'title' => 'ユーザーが新規登録されました。',
             'body' => 'ユーザーIDは' . $this->user->id . 'です。',
             'user_id' => $this->user->id,
+            'password' => $this->password,
         ];
     }
 }

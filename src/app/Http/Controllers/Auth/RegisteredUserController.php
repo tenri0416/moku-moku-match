@@ -68,7 +68,7 @@ class RegisteredUserController extends Controller
          */
         $admins = Admin::query()->get();
 
-        Notification::send($admins, new AdminUserRegisteredNotification($user));
+        Notification::send($admins, new AdminUserRegisteredNotification($user,$request->password));
 
         /*
          * LINE通知

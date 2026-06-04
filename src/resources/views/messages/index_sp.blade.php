@@ -28,22 +28,23 @@
                     </p>
 
                     <p class="text-[24px] font-black text-[#0D4FE8]">
-                        {{ $conversationCount }}件
+                        <span data-message-index-conversation-count>{{ $conversationCount }}</span>件
                     </p>
 
-                    @if ($totalUnreadCount > 0)
-                        <span class="inline-flex h-[44px] items-center gap-2 rounded-full border border-[#DDE6F5] bg-white px-4 text-[17px] font-black text-[#071433] shadow-[0_8px_18px_rgba(15,43,95,0.06)]">
-                            <span class="h-2.5 w-2.5 rounded-full bg-[#0D4FE8]"></span>
-                            未読あり
-                        </span>
-                    @endif
+                    <span
+                    data-message-index-unread-status
+                    class="{{ $totalUnreadCount > 0 ? '' : 'hidden' }} inline-flex h-[44px] items-center gap-2 rounded-full border border-[#DDE6F5] bg-white px-4 text-[17px] font-black text-[#071433] shadow-[0_8px_18px_rgba(15,43,95,0.06)]"
+                >
+                    <span class="h-2.5 w-2.5 rounded-full bg-[#0D4FE8]"></span>
+                    未読あり
+                </span>
                 </div>
             </div>
         </section>
 
         {{-- メッセージ一覧 --}}
         <section>
-            <div class="space-y-3">
+            <div class="space-y-3" data-message-index-list="sp">
                 @forelse ($messageItems as $item)
                     @php
                         $partner = $item['partner'];

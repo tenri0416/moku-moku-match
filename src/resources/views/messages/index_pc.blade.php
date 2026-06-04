@@ -34,11 +34,11 @@
                       </h2>
 
                       <p class="text-[17px] font-bold text-[#071433]">
-                          {{ $conversationCount }}件
+                        <span data-message-index-conversation-count>{{ $conversationCount }}</span>件
                       </p>
                   </div>
 
-                  <div class="space-y-3">
+                  <div class="space-y-3" data-message-index-list="pc">
                       @forelse ($messageItems as $item)
                           @php
                               $partner = $item['partner'];
@@ -184,7 +184,7 @@
                           </div>
                           <p class="mt-3 text-[14px] font-black text-[#46516B]">未読</p>
                           <p class="mt-1 text-[28px] font-black leading-none text-[#0D4FE8]">
-                              {{ $totalUnreadCount }}<span class="text-[15px]">件</span>
+                            <span data-message-index-total-unread-count>{{ $totalUnreadCount }}</span><span class="text-[15px]">件</span>
                           </p>
                       </div>
 
@@ -193,8 +193,8 @@
                               💬
                           </div>
                           <p class="mt-3 text-[14px] font-black text-[#46516B]">会話</p>
-                          <p class="mt-1 text-[28px] font-black leading-none text-[#0D4FE8]">
-                              {{ $conversationCount }}<span class="text-[15px]">件</span>
+                          <p class="mt-1 text-[28px] font-black leading-none text-[#0D4FE8]"data-message-index-conversation-count>
+                              {{ $conversationCount }}<span class="text-[15px]" data-message-index-conversation-count>件</span>
                           </p>
                       </div>
 
