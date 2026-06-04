@@ -121,29 +121,51 @@
               <section class="mt-4 rounded-[18px] border border-[#DDE6F5] bg-white p-5 shadow-[0_12px_30px_rgba(15,43,95,0.06)]">
                   <h2 class="mb-4 flex items-center gap-2 text-[20px] font-black text-[#071433]">
                       <span>✨</span>
-                      次におすすめのトレーニング
-                  </h2>
-                  <div class="grid grid-cols-2 gap-5">
-                      <a href="{{ route('trainings.index') }}" class="group flex items-center gap-5 rounded-[16px] border border-[#DDE6F5] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                          <div class="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-orange-100 text-[38px]">🔥</div>
-                          <div class="min-w-0 flex-1">
-                              <h3 class="text-[16px] font-black text-[#071433]">今日のチャレンジ</h3>
-                              <p class="mt-1 text-[14px] font-bold leading-relaxed text-[#46516B]">挑戦・改善したことを振り返り、成長の一歩を記録しましょう。</p>
-                              <span class="mt-3 inline-flex w-[160px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
+                      @if (in_array($type, ['summary', 'verbalization', 'abstraction', 'concretization'], true))
+                      <section class="mt-6 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-5 shadow-sm">
+                          <div class="mb-4 flex items-center justify-between gap-3">
+                              <div>
+                                  <h2 class="text-lg font-bold text-emerald-900">
+                                      模範解答例
+                                  </h2>
+                                  <p class="mt-1 text-sm text-emerald-700">
+                                      回答は1つだけではありません。考え方の参考として確認してください。
+                                  </p>
+                              </div>
+                              <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">
+                                  参考
+                              </span>
                           </div>
-                          <span class="text-[34px] font-light text-[#334155]">›</span>
-                      </a>
-
-                      <a href="{{ route('trainings.index') }}" class="group flex items-center gap-5 rounded-[16px] border border-[#DDE6F5] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                          <div class="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-purple-100 text-[38px]">📖</div>
-                          <div class="min-w-0 flex-1">
-                              <h3 class="text-[16px] font-black text-[#071433]">要約力トレーニング</h3>
-                              <p class="mt-1 text-[14px] font-bold leading-relaxed text-[#46516B]">文章を要約してまとめる力をさらに伸ばしましょう。</p>
-                              <span class="mt-3 inline-flex w-[160px] items-center justify-center rounded-lg bg-[#0D4FE8] px-4 py-2 text-[15px] font-black text-white shadow-[0_6px_12px_rgba(13,79,232,0.22)]">開始する ▶</span>
-                          </div>
-                          <span class="text-[34px] font-light text-[#334155]">›</span>
-                      </a>
-                  </div>
+                  
+                          @if (filled($training->answer_point))
+                              <div class="mb-4 rounded-2xl bg-white p-4">
+                                  <p class="text-xs font-bold text-emerald-600">
+                                      回答のポイント
+                                  </p>
+                                  <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-800">
+                                      {{ $training->answer_point }}
+                                  </p>
+                              </div>
+                          @endif
+                  
+                          @if (filled($training->model_answer))
+                              <div class="rounded-2xl bg-white p-4">
+                                  <p class="text-xs font-bold text-emerald-600">
+                                      模範解答例
+                                  </p>
+                                  <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-800">
+                                      {{ $training->model_answer }}
+                                  </p>
+                              </div>
+                          @else
+                              <div class="rounded-2xl bg-white p-4">
+                                  <p class="text-sm text-slate-600">
+                                      この問題には模範解答例が保存されていません。
+                                  </p>
+                              </div>
+                          @endif
+                      </section>
+                  @endif
               </section>
 
               <div class="mt-4 grid grid-cols-3 gap-5">

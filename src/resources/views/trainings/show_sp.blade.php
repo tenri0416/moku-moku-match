@@ -304,60 +304,48 @@
 
       {{-- 次におすすめ --}}
       <section class="mb-4 overflow-hidden rounded-[16px] border border-[#DDE6F5] bg-white px-3 py-4 shadow-[0_8px_22px_rgba(15,43,95,0.06)]">
-          <h2 class="mb-3 flex items-center gap-2 text-[18px] font-black text-[#071433]">
-              <span>✨</span>
-              次におすすめ
-          </h2>
-
-          <div class="space-y-2">
-              <a href="{{ route('trainings.index') }}"
-                  class="flex min-w-0 items-center gap-2 rounded-[12px] border border-[#DDE6F5] bg-white px-3 py-2">
-                  <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[26px]">
-                      🔥
-                  </span>
-
-                  <span class="min-w-0 flex-1">
-                      <span class="block truncate text-[15px] font-black text-[#071433]">
-                          今日のチャレンジ
-                      </span>
-                      <span class="block truncate text-[12px] font-bold text-[#46516B]">
-                          挑戦を振り返る
-                      </span>
-                  </span>
-
-                  <span class="shrink-0 rounded-lg bg-[#0D4FE8] px-5 py-2 text-[15px] font-black text-white">
-                      開始
-                  </span>
-
-                  <span class="shrink-0 text-[24px] text-[#64748B]">
-                      ›
-                  </span>
-              </a>
-
-              <a href="{{ route('trainings.index') }}"
-                  class="flex min-w-0 items-center gap-2 rounded-[12px] border border-[#DDE6F5] bg-white px-3 py-2">
-                  <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[26px]">
-                      📖
-                  </span>
-
-                  <span class="min-w-0 flex-1">
-                      <span class="block truncate text-[15px] font-black text-[#071433]">
-                          要約力トレーニング
-                      </span>
-                      <span class="block truncate text-[12px] font-bold text-[#46516B]">
-                          文章を短くまとめる力を鍛える
-                      </span>
-                  </span>
-
-                  <span class="shrink-0 rounded-lg bg-[#0D4FE8] px-5 py-2 text-[15px] font-black text-white">
-                      開始
-                  </span>
-
-                  <span class="shrink-0 text-[24px] text-[#64748B]">
-                      ›
-                  </span>
-              </a>
-          </div>
+        @if (in_array($type, ['summary', 'verbalization', 'abstraction', 'concretization'], true))
+        <section class="mt-6 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-900">
+                        模範解答例
+                    </h2>
+                    <p class="mt-1 text-sm text-emerald-700">
+                        回答は1つだけではありません。考え方の参考として確認してください。
+                    </p>
+                </div>
+            </div>
+    
+            @if (filled($training->answer_point))
+                <div class="mb-4 rounded-2xl bg-white p-4">
+                    <p class="text-xs font-bold text-emerald-600">
+                        回答のポイント
+                    </p>
+                    <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-800">
+                        {{ $training->answer_point }}
+                    </p>
+                </div>
+            @endif
+    
+            @if (filled($training->model_answer))
+                <div class="rounded-2xl bg-white p-4">
+                    <p class="text-xs font-bold text-emerald-600">
+                        模範解答例
+                    </p>
+                    <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-800">
+                        {{ $training->model_answer }}
+                    </p>
+                </div>
+            @else
+                <div class="rounded-2xl bg-white p-4">
+                    <p class="text-sm text-slate-600">
+                        この問題には模範解答例が保存されていません。
+                    </p>
+                </div>
+            @endif
+        </section>
+    @endif
       </section>
 
       {{-- 下部ボタン --}}

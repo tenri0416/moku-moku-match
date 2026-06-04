@@ -33,7 +33,14 @@ use App\Http\Controllers\Admin\AiUsageDashboardController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
-
+    
+    Route::get('/log-test', function () {
+        \Log::info('通常ログのテストです。');
+        \Log::warning('警告ログのテストです。');
+        \Log::error('エラーログのテストです。');
+    
+        return 'log test ok';
+    });
 Route::get('/welcome', function () {
     return view('welcome');
 })->name('welcome');

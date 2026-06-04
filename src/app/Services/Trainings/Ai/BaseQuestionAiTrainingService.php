@@ -56,13 +56,28 @@ abstract class BaseQuestionAiTrainingService extends BaseAiTrainingService
                     (string) ($question['question_body'] ?? '')
                 );
 
-                if (! filled($questionTitle) || ! filled($questionBody)) {
-                    throw new RuntimeException('AI問題生成結果の question_title または question_body が空です。');
+                $modelAnswer = $this->textNormalizer->normalize(
+                    (string) ($question['model_answer'] ?? '')
+                );
+
+                $answerPoint = $this->textNormalizer->normalize(
+                    (string) ($question['answer_point'] ?? '')
+                );
+
+                if (
+                    ! filled($questionTitle)
+                    || ! filled($questionBody)
+                    || ! filled($modelAnswer)
+                    || ! filled($answerPoint)
+                ) {
+                    throw new RuntimeException('AI問題生成結果の question_title、question_body、model_answer、answer_point のいずれかが空です。');
                 }
 
                 return [
                     'question_title' => $questionTitle,
                     'question_body' => $questionBody,
+                    'model_answer' => $modelAnswer,
+                    'answer_point' => $answerPoint,
                     'ai_provider' => $result['provider'],
                     'ai_model' => $result['model'],
                     'ai_status' => 'success',
@@ -159,6 +174,8 @@ PROMPT;
         return [
             'question_title' => $question['question_title'],
             'question_body' => $question['question_body'],
+            'model_answer' => $question['model_answer'],
+            'answer_point' => $question['answer_point'],
             'ai_provider' => 'local',
             'ai_model' => 'laravel-rule-based',
             'ai_status' => 'success',

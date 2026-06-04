@@ -40,10 +40,15 @@ class AbstractionAiTrainingService extends BaseQuestionAiTrainingService
 - JSONのみ
 - Markdown禁止
 - question_bodyは長すぎない
+- model_answerは80文字以内
+- answer_pointは50文字以内
+- 余計な説明は禁止
 
 {
   "question_title": "3つの具体例に共通する本質を考えてください",
-  "question_body": "例1：...\\n例2：...\\n例3：...\\n質問：共通する問題を一言で抽象化してください。"
+  "question_body": "例1：...\\n例2：...\\n例3：...\\n質問：共通する問題を一言で抽象化してください。",
+  "model_answer": "行動を具体化できていないこと",
+  "answer_point": "複数の例に共通する原因や本質を見る"
 }
 PROMPT;
     }
@@ -53,6 +58,8 @@ PROMPT;
         return [
             'question_title' => '3つの具体例に共通する本質を考えてください',
             'question_body' => "例1：作業を後回しにしてしまった。\n例2：説明が長くなり伝わりにくかった。\n例3：目標はあるが行動に落とし込めなかった。\n質問：これらに共通する問題を一言で抽象化し、理由も説明してください。",
+            'model_answer' => '行動を具体化できていないこと。どの例も、考えや目標はあるものの、実際に取る行動が明確になっていないためです。',
+            'answer_point' => '3つの例に共通する本質を一言で表す',
         ];
     }
 }

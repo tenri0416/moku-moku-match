@@ -34,6 +34,8 @@ class UserConcretizationTraining extends Model
         'ai_error_message',
         'is_fallback',
         'ai_attempts',
+        'model_answer',
+        'answer_point',
     ];
 
     protected $casts = [

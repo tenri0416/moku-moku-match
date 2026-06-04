@@ -54,7 +54,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            'channels' => ['daily', 'error_daily'],
             'ignore_exceptions' => false,
         ],
 
@@ -65,14 +65,43 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'daily' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 0),
-            'replace_placeholders' => true,
+    /*
+    |--------------------------------------------------------------------------
+    | 通常ログ
+    |--------------------------------------------------------------------------
+    |
+    | API動作ログ、画面アクセスログ、infoログなどを出力する。
+    | error以上は ExcludeErrorLevelFromNormalLog で除外する。
+    |
+    */
+    'daily' => [
+        'driver' => 'daily',
+        'path' => storage_path('logs/laravel.log'),
+        'level' => env('LOG_LEVEL', 'debug'),
+        'days' => env('LOG_DAILY_DAYS', 14),
+        'replace_placeholders' => true,
+        'tap' => [
+            App\Logging\ExcludeErrorLevelFromNormalLog::class,
         ],
+    ],
 
+    
+        /*
+    |--------------------------------------------------------------------------
+    | エラーログ
+    |--------------------------------------------------------------------------
+    |
+    | error / critical / alert / emergency のみ出力する。
+    |
+    */
+    'error_daily' => [
+        'driver' => 'daily',
+        'path' => storage_path('logs/error.log'),
+        'level' => 'error',
+        'days' => env('LOG_ERROR_DAILY_DAYS', 90),
+        'replace_placeholders' => true,
+    ],
+    
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
@@ -81,6 +110,8 @@ return [
             'level' => env('LOG_LEVEL', 'critical'),
             'replace_placeholders' => true,
         ],
+
+
 
         'papertrail' => [
             'driver' => 'monolog',

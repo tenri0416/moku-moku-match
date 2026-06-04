@@ -511,12 +511,12 @@ class TrainingController extends Controller
         TrainingAiScoringService $scoringService
     ): View|RedirectResponse {
         $today = now()->toDateString();
-
+    
         $training = $modelClass::query()
             ->where('user_id', auth()->id())
             ->whereDate('training_date', $today)
             ->first();
-
+    
         if ($training && filled($training->answer_body)) {
             ApiActionLogger::info(
                 methodName: 'TrainingController::createAiTraining',
@@ -527,12 +527,12 @@ class TrainingController extends Controller
                     'training_id' => $training->id,
                 ]
             );
-
+    
             return redirect()
                 ->route('trainings.show', ['type' => $type, 'id' => $training->id])
                 ->with('error', '本日の' . $training->typeLabel() . 'は実施済みです。');
         }
-
+    
         if (! $training) {
             try {
                 $question = $scoringService->generateAiTrainingQuestion(
@@ -541,7 +541,7 @@ class TrainingController extends Controller
                 );
             } catch (Throwable $e) {
                 report($e);
-
+    
                 ApiActionLogger::info(
                     methodName: 'TrainingController::createAiTraining',
                     message: 'AI出題型トレーニングの問題生成に失敗',
@@ -551,18 +551,20 @@ class TrainingController extends Controller
                         'error_message' => $e->getMessage(),
                     ]
                 );
-
+    
                 return redirect()
                     ->route('trainings.index')
                     ->with('error', $e->getMessage());
             }
-
+    
             $training = $modelClass::create([
                 'user_id' => auth()->id(),
                 'training_date' => $today,
                 'question_title' => $question['question_title'],
                 'question_body' => $question['question_body'],
-
+                'model_answer' => $question['model_answer'] ?? null,
+                'answer_point' => $question['answer_point'] ?? null,
+    
                 // AI履歴
                 'ai_provider' => $question['ai_provider'] ?? null,
                 'ai_model' => $question['ai_model'] ?? null,
@@ -571,7 +573,7 @@ class TrainingController extends Controller
                 'is_fallback' => $question['is_fallback'] ?? false,
                 'ai_attempts' => $question['ai_attempts'] ?? 1,
             ]);
-
+    
             ApiActionLogger::info(
                 methodName: 'TrainingController::createAiTraining',
                 message: 'AI出題型トレーニングの問題を作成しました',
@@ -580,6 +582,8 @@ class TrainingController extends Controller
                     'training_type' => $type,
                     'training_id' => $training->id,
                     'training_date' => $today,
+                    'has_model_answer' => filled($training->model_answer),
+                    'has_answer_point' => filled($training->answer_point),
                     'ai_provider' => $question['ai_provider'] ?? null,
                     'ai_model' => $question['ai_model'] ?? null,
                     'is_fallback' => $question['is_fallback'] ?? null,
@@ -587,7 +591,7 @@ class TrainingController extends Controller
                 ]
             );
         }
-
+    
         return view('trainings.ai-create', [
             'training' => $training,
             'type' => $type,
