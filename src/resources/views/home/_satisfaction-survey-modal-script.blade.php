@@ -8,6 +8,9 @@
           5: '5：とても満足',
       };
 
+      const pcModal = document.getElementById('satisfaction-survey-modal-pc');
+      const spModal = document.getElementById('satisfaction-survey-modal-sp');
+
       const setupRating = (type) => {
           const group = document.querySelector(`[data-satisfaction-rating-group="${type}"]`);
           const input = document.getElementById(`satisfaction-survey-rating-${type}`);
@@ -57,24 +60,72 @@
           updateCount();
       };
 
+      /**
+       * アンケートモーダルを閉じる。
+       *
+       * 「あとで回答する」用。
+       * DBには保存しないため、次回ホーム画面アクセス時に再表示される。
+       *
+       * Tailwindの hidden と md:flex が競合するため、
+       * class だけでなく style.display = 'none' で確実に非表示にする。
+       */
+      const closeSurveyModalOnly = () => {
+          if (pcModal) {
+              pcModal.classList.add('hidden');
+              pcModal.style.display = 'none';
+              pcModal.setAttribute('aria-hidden', 'true');
+          }
+
+          if (spModal) {
+              spModal.classList.add('hidden');
+              spModal.style.display = 'none';
+              spModal.setAttribute('aria-hidden', 'true');
+          }
+
+          document.body.classList.remove('overflow-hidden');
+      };
+
       setupRating('pc');
       setupRating('sp');
       setupCounter('pc');
       setupCounter('sp');
 
       document.querySelectorAll('[data-satisfaction-survey-close]').forEach((button) => {
-          button.addEventListener('click', () => {
-              document.getElementById('satisfaction-survey-modal-pc')?.classList.add('hidden');
-              document.getElementById('satisfaction-survey-modal-sp')?.classList.add('hidden');
-              document.body.classList.remove('overflow-hidden');
-          });
+          button.addEventListener('click', closeSurveyModalOnly);
       });
 
-      if (
-          document.getElementById('satisfaction-survey-modal-pc')
-          || document.getElementById('satisfaction-survey-modal-sp')
-      ) {
+      /**
+       * モーダルが表示対象の場合は、背景スクロールを止める。
+       */
+      if (pcModal || spModal) {
           document.body.classList.add('overflow-hidden');
       }
+
+      /**
+       * 背景クリックでも「あとで回答する」と同じ扱いで閉じる。
+       */
+      pcModal?.addEventListener('click', (event) => {
+          if (event.target === pcModal) {
+              closeSurveyModalOnly();
+          }
+      });
+
+      spModal?.addEventListener('click', (event) => {
+          if (event.target === spModal) {
+              closeSurveyModalOnly();
+          }
+      });
+
+      /**
+       * Escキーでも「あとで回答する」と同じ扱いで閉じる。
+       */
+      document.addEventListener('keydown', (event) => {
+          const isPcVisible = pcModal && pcModal.style.display !== 'none' && !pcModal.classList.contains('hidden');
+          const isSpVisible = spModal && spModal.style.display !== 'none' && !spModal.classList.contains('hidden');
+
+          if (event.key === 'Escape' && (isPcVisible || isSpVisible)) {
+              closeSurveyModalOnly();
+          }
+      });
   });
 </script>
