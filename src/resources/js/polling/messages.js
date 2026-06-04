@@ -7,15 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const list = root.querySelector('[data-message-list]');
-    const form = root.querySelector('[data-message-form]');
-    const textarea = root.querySelector('[data-message-body]');
+    const lists = root.querySelectorAll('[data-message-list]');
+    const forms = root.querySelectorAll('[data-message-form]');
     const latestUrl = root.dataset.latestUrl;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
     let latestMessageId = Number(root.dataset.latestMessageId || 0);
 
-    if (!list || !latestUrl) {
+    if (!lists.length || !latestUrl) {
         return;
     }
 
@@ -29,48 +28,128 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function nl2br(value) {
-        return escapeHtml(value).replace(/\n/g, '<br>');
+        return escapeHtml(value).replace(/\r?\n/g, '<br>');
     }
 
-    function messageHtml(message) {
-        const mineClass = message.is_mine
-            ? 'justify-end'
-            : 'justify-start';
+    function hasMessage(list, messageId) {
+        const items = list.querySelectorAll('[data-message-id]');
 
-        const bubbleClass = message.is_mine
-            ? 'rounded-br-md bg-indigo-600 text-white'
-            : 'rounded-bl-md bg-slate-100 text-slate-800';
+        for (const item of items) {
+            if (String(item.dataset.messageId) === String(messageId)) {
+                return true;
+            }
+        }
 
-        const metaClass = message.is_mine
-            ? 'justify-end'
-            : 'justify-start';
+        return false;
+    }
 
-        const senderName = message.is_mine
-            ? '自分'
-            : escapeHtml(message.sender_name);
+    function isSpList(list) {
+        return list.closest('.md\\:hidden') !== null;
+    }
+
+    function buildSpMessageHtml(message) {
+        const isMine = Boolean(message.is_mine);
+        const senderName = message.sender_name || 'ユーザー';
+        const avatarUrl = message.sender_avatar_url || '/images/default-avatar.png';
+        const time = message.created_time || '';
+        const readLabel = message.read_label || '未読';
+
+        const avatarHtml = isMine
+            ? ''
+            : `
+                <div class="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-blue-50">
+                    <img
+                        src="${escapeHtml(avatarUrl)}"
+                        alt="${escapeHtml(senderName)}のプロフィール画像"
+                        class="h-full w-full object-cover"
+                    >
+                </div>
+            `;
+
+        const readLabelHtml = isMine
+            ? `
+                <div class="mt-1 text-right text-[11px] font-bold text-[#94A3B8]">
+                    ${escapeHtml(readLabel)}
+                </div>
+            `
+            : '';
 
         return `
-            <div class="flex ${mineClass}" data-message-id="${message.id}">
-                <div class="max-w-[85%] sm:max-w-[70%]">
-                    <div class="mb-1 flex items-center gap-2 ${metaClass}">
-                        <span class="text-xs font-semibold text-slate-500">
-                            ${senderName}
-                        </span>
+            <div class="flex ${isMine ? 'justify-end' : 'justify-start'}" data-message-id="${escapeHtml(message.id)}">
+                <div class="flex max-w-[86%] gap-2 ${isMine ? 'flex-row-reverse' : ''}">
+                    ${avatarHtml}
 
-                        <span class="text-xs text-slate-400">
-                            ${escapeHtml(message.created_at)}
-                        </span>
-                    </div>
+                    <div>
+                        <div class="mb-1 flex items-center gap-2 ${isMine ? 'justify-end' : 'justify-start'}">
+                            <span class="text-[11px] font-bold text-[#64748B]">
+                                ${isMine ? 'あなた' : escapeHtml(senderName)}
+                            </span>
 
-                    <div class="rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm ${bubbleClass}">
-                        ${nl2br(message.body)}
-                    </div>
-
-                    ${message.is_mine ? `
-                        <div class="mt-1 text-right text-xs text-slate-400">
-                            未読
+                            <span class="text-[11px] font-bold text-[#94A3B8]">
+                                ${escapeHtml(time)}
+                            </span>
                         </div>
-                    ` : ''}
+
+                        <div class="${isMine ? 'rounded-br-[6px] bg-[#0D4FE8] text-white' : 'rounded-bl-[6px] bg-[#F1F5F9] text-[#071433]'} rounded-[18px] px-4 py-3 text-[15px] font-bold leading-7 shadow-sm">
+                            ${nl2br(message.body)}
+                        </div>
+
+                        ${readLabelHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function buildPcMessageHtml(message) {
+        const isMine = Boolean(message.is_mine);
+        const senderName = message.sender_name || 'ユーザー';
+        const avatarUrl = message.sender_avatar_url || '/images/default-avatar.png';
+        const time = message.created_at || '';
+        const readLabel = message.read_label || '未読';
+
+        const avatarHtml = isMine
+            ? ''
+            : `
+                <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-blue-50">
+                    <img
+                        src="${escapeHtml(avatarUrl)}"
+                        alt="${escapeHtml(senderName)}のプロフィール画像"
+                        class="h-full w-full object-cover"
+                    >
+                </div>
+            `;
+
+        const readLabelHtml = isMine
+            ? `
+                <div class="mt-1 text-right text-[12px] font-bold text-[#94A3B8]">
+                    ${escapeHtml(readLabel)}
+                </div>
+            `
+            : '';
+
+        return `
+            <div class="flex ${isMine ? 'justify-end' : 'justify-start'}" data-message-id="${escapeHtml(message.id)}">
+                <div class="flex max-w-[72%] gap-3 ${isMine ? 'flex-row-reverse' : ''}">
+                    ${avatarHtml}
+
+                    <div>
+                        <div class="mb-1 flex items-center gap-2 ${isMine ? 'justify-end' : 'justify-start'}">
+                            <span class="text-[12px] font-bold text-[#64748B]">
+                                ${isMine ? 'あなた' : escapeHtml(senderName)}
+                            </span>
+
+                            <span class="text-[12px] font-bold text-[#94A3B8]">
+                                ${escapeHtml(time)}
+                            </span>
+                        </div>
+
+                        <div class="${isMine ? 'rounded-br-[6px] bg-[#0D4FE8] text-white' : 'rounded-bl-[6px] bg-[#F1F5F9] text-[#071433]'} rounded-[18px] px-5 py-3 text-[15px] font-bold leading-7 shadow-sm">
+                            ${nl2br(message.body)}
+                        </div>
+
+                        ${readLabelHtml}
+                    </div>
                 </div>
             </div>
         `;
@@ -81,87 +160,147 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const emptyMessage = list.querySelector('[data-empty-message]');
-        if (emptyMessage) {
-            emptyMessage.remove();
-        }
+        lists.forEach((list) => {
+            const emptyMessage = list.querySelector('[data-empty-message]');
 
-        messages.forEach((message) => {
-            if (list.querySelector(`[data-message-id="${message.id}"]`)) {
-                return;
+            if (emptyMessage) {
+                emptyMessage.remove();
             }
 
-            list.insertAdjacentHTML('beforeend', messageHtml(message));
-            latestMessageId = Math.max(latestMessageId, Number(message.id));
+            messages.forEach((message) => {
+                if (hasMessage(list, message.id)) {
+                    return;
+                }
+
+                const html = isSpList(list)
+                    ? buildSpMessageHtml(message)
+                    : buildPcMessageHtml(message);
+
+                list.insertAdjacentHTML('beforeend', html);
+                latestMessageId = Math.max(latestMessageId, Number(message.id));
+            });
+
+            list.scrollTop = list.scrollHeight;
         });
 
-        list.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        root.dataset.latestMessageId = String(latestMessageId);
     }
 
     async function fetchLatestMessages() {
-        const url = new URL(latestUrl, window.location.origin);
-        url.searchParams.set('after_id', latestMessageId);
+        const separator = latestUrl.includes('?') ? '&' : '?';
+        const requestUrl = latestUrl
+            + separator
+            + 'after_id=' + encodeURIComponent(latestMessageId)
+            + '&_=' + Date.now();
 
-        const response = await fetch(url.toString(), {
+        const response = await fetch(requestUrl, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-cache',
             },
+            credentials: 'same-origin',
+            cache: 'no-store',
         });
 
         if (!response.ok) {
+            console.error('新着メッセージ取得エラー:', response.status);
             return;
         }
 
         const data = await response.json();
-        appendMessages(data.messages);
+        appendMessages(data.messages || []);
+    }
+
+    function resetFormButton(form) {
+        const button = form.querySelector('[data-message-submit]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = false;
+        button.textContent = button.dataset.defaultText || '送信する';
+        form.dataset.submitting = '0';
     }
 
     async function sendMessage(event) {
         event.preventDefault();
 
-        if (!form || !textarea) {
+        const form = event.currentTarget;
+        const textarea = form.querySelector('[data-message-body]');
+        const button = form.querySelector('[data-message-submit]');
+
+        if (!textarea || !button) {
             return;
         }
 
         const body = textarea.value.trim();
 
         if (!body) {
+            resetFormButton(form);
             return;
         }
 
-        const formData = new FormData(form);
-
-        const response = await fetch(form.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
-            body: formData,
-        });
-
-        if (!response.ok) {
+        if (form.dataset.submitting === '1') {
             return;
         }
 
-        const data = await response.json();
+        form.dataset.submitting = '1';
+        button.dataset.defaultText = button.textContent.trim() || '送信する';
+        button.disabled = true;
+        button.textContent = '送信中...';
 
-        textarea.value = '';
+        try {
+            const formData = new FormData(form);
 
-        if (data.message) {
-            appendMessages([data.message]);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                console.error('メッセージ送信エラー:', response.status);
+                return;
+            }
+
+            const data = await response.json();
+
+            textarea.value = '';
+
+            if (data.message) {
+                appendMessages([data.message]);
+            }
+
+            await fetchLatestMessages();
+        } catch (error) {
+            console.error('メッセージ送信に失敗しました。', error);
+        } finally {
+            resetFormButton(form);
         }
-
-        await fetchLatestMessages();
     }
 
-    if (form) {
+    lists.forEach((list) => {
+        list.scrollTop = list.scrollHeight;
+    });
+
+    forms.forEach((form) => {
         form.addEventListener('submit', sendMessage);
-    }
+
+        window.addEventListener('pageshow', () => {
+            resetFormButton(form);
+        });
+    });
 
     const poller = new Poller({
-        interval: 5000,
+        interval: 3000,
         callback: fetchLatestMessages,
     });
 

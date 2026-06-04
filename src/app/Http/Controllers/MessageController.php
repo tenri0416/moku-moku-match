@@ -285,30 +285,42 @@ class MessageController extends Controller
      */
     public function latestUser(Request $request, User $user): JsonResponse
     {
-        abort_unless(Auth::check(), 403);
+        $loginUser = $request->user();
+
+        if (! $loginUser) {
+            return response()->json([
+                'messages' => [],
+                'error' => 'ログインが必要です。',
+            ], 401);
+        }
 
         // 自分自身とのメッセージ取得は不可
-        abort_if((int) Auth::id() === (int) $user->id, 403);
+        if ((int) $loginUser->id === (int) $user->id) {
+            return response()->json([
+                'messages' => [],
+                'error' => '自分自身とのメッセージは取得できません。',
+            ], 403);
+        }
 
-        $afterId = (int) $request->query('after_id', 0);
+        $afterId = max(0, (int) $request->query('after_id', 0));
 
         $messages = Message::query()
             ->with(['sender.profile'])
             ->where('id', '>', $afterId)
-            ->where(function ($query) use ($user) {
-                $query->where(function ($query) use ($user) {
-                    $query->where('sender_id', Auth::id())
+            ->where(function ($query) use ($loginUser, $user) {
+                $query->where(function ($query) use ($loginUser, $user) {
+                    $query->where('sender_id', $loginUser->id)
                         ->where('receiver_id', $user->id);
-                })->orWhere(function ($query) use ($user) {
+                })->orWhere(function ($query) use ($loginUser, $user) {
                     $query->where('sender_id', $user->id)
-                        ->where('receiver_id', Auth::id());
+                        ->where('receiver_id', $loginUser->id);
                 });
             })
             ->oldest('id')
             ->get();
 
         $receivedMessageIds = $messages
-            ->where('receiver_id', Auth::id())
+            ->where('receiver_id', $loginUser->id)
             ->pluck('id');
 
         if ($receivedMessageIds->isNotEmpty()) {
@@ -321,25 +333,27 @@ class MessageController extends Controller
         }
 
         return response()->json([
-            'messages' => $messages->map(function (Message $message) {
-                $senderProfile = $message->sender?->profile;
+            'messages' => $messages->map(function (Message $message) use ($loginUser) {
+                $sender = $message->sender;
+                $senderProfile = $sender?->profile;
 
                 $senderAvatarPath = $senderProfile?->avatar_path;
+
                 $senderAvatarUrl = $senderAvatarPath
                     ? asset('storage/' . ltrim($senderAvatarPath, '/'))
                     : asset('images/default-avatar.png');
 
                 return [
                     'id' => $message->id,
-                    'body' => $message->body,
+                    'body' => $message->body ?? '',
                     'sender_id' => $message->sender_id,
                     'sender_name' => $senderProfile?->display_name
-                        ?? $message->sender?->name
+                        ?? $sender?->name
                         ?? 'ユーザー',
                     'sender_avatar_url' => $senderAvatarUrl,
-                    'is_mine' => (int) $message->sender_id === (int) Auth::id(),
-                    'created_at' => $message->created_at->format('Y/m/d H:i'),
-                    'created_time' => $message->created_at->format('H:i'),
+                    'is_mine' => (int) $message->sender_id === (int) $loginUser->id,
+                    'created_at' => optional($message->created_at)->format('Y/m/d H:i') ?? '',
+                    'created_time' => optional($message->created_at)->format('H:i') ?? '',
                     'read_label' => $message->read_at ? '既読' : '未読',
                 ];
             })->values(),
