@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\GoogleSsoController;
+
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -21,6 +23,29 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google SSO
+    |--------------------------------------------------------------------------
+    |
+    | 別プロジェクトで動いている構成に合わせて、Google OAuthのURLを
+    | /auth/redirect と /auth/callback に統一します。
+    |
+    | Google Cloud Console の「承認済みのリダイレクト URI」には、
+    | APP_URL + /auth/callback を登録してください。
+    |
+    | 例: http://localhost:8080/auth/callback
+    |
+    */
+    Route::get('auth/redirect', [GoogleSsoController::class, 'redirect'])
+        ->middleware('throttle:20,1')
+        ->name('auth.redirect');
+
+    Route::get('auth/callback', [GoogleSsoController::class, 'callback'])
+        ->middleware('throttle:20,1')
+        ->name('auth.callback');
+
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

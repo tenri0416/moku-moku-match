@@ -6,7 +6,7 @@
 
   <div class="leading-none">
       <p class="text-2xl font-black tracking-[0.08em] text-[#111827] sm:text-3xl">
-          MokuMokuMatch
+          MokuMoku Match
       </p>
       <p class="mt-2 text-[11px] font-bold tracking-[0.28em] text-[#6F8FAF]">
           REMOTE WORK MAGAZINE

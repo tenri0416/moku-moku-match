@@ -53,9 +53,40 @@
                         </h2>
 
                         <p class="mt-2 text-sm leading-6 text-slate-600">
-                            アカウントを作成して、作業仲間を探しましょう。
+                            メールアドレス、またはGoogleアカウントで登録できます。
                         </p>
                     </div>
+
+                    @if (session('error'))
+                        <div class="mb-6 rounded-xl bg-rose-50 p-4">
+                            <p class="text-sm font-semibold text-rose-700">
+                                {{ session('error') }}
+                            </p>
+                        </div>
+                    @endif
+
+                    @if (Route::has('auth.redirect'))
+                        <a
+                            href="{{ route('auth.redirect') }}"
+                            class="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-base font-black text-blue-600 ring-1 ring-slate-200">
+                                G
+                            </span>
+                            <span>Googleで会員登録</span>
+                        </a>
+
+                        <div class="relative mb-6">
+                            <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                <div class="w-full border-t border-slate-200"></div>
+                            </div>
+                            <div class="relative flex justify-center">
+                                <span class="bg-white px-3 text-xs font-bold text-slate-400">
+                                    または
+                                </span>
+                            </div>
+                        </div>
+                    @endif
 
                     <form method="POST" action="{{ route('register') }}" class="space-y-5">
                         @csrf

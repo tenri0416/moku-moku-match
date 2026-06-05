@@ -21,7 +21,7 @@
                   <div class="relative h-28 overflow-hidden bg-[#0B1548]">
                       <img
                           src="{{ asset('images/ogp.png') }}"
-                          alt="MokuMokuMatch"
+                          alt="MokuMoku Match"
                           class="h-full w-full object-cover opacity-90"
                       >
                       <div class="absolute inset-0 bg-[#0B1548]/10"></div>

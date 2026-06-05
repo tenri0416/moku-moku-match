@@ -1,7 +1,7 @@
 # moku-moku-match
 サーバー：ConoHa VPS
 OS：Ubuntu 24.04 LTS 想定
-アプリ名：MokuMokuMatch
+アプリ名：MokuMoku Match
 GitHubリポジトリ：https://github.com/tenri0416/moku-moku-match
 配置先：/var/www/html/MokuMokuMatch
 Laravelルート：/var/www/html/MokuMokuMatch/src

@@ -35,10 +35,12 @@ return [
         ],
     ],
 
+    // Google Analytics 4 
     'ga4' => [
         'measurement_id' => env('GA4_MEASUREMENT_ID'),
     ],
 
+    // AIプロバイダーの設定
     'google_ai' => [
         'api_key' => env('GOOGLE_AI_API_KEY'),
         'model' => env('GOOGLE_AI_MODEL', 'gemini-2.0-flash'),
@@ -54,7 +56,7 @@ return [
     ],
     'ai' => [
         // 出力トークンを増やしたくないため、全AI共通で低めに固定
-        'max_output_tokens' => env('AI_MAX_OUTPUT_TOKENS', 350),
+        'max_output_tokens' => env('AI_MAX_OUTPUT_TOKENS', 5000),
     ],
     /**
      * 各AIの1日あたりの推定上限
@@ -65,9 +67,17 @@ return [
         'openrouter' => env('AI_OPENROUTER_DAILY_LIMIT', 50),
         'groq' => env('AI_GROQ_DAILY_LIMIT', 100),
     ],
-    
+
+    // 管理者へのLINE通知設定
     'line' => [
-    'access_token' => env('LINE_ACCESS_TOKEN'),
-    'admin_to' => env('LINE_ADMIN_TO'),
-],
+        'access_token' => env('LINE_ACCESS_TOKEN'),
+        'admin_to' => env('LINE_ADMIN_TO'),
+    ],
+
+    // google SSO
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/auth/callback',
+    ],
 ];
