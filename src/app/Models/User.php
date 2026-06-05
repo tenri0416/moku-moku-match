@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -26,6 +27,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public const STATUS_ACTIVE = 1;
     public const STATUS_SUSPENDED = 2;
+    public const STATUS_WITHDRAWN = 3;
+
+    public const WITHDRAWAL_TYPE_SELF = 'self';
+    public const WITHDRAWAL_TYPE_ADMIN = 'admin';
 
     protected $fillable = [
         'name',
@@ -50,6 +55,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'withdrawn_at' => 'datetime',
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -120,11 +127,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === self::ROLE_ADMIN;
     }
 
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
     /**
      * メール認証通知を送信する
      */
@@ -147,5 +149,41 @@ class User extends Authenticatable implements MustVerifyEmail
     public function latestSatisfactionSurvey(): HasOne
     {
         return $this->hasOne(\App\Models\UserSatisfactionSurvey::class)->latestOfMany();
+    }
+
+    public function withdrawnByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'withdrawn_by_admin_id');
+    }
+
+    public function suspendedByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'suspended_by_admin_id');
+    }
+
+    public function isActive(): bool
+    {
+        return (int) $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isSuspended(): bool
+    {
+        return (int) $this->status === self::STATUS_SUSPENDED;
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return (int) $this->status === self::STATUS_WITHDRAWN
+            || $this->withdrawn_at !== null;
+    }
+
+    public function isSelfWithdrawn(): bool
+    {
+        return $this->withdrawal_type === self::WITHDRAWAL_TYPE_SELF;
+    }
+
+    public function isAdminWithdrawn(): bool
+    {
+        return $this->withdrawal_type === self::WITHDRAWAL_TYPE_ADMIN;
     }
 }

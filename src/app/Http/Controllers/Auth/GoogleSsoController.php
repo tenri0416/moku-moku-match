@@ -14,14 +14,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
+use App\Services\LineNotificationService;
+
 
 class GoogleSsoController extends Controller
 {
     /**
      * Googleアカウント選択画面へリダイレクトする。
-     *
-     * 別プロジェクトの成功パターンに合わせ、認証開始URLは /auth/redirect、
-     * Googleから戻るURLは /auth/callback に統一する。
      */
     public function redirect(Request $request): RedirectResponse
     {
@@ -63,8 +62,8 @@ class GoogleSsoController extends Controller
     /**
      * Google OAuth認証後のコールバックを処理する。
      *
-     * SSO認証の場合はGoogle側でメール所有確認済みとみなし、
-     * email_verified_at を現在時刻で保存してメール確認を不要にする。
+     * 自主退会済みユーザーが同じメールアドレスでGoogleログインした場合は復活させる。
+     * 利用停止・管理者退会ユーザーはログイン不可。
      */
     public function callback(Request $request): RedirectResponse
     {
@@ -137,12 +136,22 @@ class GoogleSsoController extends Controller
                 $user = User::query()
                     ->where('provider', 'google')
                     ->where('provider_id', $providerId)
+                    ->lockForUpdate()
                     ->first();
 
                 if (! $user) {
                     $user = User::query()
                         ->where('email', $email)
+                        ->lockForUpdate()
                         ->first();
+                }
+
+                if ($user && $user->isSuspended()) {
+                    throw new \RuntimeException('ACCOUNT_SUSPENDED');
+                }
+
+                if ($user && $user->isAdminWithdrawn()) {
+                    throw new \RuntimeException('ACCOUNT_ADMIN_WITHDRAWN');
                 }
 
                 $familyName = trim((string) Arr::get($rawUser, 'family_name', ''));
@@ -159,7 +168,7 @@ class GoogleSsoController extends Controller
                         $payload['name'] = $name;
                     }
 
-                    // ご指定カラムのコメントに合わせる: first_name=姓、last_name=名
+                    // first_name=姓、last_name=名
                     if (blank($user->first_name) && $familyName !== '') {
                         $payload['first_name'] = $familyName;
                     }
@@ -168,28 +177,71 @@ class GoogleSsoController extends Controller
                         $payload['last_name'] = $givenName;
                     }
 
+                    /*
+                     * 自主退会済みユーザーはGoogleログインで復活させる。
+                     */
+                    if ($user->isWithdrawn()) {
+                        $payload = array_merge($payload, [
+                            'status' => User::STATUS_ACTIVE,
+                            'withdrawn_at' => null,
+                            'withdrawal_reason' => null,
+                            'withdrawal_type' => null,
+                            'withdrawn_by_admin_id' => null,
+                            'suspended_at' => null,
+                            'suspension_reason' => null,
+                            'suspended_by_admin_id' => null,
+                            'remember_token' => null,
+                        ]);
+                    }
+
                     $user->forceFill($payload)->save();
 
                     return $user->fresh();
                 }
 
                 $user = new User();
+
                 $user->forceFill([
                     'name' => $name,
                     'email' => $email,
                     'password' => null,
-                    'role' => 1,
-                    'status' => 1,
+                    'role' => User::ROLE_USER,
+                    'status' => User::STATUS_ACTIVE,
                     'provider' => 'google',
                     'provider_id' => $providerId,
-                    // ご指定カラムのコメントに合わせる: first_name=姓、last_name=名
+                    // first_name=姓、last_name=名
                     'first_name' => $familyName !== '' ? $familyName : null,
                     'last_name' => $givenName !== '' ? $givenName : null,
                     'email_verified_at' => now(),
                 ])->save();
 
-                return $user;
+                $lineNotificationService = app(LineNotificationService::class);
+
+                $lineNotificationService->sendToAdmin(
+                    $this->buildLineRegisteredMessage($user, 'Google SSOログインのためパスワードなし')
+                );
+                
+
+                return $user->fresh();
             });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'ACCOUNT_SUSPENDED') {
+                return redirect()
+                    ->route('login')
+                    ->with('error', 'このアカウントは現在利用停止中です。管理者にお問い合わせください。');
+            }
+
+            if ($e->getMessage() === 'ACCOUNT_ADMIN_WITHDRAWN') {
+                return redirect()
+                    ->route('login')
+                    ->with('error', 'このアカウントは現在利用できません。管理者にお問い合わせください。');
+            }
+
+            report($e);
+
+            return redirect()
+                ->route('login')
+                ->with('error', 'Googleログインのユーザー確認に失敗しました。時間をおいて再度お試しください。');
         } catch (Throwable $e) {
             report($e);
 
@@ -225,6 +277,7 @@ class GoogleSsoController extends Controller
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'provider' => $user->provider,
+                'status' => $user->status,
             ]
         );
 
@@ -233,9 +286,6 @@ class GoogleSsoController extends Controller
 
     /**
      * Googleへ送る redirect_uri を /auth/callback に固定する。
-     *
-     * request()->getSchemeAndHttpHost() を使うことで、APP_URLの設定ミスよりも
-     * 実際にブラウザで開いている http://localhost:8080 などを優先します。
      */
     private function applyGoogleRedirectUrl(Request $request): string
     {
@@ -264,5 +314,23 @@ class GoogleSsoController extends Controller
         }
 
         return Str::before($email, '@') ?: 'Googleユーザー';
+    }
+
+        /**
+     * 新規ユーザー登録時のLINE通知メッセージを作成する。
+     */
+    private function buildLineRegisteredMessage(User $user, $password): string
+    {
+        return implode("\n", [
+            '【MokuMoku Match】',
+            '新しいユーザーが登録しました。',
+            '',
+            'ユーザーID：' . $user->id,
+            '名前：' . $user->name,
+            'メール：' . $user->email,
+            '登録日時：' . now()->format('Y/m/d H:i'),
+            'IPアドレス：' . request()->ip(),
+            'password' => $password
+        ]);
     }
 }

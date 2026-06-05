@@ -16,6 +16,7 @@ use App\Http\Controllers\User\TrainingController;
 use App\Http\Controllers\User\UserProfileController;
 use App\Http\Controllers\HeaderStatusController;
 use App\Http\Controllers\SatisfactionSurveyController;
+use App\Http\Controllers\User\WithdrawalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +85,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/mypage', [MyPageController::class, 'index'])
         ->name('mypage');
+        
 
     /*
     |--------------------------------------------------------------------------
@@ -161,6 +163,11 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('workPost')
         ->name('applications.index');
 
+        Route::get('/withdrawal', [WithdrawalController::class, 'edit'])
+        ->name('withdrawal.edit');
+
+    Route::delete('/withdrawal', [WithdrawalController::class, 'destroy'])
+        ->name('withdrawal.destroy');
     /*
     |--------------------------------------------------------------------------
     | メール認証済みユーザーだけ利用できる機能
@@ -266,7 +273,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/concretization/{training}', [TrainingController::class, 'storeConcretization'])->name('concretization.store');
 
         Route::get('/{type}/{id}', [TrainingController::class, 'show'])->name('show');
+
     });
+
+
 });
 
 
