@@ -43,10 +43,7 @@
             {{-- Register Card --}}
             <section class="mx-auto w-full max-w-md">
                 <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <div class="mb-8 text-center">
-                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-black text-white shadow-sm">
-                            M
-                        </div>
+                    <div class="mb-4 text-center">
 
                         <h2 class="mt-5 text-2xl font-black text-slate-900">
                             会員登録

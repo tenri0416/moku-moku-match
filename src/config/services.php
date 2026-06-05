@@ -74,19 +74,25 @@ return [
         'admin_to' => env('LINE_ADMIN_TO'),
     ],
 
-'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
 
-    'redirect' => env('GOOGLE_REDIRECT_URI')
-        ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/auth/callback',
+        'redirect' => env('GOOGLE_REDIRECT_URI')
+            ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/auth/callback',
 
-    'admin_redirect' => env('GOOGLE_ADMIN_REDIRECT_URI')
-        ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/admin/auth/callback',
+        'admin_redirect' => env('GOOGLE_ADMIN_REDIRECT_URI')
+            ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/admin/auth/callback',
 
-    'admin_allowed_emails' => array_values(array_filter(array_map(
-        'trim',
-        explode(',', (string) env('GOOGLE_ADMIN_ALLOWED_EMAILS', ''))
-    ))),
-],
+        'admin_allowed_emails' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('GOOGLE_ADMIN_ALLOWED_EMAILS', ''))
+        ))),
+    ],
+    'google_photos' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_PHOTOS_REDIRECT_URI'),
+        'scope' => 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+    ],
 ];

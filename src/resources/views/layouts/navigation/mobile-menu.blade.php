@@ -36,8 +36,12 @@
     <div class="fixed left-4 right-4 top-[84px] z-[80] max-h-[calc(100vh-110px)] overflow-y-auto rounded-2xl border border-[#DDE6F5] bg-white shadow-[0_18px_48px_rgba(15,43,95,0.22)]">
         <div class="border-b border-[#E5ECF7] px-4 py-4">
             <div class="flex items-center gap-3">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-[18px] font-black text-white shadow-sm">
-                    M
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#DDE6F5]">
+                    <img
+                        src="{{ asset('images/logo.png') }}"
+                        alt="MokuMoku Match"
+                        class="h-9 w-9 object-contain"
+                    >
                 </div>
 
                 <div class="min-w-0">

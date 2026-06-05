@@ -107,7 +107,20 @@
                         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
                     @endif
                 </div>
-
+                <div class="mt-4">
+                    <a
+                        href="{{ route('profile.avatar.google.redirect') }}"
+                        class="flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700"
+                    >
+                        Googleフォトから選択
+                    </a>
+                
+                    <p class="mt-2 text-xs leading-5 text-slate-500">
+                        iPhoneの写真選択メニューにGoogleフォトを直接追加することはできないため、
+                        Googleフォト連携画面から写真を選択します。
+                    </p>
+                </div>
+                
                 {{-- スキル --}}
                 <div>
                     <label for="skills" class="mb-2 block text-sm font-bold text-slate-700">

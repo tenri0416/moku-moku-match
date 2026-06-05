@@ -1,14 +1,7 @@
-<a href="{{ route('home') }}" class="flex items-center gap-3">
-  <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-base font-black text-white shadow-sm">
-      M
-  </span>
-
-  <span class="leading-tight">
-      <span class="block text-lg font-black tracking-tight text-slate-900">
-          MokuMoku Match
-      </span>
-      <span class="hidden text-xs font-semibold text-slate-500 sm:block">
-          リモート作業仲間を見つける
-      </span>
-  </span>
+<a href="{{ route('home') }}" class="relative flex h-10 w-[210px] shrink-0 items-center overflow-visible sm:w-[250px] lg:w-[280px]">
+    <img
+        src="{{ asset('images/header-logo2.png') }}"
+        alt="MokuMoku Match"
+        class="absolute left-0 top-1/2 h-11 w-auto max-w-[210px] -translate-y-1/2 object-contain sm:h-[52px] sm:max-w-[250px] lg:h-14 lg:max-w-[280px]"
+    >
 </a>

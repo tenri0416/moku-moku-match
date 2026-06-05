@@ -17,6 +17,7 @@ use App\Http\Controllers\User\UserProfileController;
 use App\Http\Controllers\HeaderStatusController;
 use App\Http\Controllers\SatisfactionSurveyController;
 use App\Http\Controllers\User\WithdrawalController;
+use App\Http\Controllers\User\GooglePhotoAvatarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,31 @@ Route::post('/email/verification-notification', function (Request $request) {
     return back()->with('status', '認証メールを再送信しました。');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
+
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile/avatar/google/redirect', [GooglePhotoAvatarController::class, 'redirect'])
+        ->name('profile.avatar.google.redirect');
+
+    Route::get('/profile/avatar/google/callback', [GooglePhotoAvatarController::class, 'callback'])
+        ->name('profile.avatar.google.callback');
+
+    Route::get('/profile/avatar/google/select', [GooglePhotoAvatarController::class, 'select'])
+        ->name('profile.avatar.google.select');
+
+    Route::post('/profile/avatar/google/session', [GooglePhotoAvatarController::class, 'createPickerSession'])
+        ->name('profile.avatar.google.session');
+
+    Route::get('/profile/avatar/google/session/{sessionId}', [GooglePhotoAvatarController::class, 'showPickerSession'])
+        ->name('profile.avatar.google.session.show');
+
+    Route::post('/profile/avatar/google/save', [GooglePhotoAvatarController::class, 'saveSelectedPhoto'])
+        ->name('profile.avatar.google.save');
+});
+
+
+
 /*
 |--------------------------------------------------------------------------
 | ログイン済みユーザー用ページ
@@ -85,7 +111,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/mypage', [MyPageController::class, 'index'])
         ->name('mypage');
-        
+       
 
     /*
     |--------------------------------------------------------------------------
