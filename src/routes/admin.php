@@ -29,6 +29,15 @@ Route::post('/admin/login/verify', [AdminAuthController::class, 'verify'])
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
     ->name('admin.logout');
 
+
+Route::get('/admin/auth/redirect', [AdminAuthController::class, 'googleRedirect'])
+    ->middleware('throttle:10,1')
+    ->name('admin.auth.redirect');
+
+Route::get('/admin/auth/callback', [AdminAuthController::class, 'googleCallback'])
+    ->middleware('throttle:10,1')
+    ->name('admin.auth.callback');
+    
 Route::prefix('admin')
     ->name('admin.')
     ->middleware('auth:admin')

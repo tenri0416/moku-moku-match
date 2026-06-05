@@ -5,37 +5,46 @@ namespace App\Http\Controllers;
 use App\Mail\AdminLoginCodeMail;
 use App\Models\Admin;
 use App\Models\AdminLoginCode;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\View\View;
+use Laravel\Socialite\Facades\Socialite;
+use Throwable;
 
 class AdminAuthController extends Controller
 {
+    private const GOOGLE_PROVIDER = 'google';
+
     /**
-     * 管理者ログイン画面を表示する
+     * 管理者ログイン画面を表示する。
      */
-    public function index()
+    public function index(): RedirectResponse|View
     {
         if (Auth::guard('admin')->check()) {
             Log::info('管理者は既にログインしています', [
                 'admin_id' => Auth::guard('admin')->id(),
             ]);
+
             return redirect()->route('admin.dashboard');
         }
+
         Log::info('管理者ログイン画面にアクセス');
 
         return view('admin.auth.login');
     }
 
     /**
-     * 管理者ログイン処理
+     * 管理者ログイン処理。
      *
-     * メールアドレス・パスワードが正しい場合でも、
-     * ここではまだ管理者ログイン完了にしない。
+     * メールアドレス・パスワードが正しい場合でも、ここではまだ管理者ログイン完了にしない。
+     * 通常ログインの場合は、従来どおりメール認証コードによる2段階認証を行う。
      */
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -44,7 +53,7 @@ class AdminAuthController extends Controller
 
         $admin = Admin::where('email', $credentials['email'])->first();
 
-        // 管理者が1人もいない、または複数いる場合はログインできないようにする
+        // 既存仕様を維持：管理者が1人もいない、または複数いる場合はログインできないようにする。
         if (Admin::count() !== 1) {
             Log::warning('管理者数が不正です', [
                 'admin_count' => Admin::count(),
@@ -53,25 +62,24 @@ class AdminAuthController extends Controller
             abort(403, '管理者設定が不正です。');
         }
 
-        if (!$admin || !Hash::check($credentials['password'], $admin->password)) {
+        if (! $admin || ! Hash::check($credentials['password'], $admin->password)) {
             Log::info('管理者ログイン失敗', [
                 'email' => $request->input('email'),
             ]);
 
-        
             return back()->withErrors([
                 'email' => 'メールアドレスまたはパスワードが正しくありません。',
             ])->onlyInput('email');
         }
 
-        // 既存の未使用コードを無効化
+        // 既存の未使用コードを無効化。
         AdminLoginCode::where('admin_id', $admin->id)
             ->whereNull('used_at')
             ->update([
                 'used_at' => now(),
             ]);
 
-        // 6桁コード生成
+        // 6桁コード生成。
         $code = (string) random_int(100000, 999999);
 
         AdminLoginCode::create([
@@ -80,10 +88,10 @@ class AdminAuthController extends Controller
             'expires_at' => now()->addMinutes(10),
         ]);
 
-        // 2段階認証待ちの管理者IDをセッションに保存
+        // 2段階認証待ちの管理者IDをセッションに保存。
         $request->session()->put('admin_2fa_pending_id', $admin->id);
 
-        // 認証コードを管理者メールに送信
+        // 認証コードを管理者メールに送信。
         Mail::to($admin->email)->send(new AdminLoginCodeMail($code));
 
         Log::info('管理者ログイン認証コード送信', [
@@ -96,14 +104,156 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * 認証コード入力画面を表示する
+     * 管理者Google SSO開始。
+     *
+     * 通常ユーザー用SSOとは別の /admin/auth/callback を使う。
      */
-    public function showVerify(Request $request)
+    public function googleRedirect(Request $request): RedirectResponse
     {
-        if (!$request->session()->has('admin_2fa_pending_id')) {
+        if (Auth::guard('admin')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $callbackUrl = $this->adminGoogleCallbackUrl($request);
+
+        Log::info('管理者Google SSO開始', [
+            'callback_url' => $callbackUrl,
+        ]);
+
+        return Socialite::driver(self::GOOGLE_PROVIDER)
+            ->redirectUrl($callbackUrl)
+            ->with([
+                // 個人用・管理者用を同じGoogleアカウントで使う場合に、アカウント選択画面を出しやすくする。
+                'prompt' => 'select_account',
+            ])
+            ->redirect();
+    }
+
+    /**
+     * 管理者Google SSOコールバック。
+     *
+     * Google認証が成功した場合は、メール認証コードによる2段階認証を省略して admin guard でログインする。
+     * ただし、GOOGLE_ADMIN_ALLOWED_EMAILS に含まれるメールアドレス、かつ admins テーブルに存在する管理者だけ許可する。
+     */
+    public function googleCallback(Request $request): RedirectResponse
+    {
+        try {
+            $callbackUrl = $this->adminGoogleCallbackUrl($request);
+
+            $googleUser = Socialite::driver(self::GOOGLE_PROVIDER)
+                ->redirectUrl($callbackUrl)
+                ->user();
+
+            $googleEmail = strtolower(trim((string) $googleUser->getEmail()));
+            $googleProviderId = (string) $googleUser->getId();
+
+            if ($googleEmail === '') {
+                Log::warning('管理者Google SSO失敗：Googleメールアドレスを取得できませんでした');
+
+                return redirect()->route('admin.login')
+                    ->withErrors([
+                        'email' => 'Googleアカウントからメールアドレスを取得できませんでした。',
+                    ]);
+            }
+
+            if (! $this->isAllowedAdminGoogleEmail($googleEmail)) {
+                Log::warning('管理者Google SSO拒否：許可されていないメールアドレス', [
+                    'google_email' => $googleEmail,
+                ]);
+
+                return redirect()->route('admin.login')
+                    ->withErrors([
+                        'email' => 'このGoogleアカウントは管理者ログインに許可されていません。',
+                    ]);
+            }
+
+            // 既存仕様を維持：管理者が1人もいない、または複数いる場合はログインできないようにする。
+            if (Admin::count() !== 1) {
+                Log::warning('管理者Google SSO拒否：管理者数が不正です', [
+                    'admin_count' => Admin::count(),
+                    'google_email' => $googleEmail,
+                ]);
+
+                abort(403, '管理者設定が不正です。');
+            }
+
+            $admin = Admin::query()
+                ->whereRaw('LOWER(email) = ?', [$googleEmail])
+                ->first();
+
+            if (! $admin) {
+                Log::warning('管理者Google SSO拒否：adminsテーブルに対象メールがありません', [
+                    'google_email' => $googleEmail,
+                ]);
+
+                return redirect()->route('admin.login')
+                    ->withErrors([
+                        'email' => 'このGoogleアカウントに対応する管理者が登録されていません。',
+                    ]);
+            }
+
+            $update = [];
+
+            if (Schema::hasColumn('admins', 'provider')) {
+                $update['provider'] = self::GOOGLE_PROVIDER;
+            }
+
+            if (Schema::hasColumn('admins', 'provider_id')) {
+                $update['provider_id'] = $googleProviderId;
+            }
+
+            if (Schema::hasColumn('admins', 'email_verified_at') && $admin->email_verified_at === null) {
+                $update['email_verified_at'] = now();
+            }
+
+            if ($update !== []) {
+                $admin->forceFill($update)->save();
+            }
+
+            // SSOログインでは2段階認証を省略するため、既存の未使用コードとpendingセッションを無効化する。
+            AdminLoginCode::where('admin_id', $admin->id)
+                ->whereNull('used_at')
+                ->update([
+                    'used_at' => now(),
+                ]);
+
+            $request->session()->forget('admin_2fa_pending_id');
+
+            Auth::guard('admin')->login($admin);
+            $request->session()->regenerate();
+
+            Log::info('管理者Google SSOログイン成功', [
+                'admin_id' => $admin->id,
+                'email' => $admin->email,
+                'google_email' => $googleEmail,
+            ]);
+
+            return redirect()->intended(route('admin.dashboard'));
+        } catch (Throwable $e) {
+            report($e);
+
+            Log::error('管理者Google SSOログイン失敗', [
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
+
+            return redirect()->route('admin.login')
+                ->withErrors([
+                    'email' => 'Googleログインに失敗しました。時間をおいて再度お試しください。',
+                ]);
+        }
+    }
+
+    /**
+     * 認証コード入力画面を表示する。
+     */
+    public function showVerify(Request $request): RedirectResponse|View
+    {
+        if (! $request->session()->has('admin_2fa_pending_id')) {
             Log::info('管理者2段階認証コード入力画面にアクセスしたが、セッションにpending_idがない', [
                 'session_data' => $request->session()->all(),
             ]);
+
             return redirect()->route('admin.login');
         }
 
@@ -115,9 +265,9 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * 認証コード確認処理
+     * 認証コード確認処理。
      */
-    public function verify(Request $request)
+    public function verify(Request $request): RedirectResponse
     {
         $request->validate([
             'code' => ['required', 'digits:6'],
@@ -125,16 +275,17 @@ class AdminAuthController extends Controller
 
         $adminId = $request->session()->get('admin_2fa_pending_id');
 
-        if (!$adminId) {
+        if (! $adminId) {
             Log::info('管理者2段階認証コード確認処理にアクセスしたが、セッションにpending_idがない', [
                 'session_data' => $request->session()->all(),
             ]);
+
             return redirect()->route('admin.login');
         }
 
         $admin = Admin::find($adminId);
 
-        if (!$admin) {
+        if (! $admin) {
             $request->session()->forget('admin_2fa_pending_id');
 
             return redirect()->route('admin.login');
@@ -145,7 +296,7 @@ class AdminAuthController extends Controller
             ->latest()
             ->first();
 
-        if (!$loginCode) {
+        if (! $loginCode) {
             $request->session()->forget('admin_2fa_pending_id');
 
             return redirect()->route('admin.login')
@@ -167,7 +318,7 @@ class AdminAuthController extends Controller
                 ]);
         }
 
-        if (!Hash::check($request->input('code'), $loginCode->code_hash)) {
+        if (! Hash::check($request->input('code'), $loginCode->code_hash)) {
             return back()->withErrors([
                 'code' => '認証コードが正しくありません。',
             ]);
@@ -177,7 +328,7 @@ class AdminAuthController extends Controller
             'used_at' => now(),
         ]);
 
-        // ここで初めて管理者ログイン完了にする
+        // ここで初めて管理者ログイン完了にする。
         Auth::guard('admin')->login($admin);
 
         $request->session()->forget('admin_2fa_pending_id');
@@ -192,9 +343,9 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * 管理者ログアウト
+     * 管理者ログアウト。
      */
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Log::info('管理者ログアウト', [
             'admin_id' => Auth::guard('admin')->id(),
@@ -207,5 +358,48 @@ class AdminAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login');
+    }
+
+    /**
+     * 管理者Google SSO用コールバックURLを返す。
+     *
+     * GOOGLE_ADMIN_REDIRECT_URI が設定されていればそれを優先する。
+     * 未設定の場合は、現在アクセスしている host から /admin/auth/callback を作る。
+     */
+    private function adminGoogleCallbackUrl(Request $request): string
+    {
+        $configured = trim((string) config('services.google.admin_redirect', ''));
+
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return rtrim($request->getSchemeAndHttpHost(), '/') . route('admin.auth.callback', [], false);
+    }
+
+    /**
+     * 管理者Google SSOを許可するメールアドレスか確認する。
+     */
+    private function isAllowedAdminGoogleEmail(string $email): bool
+    {
+        $allowedEmails = config('services.google.admin_allowed_emails', []);
+
+        if (is_string($allowedEmails)) {
+            $allowedEmails = explode(',', $allowedEmails);
+        }
+
+        $allowedEmails = collect($allowedEmails)
+            ->map(fn ($allowedEmail) => strtolower(trim((string) $allowedEmail)))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($allowedEmails === []) {
+            Log::critical('管理者Google SSOの許可メールが未設定です。GOOGLE_ADMIN_ALLOWED_EMAILS を設定してください。');
+
+            return false;
+        }
+
+        return in_array(strtolower(trim($email)), $allowedEmails, true);
     }
 }

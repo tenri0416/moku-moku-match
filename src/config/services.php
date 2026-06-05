@@ -74,10 +74,19 @@ return [
         'admin_to' => env('LINE_ADMIN_TO'),
     ],
 
-    // google SSO
-    'google' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/auth/callback',
-    ],
+'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID'),
+    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+
+    'redirect' => env('GOOGLE_REDIRECT_URI')
+        ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/auth/callback',
+
+    'admin_redirect' => env('GOOGLE_ADMIN_REDIRECT_URI')
+        ?: rtrim((string) env('APP_URL', 'http://localhost:8080'), '/') . '/admin/auth/callback',
+
+    'admin_allowed_emails' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('GOOGLE_ADMIN_ALLOWED_EMAILS', ''))
+    ))),
+],
 ];

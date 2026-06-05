@@ -69,7 +69,7 @@
                     </h2>
 
                     <p class="mt-2 text-sm leading-6 text-slate-600">
-                        管理者アカウントのメールアドレスとパスワードを入力してください。
+                        管理者アカウントでログインしてください。
                     </p>
                 </div>
 
@@ -88,6 +88,35 @@
                         <p class="text-sm font-semibold text-rose-700">
                             入力内容を確認してください。
                         </p>
+                    </div>
+                @endif
+
+                {{-- Google Admin SSO --}}
+                @if (Route::has('admin.auth.redirect'))
+                    <div class="space-y-3">
+                        <a
+                            href="{{ route('admin.auth.redirect') }}"
+                            class="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.99]"
+                        >
+                            <svg class="h-5 w-5" viewBox="0 0 533.5 544.3" aria-hidden="true">
+                                <path fill="#4285F4" d="M533.5 278.4c0-18.5-1.5-37.1-4.7-55.3H272.1v104.7h147c-6.1 33.8-25.7 63.7-54.4 82.7v68h88.1c51.6-47.5 80.7-117.6 80.7-200.1z"/>
+                                <path fill="#34A853" d="M272.1 544.3c73.7 0 135.8-24.2 181.1-65.8l-88.1-68c-24.5 16.7-56.1 26.2-93 26.2-71.4 0-131.9-48.2-153.6-112.9H27.7v70.1c46.4 92.3 140.8 150.4 244.4 150.4z"/>
+                                <path fill="#FBBC04" d="M118.5 323.8c-11.5-33.8-11.5-70.6 0-104.4v-70.1H27.7c-38.8 77.1-38.8 168.2 0 245.3l90.8-70.8z"/>
+                                <path fill="#EA4335" d="M272.1 107.7c38.9-.6 76.3 14 104.6 40.7l78-78C405.3 24.2 339.8-1.2 272.1 0 168.5 0 74.1 58.1 27.7 150.4l90.8 70.1c21.7-64.7 82.2-112.8 153.6-112.8z"/>
+                            </svg>
+                            <span>Googleで管理者ログイン</span>
+                        </a>
+
+                        <p class="text-center text-xs font-bold leading-5 text-slate-500">
+                            許可されたGoogleアカウントのみログインできます。<br>
+                            Googleログインの場合、メール認証コードによる2段階認証は省略されます。
+                        </p>
+                    </div>
+
+                    <div class="my-6 flex items-center gap-4">
+                        <div class="h-px flex-1 bg-slate-200"></div>
+                        <span class="text-xs font-black text-slate-400">または</span>
+                        <div class="h-px flex-1 bg-slate-200"></div>
                     </div>
                 @endif
 
