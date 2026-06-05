@@ -53,6 +53,7 @@
         </div>
 
         @yield('content')
+        @include('admin.users.partials.admin-impersonation-sidebar')
     </main>
 
 

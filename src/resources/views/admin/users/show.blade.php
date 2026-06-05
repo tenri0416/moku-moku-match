@@ -255,6 +255,24 @@
                     </h2>
 
                     <div class="mt-5 space-y-3">
+                        @if (session('admin_impersonation.active'))
+                            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-7 text-amber-800">
+                                現在、別ユーザーとして代理ログイン中です。ユーザー画面左側の「管理者でログイン中」から終了してください。
+                            </div>
+                        @else
+                            <form method="POST" action="{{ route('admin.users.impersonate.start', $user) }}">
+                                @csrf
+
+                                <button
+                                    type="submit"
+                                    class="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                                    onclick="return confirm('このユーザーとして操作します。投稿、トレーニング、メッセージなどが対象ユーザーの操作として保存されます。よろしいですか？');"
+                                >
+                                    このユーザーとして操作する
+                                </button>
+                            </form>
+                        @endif
+
                         @if ($user->status === 1)
                             <form method="POST" action="{{ route('admin.users.suspend', $user) }}">
                                 @csrf

@@ -12,6 +12,8 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminWorkPostController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserSatisfactionSurveyController;
+use App\Http\Controllers\Admin\AdminUserImpersonationController;
+use App\Http\Controllers\User\ImpersonationController;
 
 
 Route::get('/admin/login', [AdminAuthController::class, 'index'])
@@ -119,4 +121,12 @@ Route::prefix('admin')
         Route::get('/satisfaction-surveys', [UserSatisfactionSurveyController::class, 'index'])
             ->name('satisfaction-surveys.index');
 
+        Route::post('/users/{user}/impersonate', [AdminUserImpersonationController::class, 'start'])
+            ->name('users.impersonate.start');
+
     });
+
+
+    Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])
+    ->middleware(['auth:admin'])
+    ->name('impersonation.stop');

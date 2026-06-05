@@ -33,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return route('login');
         });
+        $middleware->web(append: [
+            \App\Http\Middleware\LogAdminImpersonatedRequest::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

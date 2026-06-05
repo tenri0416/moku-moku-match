@@ -17,7 +17,6 @@ use App\Http\Controllers\User\UserProfileController;
 use App\Http\Controllers\HeaderStatusController;
 use App\Http\Controllers\SatisfactionSurveyController;
 
-
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
