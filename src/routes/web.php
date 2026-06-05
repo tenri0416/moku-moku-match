@@ -27,9 +27,9 @@ use App\Http\Controllers\SatisfactionSurveyController;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
     
-Route::get('/welcome', function () {
-    return view('welcome');
-})->name('welcome');
+
+Route::view('/privacy-policy', 'legal.privacy-policy')->name('privacy-policy');
+Route::view('/terms', 'legal.terms')->name('terms');
 
 Route::get('/work-posts', [WorkPostController::class, 'index'])
     ->name('work-posts.index');
@@ -39,6 +39,8 @@ Route::get('/work-posts', [WorkPostController::class, 'index'])
 
     Route::get('/users/{user}', [UserProfileController::class, 'show'])
     ->name('users.show');
+
+
 
 /*
 |--------------------------------------------------------------------------
