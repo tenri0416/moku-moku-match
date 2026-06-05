@@ -12,8 +12,12 @@
     {{-- Left Area --}}
     <section class="hidden w-1/2 items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-12 lg:flex">
         <div class="max-w-lg">
-            <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-600 text-2xl font-black text-white shadow-lg shadow-indigo-900/40">
-                A
+            <div class="mx-auto flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#DDE6F5]">
+                <img
+                    src="{{ asset('images/logo.png') }}"
+                    alt="MokuMoku Match"
+                    class="h-9 w-9 object-contain"
+                >
             </div>
 
             <p class="mt-8 text-sm font-bold tracking-wide text-indigo-300">
@@ -60,8 +64,12 @@
         <div class="w-full max-w-md">
             <div class="rounded-3xl bg-white p-6 text-slate-900 shadow-2xl shadow-slate-950/40 ring-1 ring-slate-800/10 sm:p-8">
                 <div class="mb-8 text-center">
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-xl font-black text-white shadow-sm">
-                        A
+                    <div class="mx-auto flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#DDE6F5]">
+                        <img
+                            src="{{ asset('images/logo.png') }}"
+                            alt="MokuMoku Match"
+                            class="h-9 w-9 object-contain"
+                        >
                     </div>
 
                     <h2 class="mt-5 text-2xl font-black text-slate-900">

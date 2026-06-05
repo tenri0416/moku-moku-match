@@ -1,7 +1,11 @@
 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-  <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-base font-black text-white shadow-sm">
-      A
-  </span>
+    <div class="mx-auto flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#DDE6F5]">
+        <img
+            src="{{ asset('images/logo.png') }}"
+            alt="MokuMoku Match"
+            class="h-9 w-9 object-contain"
+        >
+    </div>
 
   <span>
       <span class="block text-lg font-black tracking-tight text-slate-900">
