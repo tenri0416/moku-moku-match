@@ -266,7 +266,7 @@
 
                             <div class="mt-4">
                                 <a
-                                    href="{{ route('work-posts.index') }}"
+                                    href="{{ route('home') }}"
                                     class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
                                 >
                                     募集を見る
