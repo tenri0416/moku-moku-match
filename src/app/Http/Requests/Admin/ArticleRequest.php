@@ -45,6 +45,12 @@ class ArticleRequest extends FormRequest
             'body_css' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
 
+            'thumbnail' => ['nullable', 'image', 'max:5120'],
+
+            'author_user_id' => ['nullable', 'exists:users,id'],
+            'reading_minutes' => ['required', 'integer', 'min:1', 'max:120'],
+
+
             'status' => [
                 'required',
                 'integer',

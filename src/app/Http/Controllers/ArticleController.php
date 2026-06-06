@@ -3,165 +3,145 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\ArticleCategory;
-use App\Models\ArticleTag;
-use App\Models\ArticleView;
-use App\Support\ApiActionLogger;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\ArticleTag;
 
 class ArticleController extends Controller
 {
     /**
-     * 記事一覧
+     * 記事一覧。
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        ApiActionLogger::info(
-            'ArticleController::index',
-            '記事一覧画面にアクセス',
-            [
-                'user_id' => Auth::id(),
-            ]
-        );
+        $keyword = trim((string) $request->query('keyword', ''));
+        $sort = (string) $request->query('sort', 'new');
 
-        $articles = Article::query()
-            ->with('prefecture')
-            ->public()
-            ->latest('published_at')
-            ->paginate(12);
+        $query = Article::query()
+            ->with(['category', 'prefecture', 'tags', 'authorUser.profile'])
+            ->where('status', Article::STATUS_PUBLIC)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
 
-        return view('articles.index', compact('articles'));
+        if ($keyword !== '') {
+            $query->where(function ($keywordQuery) use ($keyword) {
+                $keywordQuery
+                    ->where('title', 'like', '%' . $keyword . '%')
+                    ->orWhere('h1_title', 'like', '%' . $keyword . '%')
+                    ->orWhere('excerpt', 'like', '%' . $keyword . '%')
+                    ->orWhere('body_html', 'like', '%' . $keyword . '%')
+                    ->orWhere('seo_title', 'like', '%' . $keyword . '%')
+                    ->orWhere('seo_description', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        if ($sort === 'category') {
+            $query
+                ->leftJoin('article_categories', 'articles.article_category_id', '=', 'article_categories.id')
+                ->select('articles.*')
+                ->orderBy('article_categories.name')
+                ->orderByDesc('articles.published_at')
+                ->orderByDesc('articles.id');
+        } else {
+            $query
+                ->orderByDesc('articles.published_at')
+                ->orderByDesc('articles.id');
+        }
+
+        $articles = $query->paginate(12)->withQueryString();
+
+        $pageTitle = match (true) {
+            $keyword !== '' => '「' . $keyword . '」の検索結果',
+            $sort === 'category' => 'カテゴリー順の記事一覧',
+            default => '新着記事一覧',
+        };
+
+        $pageDescription = $keyword !== ''
+            ? 'YomuWorks内で「' . $keyword . '」に関連する記事を表示しています。'
+            : '技術、個人開発、暮らし、働き方、MokuMoku Matchの活用方法を届ける記事一覧です。';
+
+        return view('articles.index', compact(
+            'articles',
+            'keyword',
+            'sort',
+            'pageTitle',
+            'pageDescription'
+        ));
     }
 
     /**
-     * 通常の記事詳細
-     * URL例：/articles/nara-freelance-work-partner
+     * 記事詳細。
      */
     public function show(Article $article): View
     {
-        ApiActionLogger::info(
-            'ArticleController::show',
-            '記事詳細画面にアクセス',
-            [
-                'user_id' => Auth::id(),
-                'article_id' => $article->id,
-                'article_title' => $article->title ?? null,
-                'article_slug' => $article->slug ?? null,
-            ]
+        abort_unless(
+            (int) $article->status === Article::STATUS_PUBLIC
+            && $article->published_at
+            && $article->published_at->lte(now()),
+            404
         );
 
-        $this->abortIfNotPublic($article);
+        $article->load(['category', 'prefecture', 'tags', 'authorUser.profile']);
 
-        ArticleView::create([
-            'article_id' => $article->id,
-            'user_id' => Auth::id(),
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'referer' => request()->headers->get('referer'),
-        ]);
+        $relatedArticles = Article::query()
+            ->with(['category', 'prefecture', 'tags', 'authorUser.profile'])
+            ->where('status', Article::STATUS_PUBLIC)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->where('id', '!=', $article->id)
+            ->latest('published_at')
+            ->take(4)
+            ->get();
 
-        $article->load('prefecture');
-
-        return view('articles.show', compact('article'));
+        return view('articles.show', compact('article', 'relatedArticles'));
     }
 
     /**
-     * 短縮URLの記事詳細
-     * URL例：/nara
+ * タグ別の記事一覧。
+ */
+public function tag(string $tag): View
+{
+    $articleTag = ArticleTag::query()
+        ->where('slug', $tag)
+        ->firstOrFail();
+
+    $articles = Article::query()
+        ->with(['category', 'prefecture', 'tags', 'authorUser.profile'])
+        ->where('status', Article::STATUS_PUBLIC)
+        ->whereNotNull('published_at')
+        ->where('published_at', '<=', now())
+        ->whereHas('tags', function ($query) use ($articleTag) {
+            $query->where('article_tags.id', $articleTag->id);
+        })
+        ->orderByDesc('published_at')
+        ->orderByDesc('id')
+        ->paginate(12)
+        ->withQueryString();
+
+    $keyword = '';
+    $sort = 'new';
+    $pageTitle = '「' . $articleTag->name . '」の記事一覧';
+    $pageDescription = '「' . $articleTag->name . '」に関連する記事を表示しています。';
+
+    return view('articles.index', compact(
+        'articles',
+        'keyword',
+        'sort',
+        'pageTitle',
+        'pageDescription',
+        'articleTag'
+    ));
+}
+
+    /**
+     * 短縮URLの記事詳細。
      */
     public function showShort(string $shortSlug): View
     {
-        ApiActionLogger::info(
-            'ArticleController::showShort',
-            '短縮URLの記事詳細画面にアクセス',
-            [
-                'user_id' => Auth::id(),
-                'short_slug' => $shortSlug,
-            ]
-        );
-
         $article = Article::query()
             ->where('short_slug', $shortSlug)
             ->firstOrFail();
 
-        $this->abortIfNotPublic($article);
-
-        $article->load('prefecture');
-
-        return view('articles.show', compact('article'));
-    }
-
-    /**
-     * 公開記事以外は404にする
-     */
-    private function abortIfNotPublic(Article $article): void
-    {
-        abort_if($article->status !== Article::STATUS_PUBLIC, 404);
-        abort_if($article->published_at === null || $article->published_at->isFuture(), 404);
-    }
-
-    public function category(ArticleCategory $category)
-    {
-        ApiActionLogger::info(
-            'ArticleController::category',
-            '記事カテゴリ一覧画面にアクセス',
-            [
-                'user_id' => Auth::id(),
-                'category_id' => $category->id,
-                'category_name' => $category->name,
-            ]
-        );
-
-        abort_unless($category->is_active, 404);
-
-        $articles = Article::query()
-            ->with(['category', 'tags'])
-            ->where('article_category_id', $category->id)
-            ->where('status', 2)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
-            ->latest('published_at')
-            ->paginate(12);
-
-        return view('articles.index', [
-            'articles' => $articles,
-            'pageTitle' => $category->name . 'の記事一覧',
-            'pageDescription' => $category->description ?: $category->name . 'に関する記事一覧です。',
-            'currentCategory' => $category,
-        ]);
-    }
-
-    public function tag(ArticleTag $tag)
-    {
-        ApiActionLogger::info(
-            'ArticleController::tag',
-            '記事タグ一覧画面にアクセス',
-            [
-                'user_id' => Auth::id(),
-                'tag_id' => $tag->id,
-                'tag_name' => $tag->name,
-            ]
-        );
-
-        abort_unless($tag->is_active, 404);
-
-        $articles = Article::query()
-            ->with(['category', 'tags'])
-            ->whereHas('tags', function ($query) use ($tag) {
-                $query->where('article_tags.id', $tag->id);
-            })
-            ->where('status', 2)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
-            ->latest('published_at')
-            ->paginate(12);
-
-        return view('articles.index', [
-            'articles' => $articles,
-            'pageTitle' => $tag->name . 'の記事一覧',
-            'pageDescription' => $tag->description ?: $tag->name . 'に関する記事一覧です。',
-            'currentTag' => $tag,
-        ]);
+        return $this->show($article);
     }
 }

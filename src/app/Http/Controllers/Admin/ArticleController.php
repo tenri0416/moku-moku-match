@@ -8,13 +8,13 @@ use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\ArticleTag;
 use App\Models\Prefecture;
+use App\Models\User;
+use App\Services\ArticleSeoKeywordSuggestionService;
 use App\Support\ApiActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use App\Services\ArticleSeoKeywordSuggestionService;
-
 
 class ArticleController extends Controller
 {
@@ -35,7 +35,7 @@ class ArticleController extends Controller
         );
 
         $articles = Article::query()
-            ->with(['admin', 'prefecture'])
+            ->with(['admin', 'prefecture', 'category', 'tags', 'authorUser.profile'])
             ->when($request->keyword, function ($query, $keyword) {
                 $query->where(function ($query) use ($keyword) {
                     $query->where('title', 'like', "%{$keyword}%")
@@ -43,7 +43,7 @@ class ArticleController extends Controller
                         ->orWhere('short_slug', 'like', "%{$keyword}%");
                 });
             })
-            ->when($request->status, fn($query, $status) => $query->where('status', $status))
+            ->when($request->status, fn ($query, $status) => $query->where('status', $status))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -65,6 +65,7 @@ class ArticleController extends Controller
         );
 
         $article = new Article();
+
         $prefectures = Prefecture::orderBy('id')->get();
 
         $categories = ArticleCategory::with('parent')
@@ -79,7 +80,18 @@ class ArticleController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('admin.articles.create', compact('article', 'prefectures', 'categories', 'tags'));
+        $authorUsers = User::query()
+            ->with('profile')
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.articles.create', compact(
+            'article',
+            'prefectures',
+            'categories',
+            'tags',
+            'authorUsers'
+        ));
     }
 
     /**
@@ -98,6 +110,9 @@ class ArticleController extends Controller
                 'status' => $request->status,
                 'prefecture_id' => $request->prefecture_id,
                 'article_category_id' => $request->article_category_id,
+                'category_id' => $request->category_id,
+                'author_user_id' => $request->author_user_id,
+                'reading_minutes' => $request->reading_minutes,
                 'tag_ids' => $request->input('tag_ids', []),
                 'has_thumbnail' => $request->hasFile('thumbnail'),
             ]
@@ -109,7 +124,7 @@ class ArticleController extends Controller
             $validated['thumbnail_path'] = $request->file('thumbnail')->store('articles', 'public');
         }
 
-        unset($validated['thumbnail']);
+        unset($validated['thumbnail'], $validated['tag_ids']);
 
         $article = Article::create([
             ...$validated,
@@ -127,6 +142,8 @@ class ArticleController extends Controller
                 'title' => $article->title,
                 'slug' => $article->slug,
                 'status' => $article->status,
+                'author_user_id' => $article->author_user_id,
+                'reading_minutes' => $article->reading_minutes,
             ]
         );
 
@@ -135,9 +152,6 @@ class ArticleController extends Controller
             ->with('success', '記事を作成しました。');
     }
 
-    /**
-     * 記事詳細
-     */
     /**
      * 記事詳細
      */
@@ -155,7 +169,7 @@ class ArticleController extends Controller
             ]
         );
 
-        $article->load(['admin', 'prefecture', 'category', 'tags']);
+        $article->load(['admin', 'prefecture', 'category', 'tags', 'authorUser.profile']);
 
         $seoKeywordSuggestions = $seoKeywordSuggestionService->make($article);
 
@@ -179,6 +193,8 @@ class ArticleController extends Controller
             ]
         );
 
+        $article->load(['tags', 'authorUser.profile']);
+
         $prefectures = Prefecture::orderBy('id')->get();
 
         $categories = ArticleCategory::with('parent')
@@ -193,7 +209,18 @@ class ArticleController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('admin.articles.edit', compact('article', 'prefectures', 'categories', 'tags'));
+        $authorUsers = User::query()
+            ->with('profile')
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.articles.edit', compact(
+            'article',
+            'prefectures',
+            'categories',
+            'tags',
+            'authorUsers'
+        ));
     }
 
     /**
@@ -213,6 +240,9 @@ class ArticleController extends Controller
                 'status' => $request->status,
                 'prefecture_id' => $request->prefecture_id,
                 'article_category_id' => $request->article_category_id,
+                'category_id' => $request->category_id,
+                'author_user_id' => $request->author_user_id,
+                'reading_minutes' => $request->reading_minutes,
                 'tag_ids' => $request->input('tag_ids', []),
                 'has_thumbnail' => $request->hasFile('thumbnail'),
             ]
@@ -228,7 +258,7 @@ class ArticleController extends Controller
             $validated['thumbnail_path'] = $request->file('thumbnail')->store('articles', 'public');
         }
 
-        unset($validated['thumbnail']);
+        unset($validated['thumbnail'], $validated['tag_ids']);
 
         $article->update($validated);
         $article->tags()->sync($request->input('tag_ids', []));
@@ -242,6 +272,8 @@ class ArticleController extends Controller
                 'title' => $article->title,
                 'slug' => $article->slug,
                 'status' => $article->status,
+                'author_user_id' => $article->author_user_id,
+                'reading_minutes' => $article->reading_minutes,
             ]
         );
 

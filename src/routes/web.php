@@ -18,7 +18,7 @@ use App\Http\Controllers\HeaderStatusController;
 use App\Http\Controllers\SatisfactionSurveyController;
 use App\Http\Controllers\User\WithdrawalController;
 use App\Http\Controllers\User\GooglePhotoAvatarController;
-
+use App\Http\Controllers\ArticleInquiryController;
 /*
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -42,6 +42,8 @@ Route::get('/work-posts', [WorkPostController::class, 'index'])
     ->name('users.show');
 
 
+    Route::post('/article-inquiries', [ArticleInquiryController::class, 'store'])
+    ->name('article-inquiries.store');
 
 /*
 |--------------------------------------------------------------------------

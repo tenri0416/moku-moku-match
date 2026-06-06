@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Article extends Model
 {
@@ -33,6 +33,8 @@ class Article extends Model
         'status',
         'published_at',
         'article_category_id',
+        'reading_minutes',
+        'author_user_id',
     ];
 
     protected $casts = [
@@ -40,16 +42,58 @@ class Article extends Model
         'deleted_at' => 'datetime',
     ];
 
+    /**
+     * 記事を作成した管理者。
+     */
     public function admin(): BelongsTo
     {
         return $this->belongsTo(Admin::class);
     }
 
+    /**
+     * 記事に紐づく都道府県。
+     */
     public function prefecture(): BelongsTo
     {
         return $this->belongsTo(Prefecture::class);
     }
 
+    /**
+     * 記事カテゴリーを取得する。
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ArticleCategory::class, 'article_category_id');
+    }
+
+    /**
+     * 記事タグを取得する。
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(ArticleTag::class, 'article_article_tag')
+            ->withTimestamps();
+    }
+
+    /**
+     * 記事閲覧ログを取得する。
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(ArticleView::class);
+    }
+
+    /**
+     * 記事の著者として表示するユーザー。
+     */
+    public function authorUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_user_id');
+    }
+
+    /**
+     * 公開中の記事だけに絞り込む。
+     */
     public function scopePublic(Builder $query): Builder
     {
         return $query
@@ -58,6 +102,9 @@ class Article extends Model
             ->where('published_at', '<=', now());
     }
 
+    /**
+     * SEOタイトル。
+     */
     public function getSeoTitleAttribute(): ?string
     {
         return $this->attributes['seo_title']
@@ -65,6 +112,9 @@ class Article extends Model
             ?? null;
     }
 
+    /**
+     * SEO説明文。
+     */
     public function getSeoDescriptionTextAttribute(): ?string
     {
         $seoDescription = $this->attributes['seo_description'] ?? null;
@@ -72,28 +122,5 @@ class Article extends Model
         $bodyHtml = $this->attributes['body_html'] ?? '';
 
         return $seoDescription ?: ($excerpt ?: mb_substr(strip_tags($bodyHtml), 0, 120));
-    }
-    /**
-     * 記事カテゴリーを取得する
-     */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(ArticleCategory::class, 'article_category_id');
-    }
-
-    /**
-     * 記事タグを取得する
-     */
-    public function tags(): BelongsToMany
-    {
-        return $this->belongsToMany(ArticleTag::class, 'article_article_tag')
-            ->withTimestamps();
-    }
-    /**
-     * 記事閲覧ログを取得する
-     */
-    public function views(): HasMany
-    {
-        return $this->hasMany(ArticleView::class);
     }
 }

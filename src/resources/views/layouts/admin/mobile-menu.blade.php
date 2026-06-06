@@ -4,7 +4,9 @@
             'admin.articles.*',
             'admin.article-categories.*',
             'admin.article-tags.*',
-            'admin.article-views.*'
+            'admin.article-views.*',
+            'admin.article-inquiries.*'
+
         );
     @endphp
 
@@ -96,6 +98,13 @@
                         href="{{ route('admin.article-views.index') }}"
                         class="block rounded-xl px-4 py-2.5 text-sm font-bold
                         {{ request()->routeIs('admin.article-views.*') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100' }}"
+                    >
+                        記事閲覧数
+                    </a>
+                    <a
+                        href="{{ route('admin.article-inquiries.index') }}"
+                        class="block rounded-xl px-4 py-2.5 text-sm font-bold
+                        {{ request()->routeIs('admin.article-inquiries.*') ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100' }}"
                     >
                         記事閲覧数
                     </a>
