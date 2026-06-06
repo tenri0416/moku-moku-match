@@ -20,6 +20,11 @@
     $authorAvatar = $authorProfile?->avatar_path
         ? asset('storage/' . $authorProfile->avatar_path)
         : asset('images/default-avatar.png');
+
+    $pointItems = $article->point_items;
+    $tocItems = $article->toc_items;
+    $likeCount = $article->likes_count ?? $article->likes()->count();
+    $viewCount = $article->view_count ?? 0;
 @endphp
 
 <section class="yw-pc-article-hero">
@@ -32,9 +37,9 @@
             <p class="yw-point-title">この記事のポイント</p>
 
             <ul>
-                <li>読みやすく内容を整理</li>
-                <li>今日から使えるヒントを紹介</li>
-                <li>働き方や学びを少し整える</li>
+                @foreach ($pointItems as $point)
+                    <li>{{ $point }}</li>
+                @endforeach
             </ul>
         </aside>
     </div>
@@ -74,14 +79,26 @@
             <div>
                 <p>{{ $authorName }}</p>
 
-                <span>
-                    @if ($article->published_at)
-                        {{ $article->published_at->format('Y.m.d') }}
-                    @else
-                        日付未設定
-                    @endif
-                    ・ {{ $article->reading_minutes ?? 3 }}分で読めます
-                </span>
+                <div class="yw-article-meta-lines">
+                    <div class="yw-article-meta-line">
+                        @if ($article->published_at)
+                            <span>{{ $article->published_at->format('Y.m.d') }}</span>
+                        @else
+                            <span>日付未設定</span>
+                        @endif
+
+                        <span>・</span>
+                        <span>{{ $article->reading_minutes ?? 3 }}分で読めます</span>
+                    </div>
+
+                    <div class="yw-article-meta-line">
+                        <span>👁 {{ number_format($viewCount) }}</span>
+                        <span>・</span>
+                        <span class="yw-like-inline">
+                            ♡ <span data-article-like-count>{{ number_format($likeCount) }}</span>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -129,6 +146,9 @@
                         $relatedImage = $related->thumbnail_path
                             ? asset('storage/' . $related->thumbnail_path)
                             : asset('images/articles/pc-top.png');
+
+                        $relatedLikeCount = $related->likes_count ?? 0;
+                        $relatedViewCount = $related->view_count ?? 0;
                     @endphp
 
                     <article class="yw-pc-related-card">
@@ -137,7 +157,11 @@
                             <h3>{{ $related->title }}</h3>
 
                             @if ($related->published_at)
-                                <p>{{ $related->published_at->format('Y.m.d') }}</p>
+                                <p>
+                                    {{ $related->published_at->format('Y.m.d') }}
+                                    ・ 👁 {{ number_format($relatedViewCount) }}
+                                    ・ ♡ {{ number_format($relatedLikeCount) }}
+                                </p>
                             @endif
                         </a>
                     </article>
@@ -159,16 +183,35 @@
             <a href="#">X</a>
             <a href="#">f</a>
             <a href="#">B!</a>
-            <button type="button">♡ 保存</button>
+
+            <button
+                type="button"
+                class="yw-article-like-button"
+                data-article-like-button
+                data-article-id="{{ $article->id }}"
+                data-like-url="{{ route('articles.like', $article) }}"
+            >
+                <span class="yw-like-inline">
+                    ♡ <span data-article-like-count>{{ number_format($likeCount) }}</span>
+                </span>
+            </button>
+        </div>
+
+        <div class="yw-side-counts">
+            <p>記事データ</p>
+            <ul>
+                <li>閲覧数：{{ number_format($viewCount) }}</li>
+                <li>いいね：<span data-article-like-count>{{ number_format($likeCount) }}</span></li>
+            </ul>
         </div>
 
         <div class="yw-side-point">
             <p>この記事のポイント</p>
 
             <ul>
-                <li>読みやすく内容を整理</li>
-                <li>今日から使えるヒントを紹介</li>
-                <li>働き方や学びを少し整える</li>
+                @foreach ($pointItems as $point)
+                    <li>{{ $point }}</li>
+                @endforeach
             </ul>
         </div>
 
@@ -176,9 +219,9 @@
             <p>目次</p>
 
             <ul>
-                <li>はじめに</li>
-                <li>本文</li>
-                <li>まとめ</li>
+                @foreach ($tocItems as $toc)
+                    <li>{{ $toc }}</li>
+                @endforeach
             </ul>
         </div>
     </aside>

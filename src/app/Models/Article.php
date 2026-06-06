@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Article extends Model
 {
     use SoftDeletes;
@@ -35,6 +36,9 @@ class Article extends Model
         'article_category_id',
         'reading_minutes',
         'author_user_id',
+        'point_text',
+        'toc_text',
+        'view_count',
     ];
 
     protected $casts = [
@@ -122,5 +126,57 @@ class Article extends Model
         $bodyHtml = $this->attributes['body_html'] ?? '';
 
         return $seoDescription ?: ($excerpt ?: mb_substr(strip_tags($bodyHtml), 0, 120));
+    }
+
+    /**
+     * 記事いいねを取得する。
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(ArticleLike::class);
+    }
+
+    /**
+     * この記事のポイントを1行ごとの配列で取得する。
+     */
+    public function getPointItemsAttribute(): array
+    {
+        $text = trim((string) ($this->point_text ?? ''));
+
+        if ($text === '') {
+            return [
+                '読みやすく内容を整理',
+                '今日から使えるヒントを紹介',
+                '働き方や学びを少し整える',
+            ];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $text))
+            ->map(fn($line) => trim($line))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * 目次を1行ごとの配列で取得する。
+     */
+    public function getTocItemsAttribute(): array
+    {
+        $text = trim((string) ($this->toc_text ?? ''));
+
+        if ($text === '') {
+            return [
+                'はじめに',
+                '本文',
+                'まとめ',
+            ];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $text))
+            ->map(fn($line) => trim($line))
+            ->filter()
+            ->values()
+            ->all();
     }
 }

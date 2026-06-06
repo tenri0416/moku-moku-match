@@ -50,6 +50,8 @@ class ArticleRequest extends FormRequest
             'author_user_id' => ['nullable', 'exists:users,id'],
             'reading_minutes' => ['required', 'integer', 'min:1', 'max:120'],
 
+            'point_text' => ['nullable', 'string', 'max:2000'],
+            'toc_text' => ['nullable', 'string', 'max:2000'],
 
             'status' => [
                 'required',

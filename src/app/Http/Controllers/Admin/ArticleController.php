@@ -36,6 +36,7 @@ class ArticleController extends Controller
 
         $articles = Article::query()
             ->with(['admin', 'prefecture', 'category', 'tags', 'authorUser.profile'])
+            ->withCount('likes')
             ->when($request->keyword, function ($query, $keyword) {
                 $query->where(function ($query) use ($keyword) {
                     $query->where('title', 'like', "%{$keyword}%")

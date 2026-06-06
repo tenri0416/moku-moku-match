@@ -1015,4 +1015,139 @@
         font-size: 12px;
         font-weight: 800;
     }
+
+    .yw-share-box button.is-liked,
+    .yw-sp-share button.is-liked {
+        background: #879479;
+        color: #fff;
+        border-color: #879479;
+    }
+
+    .yw-side-counts {
+        margin-top: 18px;
+        padding: 18px;
+        border-radius: 16px;
+        background: rgba(255, 252, 244, 0.78);
+        border: 1px solid rgba(115, 97, 67, 0.14);
+    }
+
+    .yw-side-counts p {
+        margin: 0 0 10px;
+        color: #25231f;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .yw-side-counts ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .yw-side-counts li {
+        margin-top: 8px;
+        color: #4f493d;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .yw-sp-article-counts {
+        margin-top: 4px;
+    }
+
+    .yw-like-inline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+        line-height: 1;
+    }
+
+    .yw-article-like-button {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .yw-article-like-button span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .yw-card-meta .yw-like-inline {
+        display: inline-flex;
+    }
+}
+
+
+/* =========================================
+   記事詳細：著者付近のメタ情報修正
+   日付・読了時間 / 閲覧数・いいね数を2行で揃える
+========================================= */
+
+@media (min-width: 769px) {
+    .yw-article-meta-lines {
+        display: grid;
+        gap: 4px;
+        margin-top: 5px;
+        color: #5d574d;
+        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .yw-article-meta-line {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .yw-pc-author .yw-article-meta-lines,
+    .yw-pc-author .yw-article-meta-line,
+    .yw-pc-author .yw-like-inline {
+        margin-top: 0;
+    }
+
+    .yw-pc-author .yw-article-meta-line span,
+    .yw-pc-author .yw-like-inline,
+    .yw-pc-author .yw-like-inline span {
+        display: inline-flex !important;
+        align-items: center;
+        width: auto !important;
+        margin: 0 !important;
+        line-height: 1.5;
+    }
+
+    .yw-like-inline {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+        line-height: 1.5;
+    }
+
+    .yw-article-like-button,
+    .yw-share-box button[data-article-like-button] {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .yw-article-like-button span,
+    .yw-share-box button[data-article-like-button] span {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: auto !important;
+        margin: 0 !important;
+    }
 }

@@ -28,9 +28,14 @@
             </a>
         </div>
 
-        {{-- Search --}}
+        @if (session('success'))
+            <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <form method="GET" action="{{ route('admin.articles.index') }}" class="grid gap-4 md:grid-cols-3">
+            <form method="GET" action="{{ route('admin.articles.index') }}" class="grid gap-4 md:grid-cols-4">
                 <div class="md:col-span-2">
                     <label for="keyword" class="mb-2 block text-sm font-bold text-slate-700">
                         キーワード
@@ -63,7 +68,27 @@
                     </select>
                 </div>
 
-                <div class="flex items-end gap-3 md:col-span-3">
+                <div>
+                    <label for="article_category_id" class="mb-2 block text-sm font-bold text-slate-700">
+                        カテゴリー
+                    </label>
+
+                    <select
+                        id="article_category_id"
+                        name="article_category_id"
+                        class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    >
+                        <option value="">すべて</option>
+
+                        @foreach (($categories ?? collect()) as $category)
+                            <option value="{{ $category->id }}" @selected((string) request('article_category_id') === (string) $category->id)>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-3 md:col-span-4">
                     <button
                         type="submit"
                         class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
@@ -81,7 +106,6 @@
             </form>
         </div>
 
-        {{-- List --}}
         <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200">
@@ -94,10 +118,13 @@
                                 記事
                             </th>
                             <th class="whitespace-nowrap px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
-                                対象地域
+                                カテゴリー
                             </th>
                             <th class="whitespace-nowrap px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                                 状態
+                            </th>
+                            <th class="whitespace-nowrap px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                                数値
                             </th>
                             <th class="whitespace-nowrap px-5 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                                 公開日時
@@ -131,6 +158,9 @@
                                 $publicUrl = $article->short_slug
                                     ? route('articles.short-show', $article->short_slug)
                                     : route('articles.show', $article);
+
+                                $likeCount = $article->likes_count ?? 0;
+                                $viewCount = $article->view_count ?? 0;
                             @endphp
 
                             <tr class="hover:bg-slate-50">
@@ -153,17 +183,30 @@
                                                 短縮URL：/{{ $article->short_slug }}
                                             </p>
                                         @endif
+
+                                        @if ($article->prefecture)
+                                            <p class="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                                                {{ $article->prefecture->name }}
+                                            </p>
+                                        @endif
                                     </div>
                                 </td>
 
                                 <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
-                                    {{ $article->prefecture?->name ?? '全国向け' }}
+                                    {{ $article->category?->name ?? '未設定' }}
                                 </td>
 
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
                                         {{ $statusLabel }}
                                     </span>
+                                </td>
+
+                                <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
+                                    <div class="space-y-1">
+                                        <p>👁 {{ number_format($viewCount) }}</p>
+                                        <p>♡ {{ number_format($likeCount) }}</p>
+                                    </div>
                                 </td>
 
                                 <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
@@ -221,7 +264,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-10 text-center text-sm text-slate-500">
+                                <td colspan="8" class="px-5 py-10 text-center text-sm text-slate-500">
                                     記事がありません。
                                 </td>
                             </tr>

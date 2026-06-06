@@ -19,7 +19,9 @@ use App\Http\Controllers\SatisfactionSurveyController;
 use App\Http\Controllers\User\WithdrawalController;
 use App\Http\Controllers\User\GooglePhotoAvatarController;
 use App\Http\Controllers\ArticleInquiryController;
-/*
+use App\Http\Controllers\ArticleController;
+
+/*sa
 |--------------------------------------------------------------------------
 | 公開ページ
 |--------------------------------------------------------------------------
@@ -44,6 +46,9 @@ Route::get('/work-posts', [WorkPostController::class, 'index'])
 
     Route::post('/article-inquiries', [ArticleInquiryController::class, 'store'])
     ->name('article-inquiries.store');
+
+    Route::post('/articles/{article}/like', [ArticleController::class, 'like'])
+    ->name('articles.like');
 
 /*
 |--------------------------------------------------------------------------

@@ -51,6 +51,9 @@
                 $authorAvatar = $authorProfile?->avatar_path
                     ? asset('storage/' . $authorProfile->avatar_path)
                     : asset('images/default-avatar.png');
+
+                $likeCount = $article->likes_count ?? 0;
+                $viewCount = $article->view_count ?? 0;
             @endphp
 
             <article class="yw-sp-article-card">
@@ -107,6 +110,8 @@
                     @endif
 
                     <span>{{ $article->reading_minutes ?? 3 }}分で読めます</span>
+                    <span>👁 {{ number_format($viewCount) }}</span>
+                    <span class="yw-like-inline">♡ {{ number_format($likeCount) }}</span>
 
                     <a href="{{ $articleUrl }}">読む →</a>
                 </div>

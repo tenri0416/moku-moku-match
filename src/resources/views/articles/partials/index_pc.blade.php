@@ -57,6 +57,9 @@
             $featuredAuthorAvatar = $featuredAuthorProfile?->avatar_path
                 ? asset('storage/' . $featuredAuthorProfile->avatar_path)
                 : asset('images/default-avatar.png');
+
+            $featuredLikeCount = $featuredArticle->likes_count ?? 0;
+            $featuredViewCount = $featuredArticle->view_count ?? 0;
         @endphp
 
         <article class="yw-pc-featured-card">
@@ -110,6 +113,8 @@
                     @endif
 
                     <span>{{ $featuredArticle->reading_minutes ?? 3 }}分で読めます</span>
+                    <span>👁 {{ number_format($featuredViewCount) }}</span>
+                    <span class="yw-like-inline">♡ {{ number_format($featuredLikeCount) }}</span>
 
                     <a href="{{ $featuredArticleUrl }}">記事を読む →</a>
                 </div>
@@ -141,6 +146,9 @@
                 $authorAvatar = $authorProfile?->avatar_path
                     ? asset('storage/' . $authorProfile->avatar_path)
                     : asset('images/default-avatar.png');
+
+                $likeCount = $article->likes_count ?? 0;
+                $viewCount = $article->view_count ?? 0;
             @endphp
 
             <article class="yw-pc-article-card">
@@ -194,6 +202,8 @@
                         @endif
 
                         <span>{{ $article->reading_minutes ?? 3 }}分で読めます</span>
+                        <span>👁 {{ number_format($viewCount) }}</span>
+                        <span class="yw-like-inline">♡ {{ number_format($likeCount) }}</span>
 
                         <a href="{{ $articleUrl }}">記事を読む →</a>
                     </div>
