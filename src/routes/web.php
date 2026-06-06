@@ -20,6 +20,7 @@ use App\Http\Controllers\User\WithdrawalController;
 use App\Http\Controllers\User\GooglePhotoAvatarController;
 use App\Http\Controllers\ArticleInquiryController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ReadingReflectionTrainingController;
 
 /*sa
 |--------------------------------------------------------------------------
@@ -50,6 +51,14 @@ Route::get('/work-posts', [WorkPostController::class, 'index'])
     Route::post('/articles/{article}/like', [ArticleController::class, 'like'])
     ->name('articles.like');
 
+
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'index'])
+            ->name('reading-reflections.index');
+    
+        Route::post('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'store'])
+            ->name('reading-reflections.store');
+    });
 /*
 |--------------------------------------------------------------------------
 | メール認証関連

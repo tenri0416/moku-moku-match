@@ -84,7 +84,7 @@
     $monthlyRank = $monthlyRank ?? 12;
     $historyCount = $totalTrainingCount ?: 12;
 @endphp
-
+@include('reading-reflection-trainings._modal')
 @include('trainings.index_sp')
 @include('trainings.index_pc')
 @endsection

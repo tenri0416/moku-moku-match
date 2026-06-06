@@ -95,4 +95,12 @@ return [
         'redirect' => env('GOOGLE_PHOTOS_REDIRECT_URI'),
         'scope' => 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
     ],
+
+    'reading_reflection' => [
+    'allowed_emails' => [
+        'tenriyu0416@gmail.com',
+        'yuki.fujimoto.free@gmail.com',
+        'ramen.like.tonkotu@gmail.comm',
+    ],
+],
 ];
