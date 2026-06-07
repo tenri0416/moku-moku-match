@@ -1,5 +1,6 @@
 <?php
 
+
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -12,16 +13,27 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\GoogleSsoController;
 
+use App\Http\Controllers\Auth\Login\LoginViewController;
 
+
+/**
+ * ユーザー認証に関連するルートを定義します。
+ * ゲストユーザーのみアクセスが可能なルートになっています。
+ */
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+    /**
+     * ログインページに遷移するルートを定義します。
+     */
+    Route::get('login', LoginViewController::class)->name('login');
 
+    /**
+     * ログイン処理（メールアドレス／パスワード）を実行するルートを定義します。
+     */
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     /*

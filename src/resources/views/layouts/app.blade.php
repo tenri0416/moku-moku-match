@@ -48,10 +48,6 @@
     @include('layouts.header')
 
     <main class="pb-[96px] md:pb-0">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            @include('components.flash-message')
-        </div>
-
         @yield('content')
         @include('admin.users.partials.admin-impersonation-sidebar')
     </main>
