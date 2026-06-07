@@ -18,12 +18,16 @@
                     </p>
                 </div>
 
-                <form method="POST" action="{{ route('impersonation.stop') }}">
+                <form
+                    method="POST"
+                    action="{{ route('impersonation.stop') }}"
+                    onsubmit="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');"
+                >
                     @csrf
+
                     <button
                         type="submit"
-                        class="w-full rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-700 shadow-sm transition hover:bg-rose-50"
-                        onclick="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');"
+                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-700 shadow-sm transition hover:bg-rose-50 active:bg-rose-100"
                     >
                         代理ログインを終了
                     </button>
@@ -54,13 +58,17 @@
                     </p>
                 </div>
 
-                <form method="POST" action="{{ route('impersonation.stop') }}" class="mt-2">
+                <form
+                    method="POST"
+                    action="{{ route('impersonation.stop') }}"
+                    class="mt-2"
+                    onsubmit="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');"
+                >
                     @csrf
 
                     <button
                         type="submit"
-                        class="w-full rounded-xl bg-white px-3 py-2 text-[11px] font-black text-rose-700 shadow-sm"
-                        onclick="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');"
+                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-[11px] font-black text-rose-700 shadow-sm active:bg-rose-100"
                     >
                         終了して管理画面へ戻る
                     </button>
