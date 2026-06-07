@@ -4,53 +4,14 @@
 
 @section('content')
 <div class="min-h-screen bg-slate-50">
-    <div class="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center px-4 py-12 sm:px-6 lg:px-8">
-        <div class="grid w-full gap-8 lg:grid-cols-2 lg:items-center">
-            {{-- Left --}}
-            <section class="hidden lg:block">
-                <p class="text-sm font-bold text-indigo-600">
-                    USER LOGIN
-                </p>
-
-                <h1 class="mt-4 text-4xl font-black leading-tight tracking-tight text-slate-900">
-                    作業仲間とつながって、<br>
-                    今日の作業を前に進めよう。
-                </h1>
-
-                <p class="mt-6 max-w-xl leading-8 text-slate-600">
-                    MokuMoku Matchは、フルリモートで働くITエンジニアや学習者が、
-                    一緒に黙々作業・勉強・情報交換できる相手を探すためのサービスです。
-                </p>
-
-                <div class="mt-8 grid gap-4 sm:grid-cols-3">
-                    <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                        <div class="text-2xl">💻</div>
-                        <p class="mt-3 text-sm font-bold text-slate-900">
-                            黙々作業
-                        </p>
-                    </div>
-
-                    <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                        <div class="text-2xl">📚</div>
-                        <p class="mt-3 text-sm font-bold text-slate-900">
-                            勉強仲間
-                        </p>
-                    </div>
-
-                    <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                        <div class="text-2xl">🤝</div>
-                        <p class="mt-3 text-sm font-bold text-slate-900">
-                            情報交換
-                        </p>
-                    </div>
-                </div>
-            </section>
+    <div class="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl justify-center px-4 pt-4 pb-12 sm:px-6 lg:px-8">
+        <div class="w-full max-w-md">
 
             {{-- Login Card --}}
-            <section class="mx-auto w-full max-w-md">
-                <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <div class="mb-4 text-center">
-                        <h2 class="mt-5 text-2xl font-black text-slate-900">
+            <section class="w-full">
+                <div class="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-8">
+                    <div class="mb-2 text-center">
+                        <h2 class="text-2xl font-black text-slate-900">
                             ログイン
                         </h2>
 
@@ -81,9 +42,12 @@
                             href="{{ route('auth.redirect') }}"
                             class="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
-                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-base font-black text-blue-600 ring-1 ring-slate-200">
-                                G
-                            </span>
+                        <svg class="h-5 w-5" viewBox="0 0 533.5 544.3" aria-hidden="true">
+                            <path fill="#4285F4" d="M533.5 278.4c0-18.5-1.5-37.1-4.7-55.3H272.1v104.7h147c-6.1 33.8-25.7 63.7-54.4 82.7v68h88.1c51.6-47.5 80.7-117.6 80.7-200.1z"/>
+                            <path fill="#34A853" d="M272.1 544.3c73.7 0 135.8-24.2 181.1-65.8l-88.1-68c-24.5 16.7-56.1 26.2-93 26.2-71.4 0-131.9-48.2-153.6-112.9H27.7v70.1c46.4 92.3 140.8 150.4 244.4 150.4z"/>
+                            <path fill="#FBBC04" d="M118.5 323.8c-11.5-33.8-11.5-70.6 0-104.4v-70.1H27.7c-38.8 77.1-38.8 168.2 0 245.3l90.8-70.8z"/>
+                            <path fill="#EA4335" d="M272.1 107.7c38.9-.6 76.3 14 104.6 40.7l78-78C405.3 24.2 339.8-1.2 272.1 0 168.5 0 74.1 58.1 27.7 150.4l90.8 70.1c21.7-64.7 82.2-112.8 153.6-112.8z"/>
+                        </svg>
                             <span>Googleでログイン</span>
                         </a>
 
@@ -92,7 +56,7 @@
                                 <div class="w-full border-t border-slate-200"></div>
                             </div>
                             <div class="relative flex justify-center">
-                                <span class="bg-white px-3 text-xs font-bold text-slate-400">
+                                <span class="bg-white px- text-xs font-bold text-slate-400">
                                     または
                                 </span>
                             </div>
@@ -197,10 +161,6 @@
                         </div>
                     @endif
                 </div>
-
-                <p class="mt-6 text-center text-xs leading-6 text-slate-500">
-                    管理者の方は、管理者用ログインページからログインしてください。
-                </p>
             </section>
         </div>
     </div>
