@@ -18,12 +18,13 @@
                     </p>
                 </div>
 
-                <form method="POST" action="{{ route('impersonation.stop') }}"
-                    onsubmit="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');">
+                <form method="POST" action="{{ route('impersonation.stop') }}">
                     @csrf
 
-                    <button type="submit"
-                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-700 shadow-sm transition hover:bg-rose-50 active:bg-rose-100">
+                    <button
+                        type="submit"
+                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-700 shadow-sm transition hover:bg-rose-50 active:bg-rose-100"
+                    >
                         代理ログインを終了
                     </button>
                 </form>
@@ -36,7 +37,8 @@
         <details class="group">
             <summary
                 class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full bg-rose-700 text-[11px] font-black text-white shadow-xl"
-                aria-label="管理者代理ログイン中">
+                aria-label="管理者代理ログイン中"
+            >
                 管理
             </summary>
 
@@ -51,12 +53,14 @@
                         {{ $impersonation['user_name'] ?? 'ユーザー' }}
                     </p>
                 </div>
-                <form method="POST" action="{{ route('impersonation.stop') }}"
-                    onsubmit="return confirm('代理ログインを終了して管理者画面へ戻ります。よろしいですか？');">
+
+                <form method="POST" action="{{ route('impersonation.stop') }}" class="mt-2">
                     @csrf
 
-                    <button type="submit"
-                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-[11px] font-black text-rose-700 shadow-sm active:bg-rose-100">
+                    <button
+                        type="submit"
+                        class="w-full touch-manipulation rounded-xl bg-white px-3 py-2 text-[11px] font-black text-rose-700 shadow-sm active:bg-rose-100"
+                    >
                         代理ログインを終了
                     </button>
                 </form>
