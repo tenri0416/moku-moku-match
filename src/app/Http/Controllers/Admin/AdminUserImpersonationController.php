@@ -17,6 +17,11 @@ class AdminUserImpersonationController extends Controller
     {
         $admin = Auth::guard('admin')->user();
 
+        Log::info('管理者代理ログインの開始を試みています。', [
+            'admin_id' => $admin?->getAuthIdentifier(),
+            'user_id' => $user->id,
+            'ip' => $request->ip(),
+        ]);
         abort_unless($admin, 403);
 
         if (($request->session()->get('admin_impersonation.active') ?? false) === true) {
