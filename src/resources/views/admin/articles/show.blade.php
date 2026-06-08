@@ -86,424 +86,401 @@
 @endpush
 
 @section('content')
-@php
-    $statusLabel = match ((int) $article->status) {
-        1 => '下書き',
-        2 => '公開',
-        3 => '非公開',
-        default => '不明',
-    };
+    @php
+        $statusLabel = match ((int) $article->status) {
+            1 => '下書き',
+            2 => '公開',
+            3 => '非公開',
+            default => '不明',
+        };
 
-    $statusClass = match ((int) $article->status) {
-        1 => 'bg-slate-100 text-slate-700',
-        2 => 'bg-emerald-50 text-emerald-700',
-        3 => 'bg-rose-50 text-rose-700',
-        default => 'bg-slate-100 text-slate-700',
-    };
+        $statusClass = match ((int) $article->status) {
+            1 => 'bg-slate-100 text-slate-700',
+            2 => 'bg-emerald-50 text-emerald-700',
+            3 => 'bg-rose-50 text-rose-700',
+            default => 'bg-slate-100 text-slate-700',
+        };
 
-    $publicUrl = $article->short_slug
-        ? route('articles.short-show', $article->short_slug)
-        : route('articles.show', $article);
+        $publicUrl = $article->short_slug
+            ? route('articles.short-show', $article->short_slug)
+            : route('articles.show', $article);
 
-    $pointItems = $article->point_items ?? [
-        '読みやすく内容を整理',
-        '今日から使えるヒントを紹介',
-        '働き方や学びを少し整える',
-    ];
+        $pointItems = $article->point_items ?? [
+            '読みやすく内容を整理',
+            '今日から使えるヒントを紹介',
+            '働き方や学びを少し整える',
+        ];
 
-    $tocItems = $article->toc_items ?? [
-        'はじめに',
-        '本文',
-        'まとめ',
-    ];
+        $tocItems = $article->toc_items ?? ['はじめに', '本文', 'まとめ'];
 
-    $likeCount = $article->likes_count ?? (method_exists($article, 'likes') ? $article->likes()->count() : 0);
-    $viewCount = $article->view_count ?? 0;
-@endphp
+        $likeCount = $article->likes_count ?? (method_exists($article, 'likes') ? $article->likes()->count() : 0);
+        $viewCount = $article->view_count ?? 0;
+    @endphp
 
-<div class="min-h-screen bg-slate-50">
-    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <p class="text-sm font-bold text-indigo-600">
-                    ARTICLE DETAIL
-                </p>
+    <div class="min-h-screen bg-slate-50">
+        <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-bold text-indigo-600">
+                        ARTICLE DETAIL
+                    </p>
 
-                <h1 class="mt-2 text-3xl font-bold text-slate-900">
-                    記事詳細
-                </h1>
+                    <h1 class="mt-2 text-3xl font-bold text-slate-900">
+                        記事詳細
+                    </h1>
 
-                <p class="mt-3 text-slate-600">
-                    作成した記事の内容・SEO設定・公開状態・本文デザインを確認できます。
-                </p>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-                <a
-                    href="{{ route('admin.articles.index') }}"
-                    class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                    一覧へ戻る
-                </a>
-
-                <a
-                    href="{{ route('admin.articles.edit', $article) }}"
-                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-                >
-                    編集する
-                </a>
-            </div>
-        </div>
-
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div class="space-y-6">
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <div class="mb-4 flex flex-wrap gap-2">
-                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
-                            {{ $statusLabel }}
-                        </span>
-
-                        @if ($article->category)
-                            <span class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                                {{ $article->category->name }}
-                            </span>
-                        @endif
-
-                        @if ($article->prefecture)
-                            <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                                {{ $article->prefecture->name }}
-                            </span>
-                        @else
-                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                全国向け
-                            </span>
-                        @endif
-                    </div>
-
-                    <h2 class="text-2xl font-bold leading-tight text-slate-900">
-                        {{ $article->title }}
-                    </h2>
-
-                    @if ($article->excerpt)
-                        <p class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
-                            {{ $article->excerpt }}
-                        </p>
-                    @endif
-
-                    <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                        <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                            <p class="text-xs font-bold text-slate-500">閲覧数</p>
-                            <p class="mt-1 text-2xl font-black text-slate-900">{{ number_format($viewCount) }}</p>
-                        </div>
-
-                        <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                            <p class="text-xs font-bold text-slate-500">いいね数</p>
-                            <p class="mt-1 text-2xl font-black text-slate-900">{{ number_format($likeCount) }}</p>
-                        </div>
-
-                        <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                            <p class="text-xs font-bold text-slate-500">読了時間</p>
-                            <p class="mt-1 text-2xl font-black text-slate-900">{{ $article->reading_minutes ?? 3 }}分</p>
-                        </div>
-                    </div>
-
-                    @if ($article->thumbnail_path)
-                        <div class="mt-6">
-                            <img
-                                src="{{ asset('storage/' . $article->thumbnail_path) }}"
-                                alt="{{ $article->title }}"
-                                class="w-full rounded-2xl object-cover ring-1 ring-slate-200"
-                            >
-                        </div>
-                    @endif
+                    <p class="mt-3 text-slate-600">
+                        作成した記事の内容・SEO設定・公開状態・本文デザインを確認できます。
+                    </p>
                 </div>
 
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h3 class="text-lg font-bold text-slate-900">
-                            この記事のポイント
-                        </h3>
+                <div class="flex flex-wrap gap-3">
+                    <a href="{{ route('admin.articles.index') }}"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                        一覧へ戻る
+                    </a>
 
-                        <ul class="mt-4 space-y-2">
-                            @foreach ($pointItems as $point)
-                                <li class="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
-                                    {{ $point }}
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-
-                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h3 class="text-lg font-bold text-slate-900">
-                            目次
-                        </h3>
-
-                        <ul class="mt-4 space-y-2">
-                            @foreach ($tocItems as $toc)
-                                <li class="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
-                                    {{ $toc }}
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
+                    <a href="{{ route('admin.articles.edit', $article) }}"
+                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">
+                        編集する
+                    </a>
                 </div>
+            </div>
 
-                <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                    <div class="border-b border-slate-200 bg-slate-900 px-6 py-4 sm:px-8">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-xs font-bold tracking-[0.18em] text-indigo-200">
-                                    ARTICLE PREVIEW
-                                </p>
-
-                                <h3 class="mt-1 text-lg font-bold text-white">
-                                    実際の記事表示プレビュー
-                                </h3>
-                            </div>
-
-                            @if ((int) $article->status === 2)
-                                <a
-                                    href="{{ $publicUrl }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
-                                >
-                                    公開ページを別タブで確認
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-
-                    <article class="px-6 py-8 sm:px-10">
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+                <div class="space-y-6">
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
                         <div class="mb-4 flex flex-wrap gap-2">
-                            <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                                記事
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                                {{ $statusLabel }}
                             </span>
 
                             @if ($article->category)
-                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                                <span
+                                    class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
                                     {{ $article->category->name }}
                                 </span>
                             @endif
 
                             @if ($article->prefecture)
-                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                                <span
+                                    class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                                     {{ $article->prefecture->name }}
+                                </span>
+                            @else
+                                <span
+                                    class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                    全国向け
                                 </span>
                             @endif
                         </div>
 
-                        <h1 class="text-3xl font-bold leading-tight text-slate-900">
-                            {{ $article->h1_title ?: $article->title }}
-                        </h1>
-
-                        <p class="mt-4 text-sm text-slate-500">
-                            公開日：{{ $article->published_at?->format('Y/m/d') ?? '未設定' }}
-                            ・閲覧数：{{ number_format($viewCount) }}
-                            ・いいね：{{ number_format($likeCount) }}
-                        </p>
-
-                        @if ($article->thumbnail_path)
-                            <img
-                                src="{{ asset('storage/' . $article->thumbnail_path) }}"
-                                alt="{{ $article->title }}"
-                                class="mt-8 w-full rounded-2xl object-cover ring-1 ring-slate-200"
-                            >
-                        @endif
+                        <h2 class="text-2xl font-bold leading-tight text-slate-900">
+                            {{ $article->title }}
+                        </h2>
 
                         @if ($article->excerpt)
-                            <p class="mt-8 rounded-xl bg-slate-50 p-4 leading-7 text-slate-700">
+                            <p class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
                                 {{ $article->excerpt }}
                             </p>
                         @endif
 
-                        <div class="article-body article-preview-body mt-8">
-                            {!! $article->body_html !!}
-                        </div>
+                        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                            <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                <p class="text-xs font-bold text-slate-500">閲覧数</p>
+                                <p class="mt-1 text-2xl font-black text-slate-900">{{ number_format($viewCount) }}</p>
+                            </div>
 
-                        <div class="mt-10 rounded-2xl bg-indigo-50 p-5">
-                            <p class="font-bold text-indigo-900">
-                                作業仲間を探してみませんか？
-                            </p>
+                            <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                <p class="text-xs font-bold text-slate-500">いいね数</p>
+                                <p class="mt-1 text-2xl font-black text-slate-900">{{ number_format($likeCount) }}</p>
+                            </div>
 
-                            <p class="mt-2 text-sm leading-7 text-indigo-800">
-                                MokuMoku Matchでは、フルリモートで働く人や学習中の人が、黙々作業・勉強・情報交換できる相手を探せます。
-                            </p>
-
-                            <div class="mt-4">
-                                <a
-                                    href="{{ route('home') }}"
-                                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-                                >
-                                    募集を見る
-                                </a>
+                            <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                <p class="text-xs font-bold text-slate-500">読了時間</p>
+                                <p class="mt-1 text-2xl font-black text-slate-900">{{ $article->reading_minutes ?? 3 }}分
+                                </p>
                             </div>
                         </div>
-                    </article>
-                </div>
 
-                <div class="grid gap-6 xl:grid-cols-2">
-                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h3 class="text-lg font-bold text-slate-900">
-                            保存されているHTML
-                        </h3>
-
-                        <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_html }}</code></pre>
-                    </div>
-
-                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                        <h3 class="text-lg font-bold text-slate-900">
-                            保存されている記事専用CSS
-                        </h3>
-
-                        <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_css ?: '記事専用CSSは未設定です。' }}</code></pre>
-                    </div>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        公開情報
-                    </h3>
-
-                    <dl class="mt-5 space-y-4 text-sm">
-                        <div>
-                            <dt class="font-bold text-slate-500">公開状態</dt>
-                            <dd class="mt-1">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
-                                    {{ $statusLabel }}
-                                </span>
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt class="font-bold text-slate-500">カテゴリー</dt>
-                            <dd class="mt-1 text-slate-800">
-                                {{ $article->category?->name ?? '未設定' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt class="font-bold text-slate-500">公開日時</dt>
-                            <dd class="mt-1 text-slate-800">
-                                {{ $article->published_at ? $article->published_at->format('Y/m/d H:i') : '未設定' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt class="font-bold text-slate-500">作成管理者</dt>
-                            <dd class="mt-1 text-slate-800">
-                                {{ $article->admin?->name ?? '未設定' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt class="font-bold text-slate-500">作成日時</dt>
-                            <dd class="mt-1 text-slate-800">
-                                {{ $article->created_at?->format('Y/m/d H:i') }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt class="font-bold text-slate-500">更新日時</dt>
-                            <dd class="mt-1 text-slate-800">
-                                {{ $article->updated_at?->format('Y/m/d H:i') }}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        URL
-                    </h3>
-
-                    <div class="mt-5 space-y-4 text-sm">
-                        <div>
-                            <p class="font-bold text-slate-500">通常URL</p>
-                            <p class="mt-1 break-all text-indigo-700">
-                                /articles/{{ $article->slug }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p class="font-bold text-slate-500">短縮URL</p>
-                            <p class="mt-1 break-all text-indigo-700">
-                                {{ $article->short_slug ? '/' . $article->short_slug : '未設定' }}
-                            </p>
-                        </div>
-
-                        @if ((int) $article->status === 2)
-                            <a
-                                href="{{ $publicUrl }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                            >
-                                公開ページを見る
-                            </a>
+                        @if ($article->thumbnail_path)
+                            <div class="mt-6">
+                                <img src="{{ asset('storage/' . $article->thumbnail_path) }}" alt="{{ $article->title }}"
+                                    class="w-full rounded-2xl object-cover ring-1 ring-slate-200">
+                            </div>
                         @endif
                     </div>
+
+                    <div class="grid gap-6 lg:grid-cols-2">
+                        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                            <h3 class="text-lg font-bold text-slate-900">
+                                この記事のポイント
+                            </h3>
+
+                            <ul class="mt-4 space-y-2">
+                                @foreach ($pointItems as $point)
+                                    <li class="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                                        {{ $point }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                            <h3 class="text-lg font-bold text-slate-900">
+                                目次
+                            </h3>
+
+                            <ul class="mt-4 space-y-2">
+                                @foreach ($tocItems as $toc)
+                                    <li class="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                                        {{ $toc }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                        <div class="border-b border-slate-200 bg-slate-900 px-6 py-4 sm:px-8">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-xs font-bold tracking-[0.18em] text-indigo-200">
+                                        ARTICLE PREVIEW
+                                    </p>
+
+                                    <h3 class="mt-1 text-lg font-bold text-white">
+                                        実際の記事表示プレビュー
+                                    </h3>
+                                </div>
+
+                                @if ((int) $article->status === 2)
+                                    <a href="{{ $publicUrl }}" target="_blank" rel="noopener noreferrer"
+                                        class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-slate-100">
+                                        公開ページを別タブで確認
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                        <article class="px-6 py-8 sm:px-10">
+                            <div class="mb-4 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                                    記事
+                                </span>
+
+                                @if ($article->category)
+                                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                                        {{ $article->category->name }}
+                                    </span>
+                                @endif
+
+                                @if ($article->prefecture)
+                                    <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                                        {{ $article->prefecture->name }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <h1 class="text-3xl font-bold leading-tight text-slate-900">
+                                {{ $article->h1_title ?: $article->title }}
+                            </h1>
+
+                            <p class="mt-4 text-sm text-slate-500">
+                                公開日：{{ $article->published_at?->format('Y/m/d') ?? '未設定' }}
+                                ・閲覧数：{{ number_format($viewCount) }}
+                                ・いいね：{{ number_format($likeCount) }}
+                            </p>
+
+                            @if ($article->thumbnail_path)
+                                <img src="{{ asset('storage/' . $article->thumbnail_path) }}" alt="{{ $article->title }}"
+                                    class="mt-8 w-full rounded-2xl object-cover ring-1 ring-slate-200">
+                            @endif
+
+                            @if ($article->excerpt)
+                                <p class="mt-8 rounded-xl bg-slate-50 p-4 leading-7 text-slate-700">
+                                    {{ $article->excerpt }}
+                                </p>
+                            @endif
+
+                            <div class="article-body article-preview-body mt-8">
+                                {!! $article->body_html !!}
+                            </div>
+                            
+                            {{-- PC記事下広告 --}}
+                            @include('ads.yomuworks_pc_article_bottom')
+
+                            <div class="mt-10 rounded-2xl bg-indigo-50 p-5">
+                                <p class="font-bold text-indigo-900">
+                                    作業仲間を探してみませんか？
+                                </p>
+
+                                <p class="mt-2 text-sm leading-7 text-indigo-800">
+                                    MokuMoku Matchでは、フルリモートで働く人や学習中の人が、黙々作業・勉強・情報交換できる相手を探せます。
+                                </p>
+
+                                <div class="mt-4">
+                                    <a href="{{ route('home') }}"
+                                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">
+                                        募集を見る
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="grid gap-6 xl:grid-cols-2">
+                        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                            <h3 class="text-lg font-bold text-slate-900">
+                                保存されているHTML
+                            </h3>
+
+                            <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_html }}</code></pre>
+                        </div>
+
+                        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                            <h3 class="text-lg font-bold text-slate-900">
+                                保存されている記事専用CSS
+                            </h3>
+
+                            <pre class="mt-5 max-h-[500px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-slate-100"><code>{{ $article->body_css ?: '記事専用CSSは未設定です。' }}</code></pre>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-bold text-slate-900">
-                        SEO設定
-                    </h3>
+                <div class="space-y-6">
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900">
+                            公開情報
+                        </h3>
 
-                    <dl class="mt-5 space-y-4 text-sm">
-                        <div>
-                            <dt class="font-bold text-slate-500">SEOタイトル</dt>
-                            <dd class="mt-1 leading-6 text-slate-800">
-                                {{ $article->seo_title ?: '未設定' }}
-                            </dd>
+                        <dl class="mt-5 space-y-4 text-sm">
+                            <div>
+                                <dt class="font-bold text-slate-500">公開状態</dt>
+                                <dd class="mt-1">
+                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                                        {{ $statusLabel }}
+                                    </span>
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt class="font-bold text-slate-500">カテゴリー</dt>
+                                <dd class="mt-1 text-slate-800">
+                                    {{ $article->category?->name ?? '未設定' }}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt class="font-bold text-slate-500">公開日時</dt>
+                                <dd class="mt-1 text-slate-800">
+                                    {{ $article->published_at ? $article->published_at->format('Y/m/d H:i') : '未設定' }}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt class="font-bold text-slate-500">作成管理者</dt>
+                                <dd class="mt-1 text-slate-800">
+                                    {{ $article->admin?->name ?? '未設定' }}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt class="font-bold text-slate-500">作成日時</dt>
+                                <dd class="mt-1 text-slate-800">
+                                    {{ $article->created_at?->format('Y/m/d H:i') }}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt class="font-bold text-slate-500">更新日時</dt>
+                                <dd class="mt-1 text-slate-800">
+                                    {{ $article->updated_at?->format('Y/m/d H:i') }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900">
+                            URL
+                        </h3>
+
+                        <div class="mt-5 space-y-4 text-sm">
+                            <div>
+                                <p class="font-bold text-slate-500">通常URL</p>
+                                <p class="mt-1 break-all text-indigo-700">
+                                    /articles/{{ $article->slug }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="font-bold text-slate-500">短縮URL</p>
+                                <p class="mt-1 break-all text-indigo-700">
+                                    {{ $article->short_slug ? '/' . $article->short_slug : '未設定' }}
+                                </p>
+                            </div>
+
+                            @if ((int) $article->status === 2)
+                                <a href="{{ $publicUrl }}" target="_blank" rel="noopener noreferrer"
+                                    class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                                    公開ページを見る
+                                </a>
+                            @endif
                         </div>
+                    </div>
 
-                        <div>
-                            <dt class="font-bold text-slate-500">H1見出し</dt>
-                            <dd class="mt-1 leading-6 text-slate-800">
-                                {{ $article->h1_title ?: '未設定' }}
-                            </dd>
-                        </div>
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900">
+                            SEO設定
+                        </h3>
 
-                        <div>
-                            <dt class="font-bold text-slate-500">SEOディスクリプション</dt>
-                            <dd class="mt-1 leading-6 text-slate-800">
-                                {{ $article->seo_description ?: '未設定' }}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
+                        <dl class="mt-5 space-y-4 text-sm">
+                            <div>
+                                <dt class="font-bold text-slate-500">SEOタイトル</dt>
+                                <dd class="mt-1 leading-6 text-slate-800">
+                                    {{ $article->seo_title ?: '未設定' }}
+                                </dd>
+                            </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-bold text-rose-700">
-                        削除
-                    </h3>
+                            <div>
+                                <dt class="font-bold text-slate-500">H1見出し</dt>
+                                <dd class="mt-1 leading-6 text-slate-800">
+                                    {{ $article->h1_title ?: '未設定' }}
+                                </dd>
+                            </div>
 
-                    <p class="mt-3 text-sm leading-6 text-slate-600">
-                        削除すると一覧やユーザー画面には表示されません。
-                    </p>
+                            <div>
+                                <dt class="font-bold text-slate-500">SEOディスクリプション</dt>
+                                <dd class="mt-1 leading-6 text-slate-800">
+                                    {{ $article->seo_description ?: '未設定' }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
 
-                    <form
-                        method="POST"
-                        action="{{ route('admin.articles.destroy', $article) }}"
-                        class="mt-5"
-                        onsubmit="return confirm('この記事を削除しますか？');"
-                    >
-                        @csrf
-                        @method('DELETE')
+                    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                        <h3 class="text-lg font-bold text-rose-700">
+                            削除
+                        </h3>
 
-                        <button
-                            type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700"
-                        >
-                            削除する
-                        </button>
-                    </form>
+                        <p class="mt-3 text-sm leading-6 text-slate-600">
+                            削除すると一覧やユーザー画面には表示されません。
+                        </p>
+
+                        <form method="POST" action="{{ route('admin.articles.destroy', $article) }}" class="mt-5"
+                            onsubmit="return confirm('この記事を削除しますか？');">
+                            @csrf
+                            @method('DELETE')
+
+                            <button type="submit"
+                                class="inline-flex w-full items-center justify-center rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700">
+                                削除する
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 @endsection
