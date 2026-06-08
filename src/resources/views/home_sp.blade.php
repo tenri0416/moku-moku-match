@@ -230,4 +230,35 @@
             </a>
         </section>
     </div>
+    {{-- フッター --}}
+<footer class="mt-6 rounded-[18px] border border-[#DDE6F5] bg-white px-4 py-5 text-center shadow-[0_8px_22px_rgba(15,43,95,0.06)]">
+    <p class="text-[15px] font-black text-[#071433]">
+        MokuMoku Match
+    </p>
+
+    <p class="mt-2 text-[12px] font-bold leading-relaxed text-[#64748B]">
+        リモートワーク・勉強の作業仲間が見つかる<br>
+        マッチングサービス
+    </p>
+
+    <div class="mt-4 grid grid-cols-2 gap-3">
+        <a
+            href="{{ url('/privacy-policy') }}"
+            class="flex h-[44px] items-center justify-center rounded-[12px] border border-[#DDE6F5] bg-[#F8FAFF] text-[13px] font-black text-[#071433]"
+        >
+            プライバシーポリシー
+        </a>
+
+        <a
+            href="{{ url('/terms') }}"
+            class="flex h-[44px] items-center justify-center rounded-[12px] border border-[#DDE6F5] bg-[#F8FAFF] text-[13px] font-black text-[#071433]"
+        >
+            利用規約
+        </a>
+    </div>
+
+    <p class="mt-4 text-[11px] font-bold text-[#94A3B8]">
+        © {{ now()->year }} MokuMoku Match
+    </p>
+</footer>
 </div>
