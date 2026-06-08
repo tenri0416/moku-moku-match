@@ -4,3 +4,4 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <meta name="google-site-verification" content="yDJmA1X0ZuNmPo5_GDEOTF1UZDA5K1MHTx9W84-AMqc">
+<meta name="google-adsense-account" content="ca-pub-5684202120084292">

@@ -7,6 +7,7 @@
         name="description"
         content="@yield('description', 'YomuWorksは、技術、個人開発、暮らし、働き方、MokuMoku Matchの活用方法を届ける読みものメディアです。')"
     >
+    <meta name="google-adsense-account" content="ca-pub-5684202120084292">
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
