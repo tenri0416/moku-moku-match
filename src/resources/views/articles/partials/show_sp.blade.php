@@ -5,17 +5,14 @@
 
     $articleTitle = $article->h1_title ?: $article->title;
 
-    $articleLead = $article->excerpt
-        ?: 'この記事では、日々の働き方や学びを少し整えるためのヒントを紹介します。';
+    $articleLead = $article->excerpt ?: 'この記事では、日々の働き方や学びを少し整えるためのヒントを紹介します。';
 
     $relatedArticles = $relatedArticles ?? collect();
 
     $authorUser = $article->authorUser;
     $authorProfile = $authorUser?->profile;
 
-    $authorName = $authorProfile?->display_name
-        ?: $authorUser?->name
-        ?: 'YomuWorks編集部';
+    $authorName = $authorProfile?->display_name ?: $authorUser?->name ?: 'YomuWorks編集部';
 
     $authorAvatar = $authorProfile?->avatar_path
         ? asset('storage/' . $authorProfile->avatar_path)
@@ -55,11 +52,7 @@
     </p>
 
     <div class="yw-sp-author">
-        <img
-            src="{{ $authorAvatar }}"
-            alt="{{ $authorName }}"
-            class="yw-author-avatar-img"
-        >
+        <img src="{{ $authorAvatar }}" alt="{{ $authorName }}" class="yw-author-avatar-img">
 
         <div>
             <p>{{ $authorName }}</p>
@@ -102,13 +95,8 @@
         <a href="#">f</a>
         <a href="#">B!</a>
 
-        <button
-            type="button"
-            class="yw-article-like-button"
-            data-article-like-button
-            data-article-id="{{ $article->id }}"
-            data-like-url="{{ route('articles.like', $article) }}"
-        >
+        <button type="button" class="yw-article-like-button" data-article-like-button
+            data-article-id="{{ $article->id }}" data-like-url="{{ route('articles.like', $article) }}">
             <span class="yw-like-inline">
                 ♡ <span data-article-like-count>{{ number_format($likeCount) }}</span>
             </span>
@@ -138,6 +126,9 @@
     <div class="yw-sp-article-body article-body">
         {!! $article->body_html !!}
     </div>
+
+    {{-- SP記事下広告 --}}
+    @include('ads.yomuworks_sp_article_bottom')
 
     <section class="yw-service-box">
         <p class="yw-service-title">
