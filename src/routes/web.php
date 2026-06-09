@@ -21,7 +21,7 @@ use App\Http\Controllers\User\GooglePhotoAvatarController;
 use App\Http\Controllers\ArticleInquiryController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ReadingReflectionTrainingController;
-
+use App\Http\Controllers\ConceptTrainingController;
 /*sa
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -110,6 +110,17 @@ Route::middleware(['auth'])->group(function () {
 
 
 
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/trainings/concept', [ConceptTrainingController::class, 'create'])
+        ->name('trainings.concept.create');
+
+    Route::post('/trainings/concept', [ConceptTrainingController::class, 'store'])
+        ->name('trainings.concept.store');
+
+    Route::get('/trainings/concept/{training}', [ConceptTrainingController::class, 'show'])
+        ->name('trainings.concept.show');
+});
 /*
 |--------------------------------------------------------------------------
 | ログイン済みユーザー用ページ

@@ -218,3 +218,9 @@ class ArticleController extends Controller
         return $this->show($article);
     }
 }
+
+
+
+// <!-- admax -->
+// <script src="https://adm.shinobi.jp/s/7a6e9ec6bd134cb6a61110cbfe221f82"></script>
+// <!-- admax -->
