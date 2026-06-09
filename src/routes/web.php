@@ -22,6 +22,10 @@ use App\Http\Controllers\ArticleInquiryController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ReadingReflectionTrainingController;
 use App\Http\Controllers\ConceptTrainingController;
+use App\Http\Controllers\ImaginationTrainingController;
+
+
+
 /*sa
 |--------------------------------------------------------------------------
 | 公開ページ
@@ -87,6 +91,17 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 
 
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/trainings/imagination', [ImaginationTrainingController::class, 'create'])
+        ->name('trainings.imagination.create');
+
+    Route::post('/trainings/imagination', [ImaginationTrainingController::class, 'store'])
+        ->name('trainings.imagination.store');
+
+    Route::get('/trainings/imagination/{training}', [ImaginationTrainingController::class, 'show'])
+        ->name('trainings.imagination.show');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/profile/avatar/google/redirect', [GooglePhotoAvatarController::class, 'redirect'])

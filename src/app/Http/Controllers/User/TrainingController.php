@@ -20,6 +20,9 @@ use Illuminate\View\View;
 use RuntimeException;
 use Throwable;
 use App\Models\UserConceptTraining;
+use App\Models\UserImaginationTraining;
+
+
 
 class TrainingController extends Controller
 {
@@ -38,12 +41,12 @@ class TrainingController extends Controller
 
         $trainings = collect()
             ->merge($this->mapTrainings(UserDiaryTraining::where('user_id', $userId)->get(), UserDiaryTraining::TYPE))
-            ->merge($this->mapTrainings(UserChallengeTraining::where('user_id', $userId)->get(), UserChallengeTraining::TYPE))
             ->merge($this->mapTrainings(UserSummaryTraining::where('user_id', $userId)->get(), UserSummaryTraining::TYPE))
             ->merge($this->mapTrainings(UserVerbalizationTraining::where('user_id', $userId)->get(), UserVerbalizationTraining::TYPE))
             ->merge($this->mapTrainings(UserAbstractionTraining::where('user_id', $userId)->get(), UserAbstractionTraining::TYPE))
             ->merge($this->mapTrainings(UserConcretizationTraining::where('user_id', $userId)->get(), UserConcretizationTraining::TYPE))
             ->merge($this->mapConceptTrainings(UserConceptTraining::where('user_id', $userId)->get()))
+            ->merge($this->mapImaginationTrainings(UserImaginationTraining::where('user_id', $userId)->get()))
             ->when($request->type, fn(Collection $items) => $items->where('type', $request->type))
             ->sortByDesc('training_date')
             ->values();
@@ -842,41 +845,34 @@ class TrainingController extends Controller
         ];
     }
 
-    /**
-     * 今日の各トレーニング実施状況を取得する
-     */
     private function todayTrainingStatuses(int $userId): array
     {
         return [
             'diary' => UserDiaryTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->exists(),
-
-            'challenge' => UserChallengeTraining::where('user_id', $userId)
-                ->whereDate('training_date', today())
-                ->exists(),
-
+    
             'summary' => UserSummaryTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->whereNotNull('answer_body')
                 ->exists(),
-
+    
             'verbalization' => UserVerbalizationTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->whereNotNull('answer_body')
                 ->exists(),
-
+    
             'abstraction' => UserAbstractionTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->whereNotNull('answer_body')
                 ->exists(),
-
-            'concretization' => UserConcretizationTraining::where('user_id', $userId)
+    
+            'concept' => UserConceptTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->whereNotNull('answer_body')
                 ->exists(),
-
-            'concept' => UserConceptTraining::where('user_id', $userId)
+    
+            'imagination' => UserImaginationTraining::where('user_id', $userId)
                 ->whereDate('training_date', today())
                 ->whereNotNull('answer_body')
                 ->exists(),
@@ -901,18 +897,6 @@ class TrainingController extends Controller
                 'points' => '最大10pt',
                 'emoji' => '📝',
                 'bg' => 'bg-blue-100',
-                'loading' => true,
-            ],
-            [
-                'key' => 'challenge',
-                'label' => '今日のチャレンジ',
-                'short_label' => '今日のチャレンジ',
-                'description' => '挑戦を振り返る',
-                'pc_description' => '挑戦を振り返り<br>気づきを得る',
-                'route' => route('trainings.challenge.create'),
-                'points' => '最大10pt',
-                'emoji' => '🔥',
-                'bg' => 'bg-orange-100',
                 'loading' => true,
             ],
             [
@@ -961,6 +945,18 @@ class TrainingController extends Controller
                 'points' => '最大10pt',
                 'emoji' => '🧩',
                 'bg' => 'bg-sky-100',
+                'loading' => true,
+            ],
+            [
+                'key' => 'imagination',
+                'label' => '想像力トレーニング',
+                'short_label' => '想像力',
+                'description' => '状況や気持ちを想像する',
+                'pc_description' => '場面や気持ちを想像して<br>発想力を鍛える',
+                'route' => route('trainings.imagination.create'),
+                'points' => '最大10pt',
+                'emoji' => '🌈',
+                'bg' => 'bg-cyan-100',
                 'loading' => true,
             ],
         ];
@@ -1110,6 +1106,22 @@ class TrainingController extends Controller
                 'earned_points' => $training->earned_points,
                 'is_answered' => filled($training->answer_body),
                 'show_route' => route('trainings.concept.show', $training),
+            ];
+        });
+    }
+    private function mapImaginationTrainings(Collection $trainings): Collection
+    {
+        return $trainings->map(function (UserImaginationTraining $training) {
+            return [
+                'id' => $training->id,
+                'type' => 'imagination',
+                'type_label' => '想像力トレーニング',
+                'training_date' => $training->training_date,
+                'title' => $training->question_body ?? '-',
+                'total_score' => $training->total_score,
+                'earned_points' => $training->earned_points,
+                'is_answered' => filled($training->answer_body),
+                'show_route' => route('trainings.imagination.show', $training),
             ];
         });
     }
