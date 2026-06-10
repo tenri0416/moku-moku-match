@@ -23,6 +23,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ReadingReflectionTrainingController;
 use App\Http\Controllers\ConceptTrainingController;
 use App\Http\Controllers\ImaginationTrainingController;
+use App\Http\Controllers\VocabularyTrainingController;
 
 
 
@@ -102,6 +103,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/trainings/imagination/{training}', [ImaginationTrainingController::class, 'show'])
         ->name('trainings.imagination.show');
 });
+
+
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/trainings/vocabulary', [VocabularyTrainingController::class, 'index'])
+        ->name('trainings.vocabulary.index');
+
+    Route::get('/trainings/vocabulary/create', [VocabularyTrainingController::class, 'create'])
+        ->name('trainings.vocabulary.create');
+
+    Route::post('/trainings/vocabulary', [VocabularyTrainingController::class, 'store'])
+        ->name('trainings.vocabulary.store');
+
+    Route::get('/trainings/vocabulary/{word}/edit', [VocabularyTrainingController::class, 'edit'])
+        ->name('trainings.vocabulary.edit');
+
+    Route::put('/trainings/vocabulary/{word}', [VocabularyTrainingController::class, 'update'])
+        ->name('trainings.vocabulary.update');
+
+    Route::delete('/trainings/vocabulary/{word}', [VocabularyTrainingController::class, 'destroy'])
+        ->name('trainings.vocabulary.destroy');
+
+    Route::get('/trainings/vocabulary-review', [VocabularyTrainingController::class, 'review'])
+        ->name('trainings.vocabulary.review');
+
+    Route::post('/trainings/vocabulary-review', [VocabularyTrainingController::class, 'storeReview'])
+        ->name('trainings.vocabulary.review.store');
+
+    Route::get('/trainings/vocabulary-reviews/{review}', [VocabularyTrainingController::class, 'showReview'])
+        ->name('trainings.vocabulary.reviews.show');
+});
+
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/profile/avatar/google/redirect', [GooglePhotoAvatarController::class, 'redirect'])

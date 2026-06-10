@@ -13,6 +13,7 @@
 @endphp
 
 @include('reading-reflection-trainings._modal')
+@include('trainings.vocabulary._modal')
 @include('trainings.index_sp')
 @include('trainings.index_pc')
 @endsection

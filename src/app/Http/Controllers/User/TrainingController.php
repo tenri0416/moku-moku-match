@@ -961,7 +961,7 @@ class TrainingController extends Controller
             ],
         ];
     }
-
+    
     /**
      * 連続実施日数を算出する
      */
