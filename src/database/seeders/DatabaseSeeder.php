@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             DemoWorkPostSeeder::class,
             ArticleCategorySeeder::class,
             ArticleTagSeeder::class,
+            AdditionalAdminSeeder::class,
         ]);
     }
 }

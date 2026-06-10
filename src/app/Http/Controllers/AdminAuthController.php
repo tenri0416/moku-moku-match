@@ -53,14 +53,6 @@ class AdminAuthController extends Controller
 
         $admin = Admin::where('email', $credentials['email'])->first();
 
-        // 既存仕様を維持：管理者が1人もいない、または複数いる場合はログインできないようにする。
-        if (Admin::count() !== 1) {
-            Log::warning('管理者数が不正です', [
-                'admin_count' => Admin::count(),
-            ]);
-
-            abort(403, '管理者設定が不正です。');
-        }
 
         if (! $admin || ! Hash::check($credentials['password'], $admin->password)) {
             Log::info('管理者ログイン失敗', [
@@ -167,15 +159,6 @@ class AdminAuthController extends Controller
                     ]);
             }
 
-            // 既存仕様を維持：管理者が1人もいない、または複数いる場合はログインできないようにする。
-            if (Admin::count() !== 1) {
-                Log::warning('管理者Google SSO拒否：管理者数が不正です', [
-                    'admin_count' => Admin::count(),
-                    'google_email' => $googleEmail,
-                ]);
-
-                abort(403, '管理者設定が不正です。');
-            }
 
             $admin = Admin::query()
                 ->whereRaw('LOWER(email) = ?', [$googleEmail])
@@ -380,22 +363,44 @@ class AdminAuthController extends Controller
     /**
      * 管理者Google SSOを許可するメールアドレスか確認する。
      */
+    /**
+     * 管理者Google SSOを許可するメールアドレスか確認する。
+     *
+     * GOOGLE_ADMIN_ALLOWED_EMAILS に加えて、
+     * services.php の reading_reflection.allowed_emails も管理者Googleログイン許可リストとして使用する。
+     */
+    /**
+     * 管理者Google SSOを許可するメールアドレスか確認する。
+     *
+     * services.php は変更せず、
+     * google.admin_allowed_emails と reading_reflection.allowed_emails の両方を使用する。
+     */
     private function isAllowedAdminGoogleEmail(string $email): bool
     {
-        $allowedEmails = config('services.google.admin_allowed_emails', []);
+        $adminAllowedEmails = config('services.google.admin_allowed_emails', []);
+        $readingReflectionAllowedEmails = config('services.reading_reflection.allowed_emails', []);
 
-        if (is_string($allowedEmails)) {
-            $allowedEmails = explode(',', $allowedEmails);
+        if (is_string($adminAllowedEmails)) {
+            $adminAllowedEmails = explode(',', $adminAllowedEmails);
         }
 
-        $allowedEmails = collect($allowedEmails)
-            ->map(fn ($allowedEmail) => strtolower(trim((string) $allowedEmail)))
+        if (is_string($readingReflectionAllowedEmails)) {
+            $readingReflectionAllowedEmails = explode(',', $readingReflectionAllowedEmails);
+        }
+
+        $allowedEmails = collect($adminAllowedEmails)
+            ->merge($readingReflectionAllowedEmails)
+            ->map(fn($allowedEmail) => strtolower(trim((string) $allowedEmail)))
             ->filter()
+            ->unique()
             ->values()
             ->all();
 
         if ($allowedEmails === []) {
-            Log::critical('管理者Google SSOの許可メールが未設定です。GOOGLE_ADMIN_ALLOWED_EMAILS を設定してください。');
+            Log::critical('管理者Google SSOの許可メールが未設定です。', [
+                'services_google_admin_allowed_emails' => config('services.google.admin_allowed_emails', []),
+                'services_reading_reflection_allowed_emails' => config('services.reading_reflection.allowed_emails', []),
+            ]);
 
             return false;
         }

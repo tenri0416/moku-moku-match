@@ -100,7 +100,7 @@ return [
     'allowed_emails' => [
         'tenriyu0416@gmail.com',
         'yuki.fujimoto.free@gmail.com',
-        'ramen.like.tonkotu@gmail.comm',
+        'ramen.like.tonkotu@gmail.com',
     ],
 ],
 ];
