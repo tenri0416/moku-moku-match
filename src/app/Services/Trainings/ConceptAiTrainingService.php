@@ -3,7 +3,7 @@
 namespace App\Services\Trainings;
 
 use App\Models\UserConceptTraining;
-use App\Services\AiProviderManager;
+use App\Services\Ai\AiProviderManager;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -225,36 +225,6 @@ PROMPT;
 PROMPT;
     }
 
-    /**
-     * 既存の AiProviderManager に接続するための薄いアダプタです。
-     * プロジェクト側のメソッド名が違う場合は、このメソッドだけ調整してください。
-     */
-    private function callAi(string $prompt, string $actionName): array
-    {
-        if (! class_exists(AiProviderManager::class)) {
-            throw new \RuntimeException('AiProviderManager が見つかりません。');
-        }
-
-        $manager = app(AiProviderManager::class);
-
-        if (method_exists($manager, 'generate')) {
-            return $manager->generate($prompt, $actionName);
-        }
-
-        if (method_exists($manager, 'generateText')) {
-            return $manager->generateText($prompt, $actionName);
-        }
-
-        if (method_exists($manager, 'ask')) {
-            return $manager->ask($prompt, $actionName);
-        }
-
-        if (method_exists($manager, 'request')) {
-            return $manager->request($prompt, $actionName);
-        }
-
-        throw new \RuntimeException('AiProviderManager の呼び出しメソッドが見つかりません。');
-    }
 
     private function decodeJson(string $content): array
     {
@@ -316,4 +286,38 @@ PROMPT;
     {
         return max(0, min(100, (int) $score));
     }
+
+    /**
+ * 既存の AiProviderManager に接続するための薄いアダプタです。
+ */
+private function callAi(string $prompt, string $actionName): array
+{
+    if (! class_exists(AiProviderManager::class)) {
+        throw new \RuntimeException('AiProviderManager が見つかりません。');
+    }
+
+    $manager = app(AiProviderManager::class);
+
+    if (! method_exists($manager, 'requestJson')) {
+        throw new \RuntimeException('AiProviderManager::requestJson が見つかりません。');
+    }
+
+    $result = $manager->requestJson(
+        prompt: $prompt,
+        temperature: 0.2,
+        actionName: $actionName,
+    );
+
+    if (($result['success'] ?? false) !== true) {
+        throw new \RuntimeException($result['error_message'] ?? 'AIリクエストに失敗しました。');
+    }
+
+    return [
+        'content' => $result['text'] ?? '',
+        'provider' => $result['provider'] ?? null,
+        'model' => $result['model'] ?? null,
+        'attempts' => $result['attempts'] ?? 1,
+        'is_fallback' => $result['is_fallback'] ?? false,
+    ];
+}
 }

@@ -54,7 +54,7 @@ class AiProviderManager
             $result = $provider->requestJson(
                 prompt: $prompt,
                 temperature: $temperature,
-                maxOutputTokens: (int) config('services.ai.max_output_tokens', 350),
+                maxOutputTokens: (int) config('services.ai.max_output_tokens', 5000),
             );
 
             if ($result->success) {
