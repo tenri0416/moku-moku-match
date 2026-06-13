@@ -3,7 +3,7 @@
 namespace App\Services\Trainings;
 
 use App\Models\VocabularyWord;
-use App\Services\AiProviderManager;
+use App\Services\Ai\AiProviderManager;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -145,16 +145,30 @@ PROMPT;
         if (! class_exists(AiProviderManager::class)) {
             throw new \RuntimeException('AiProviderManager が見つかりません。');
         }
-
+    
         $manager = app(AiProviderManager::class);
-
-        foreach (['generate', 'generateText', 'ask', 'request'] as $method) {
-            if (method_exists($manager, $method)) {
-                return $manager->{$method}($prompt, $actionName);
-            }
+    
+        if (! method_exists($manager, 'requestJson')) {
+            throw new \RuntimeException('AiProviderManager::requestJson が見つかりません。');
         }
-
-        throw new \RuntimeException('AiProviderManager の呼び出しメソッドが見つかりません。');
+    
+        $result = $manager->requestJson(
+            prompt: $prompt,
+            temperature: 0.2,
+            actionName: $actionName,
+        );
+    
+        if (($result['success'] ?? false) !== true) {
+            throw new \RuntimeException($result['error_message'] ?? 'AIリクエストに失敗しました。');
+        }
+    
+        return [
+            'content' => $result['text'] ?? '',
+            'provider' => $result['provider'] ?? null,
+            'model' => $result['model'] ?? null,
+            'attempts' => $result['attempts'] ?? 1,
+            'is_fallback' => $result['is_fallback'] ?? false,
+        ];
     }
 
     private function decodeJson(string $content): array

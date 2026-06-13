@@ -24,7 +24,7 @@ use App\Http\Controllers\ReadingReflectionTrainingController;
 use App\Http\Controllers\ConceptTrainingController;
 use App\Http\Controllers\ImaginationTrainingController;
 use App\Http\Controllers\VocabularyTrainingController;
-
+use App\Http\Controllers\VocabularyPrintTestController;
 
 
 /*sa
@@ -35,7 +35,7 @@ use App\Http\Controllers\VocabularyTrainingController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
-    
+
 
 Route::view('/privacy-policy', 'legal.privacy-policy')->name('privacy-policy');
 Route::view('/terms', 'legal.terms')->name('terms');
@@ -43,27 +43,27 @@ Route::view('/terms', 'legal.terms')->name('terms');
 Route::get('/work-posts', [WorkPostController::class, 'index'])
     ->name('work-posts.index');
 
-    Route::get('/trainings/ranking', [TrainingController::class, 'ranking'])
+Route::get('/trainings/ranking', [TrainingController::class, 'ranking'])
     ->name('trainings.ranking');
 
-    Route::get('/users/{user}', [UserProfileController::class, 'show'])
+Route::get('/users/{user}', [UserProfileController::class, 'show'])
     ->name('users.show');
 
 
-    Route::post('/article-inquiries', [ArticleInquiryController::class, 'store'])
+Route::post('/article-inquiries', [ArticleInquiryController::class, 'store'])
     ->name('article-inquiries.store');
 
-    Route::post('/articles/{article}/like', [ArticleController::class, 'like'])
+Route::post('/articles/{article}/like', [ArticleController::class, 'like'])
     ->name('articles.like');
 
 
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'index'])
-            ->name('reading-reflections.index');
-    
-        Route::post('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'store'])
-            ->name('reading-reflections.store');
-    });
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'index'])
+        ->name('reading-reflections.index');
+
+    Route::post('/trainings/reading-reflections', [ReadingReflectionTrainingController::class, 'store'])
+        ->name('reading-reflections.store');
+});
 /*
 |--------------------------------------------------------------------------
 | メール認証関連
@@ -133,6 +133,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/trainings/vocabulary-reviews/{review}', [VocabularyTrainingController::class, 'showReview'])
         ->name('trainings.vocabulary.reviews.show');
+
+    Route::get('/trainings/vocabulary-print', [VocabularyPrintTestController::class, 'index'])
+        ->name('trainings.vocabulary.print.index');
+
+    Route::post('/trainings/vocabulary-print', [VocabularyPrintTestController::class, 'store'])
+        ->name('trainings.vocabulary.print.store');
+
+    Route::get('/trainings/vocabulary-print/{printTest}', [VocabularyPrintTestController::class, 'show'])
+        ->name('trainings.vocabulary.print.show');
+
+    Route::get('/trainings/vocabulary-print/{printTest}/questions.pdf', [VocabularyPrintTestController::class, 'downloadQuestions'])
+        ->name('trainings.vocabulary.print.questions');
+
+    Route::get('/trainings/vocabulary-print/{printTest}/answers.pdf', [VocabularyPrintTestController::class, 'downloadAnswers'])
+        ->name('trainings.vocabulary.print.answers');
 });
 
 
@@ -181,12 +196,12 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::get('/header/status', [HeaderStatusController::class, 'show'])
-    ->name('header.status');
+        ->name('header.status');
 
 
     Route::get('/mypage', [MyPageController::class, 'index'])
         ->name('mypage');
-       
+
 
     /*
     |--------------------------------------------------------------------------
@@ -264,7 +279,7 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('workPost')
         ->name('applications.index');
 
-        Route::get('/withdrawal', [WithdrawalController::class, 'edit'])
+    Route::get('/withdrawal', [WithdrawalController::class, 'edit'])
         ->name('withdrawal.edit');
 
     Route::delete('/withdrawal', [WithdrawalController::class, 'destroy'])
@@ -287,7 +302,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/work-posts/{workPost}/edit', [WorkPostController::class, 'edit'])
             ->whereNumber('workPost')
             ->name('work-posts.edit');
-            
+
 
         Route::put('/work-posts/{workPost}', [WorkPostController::class, 'update'])
             ->whereNumber('workPost')
@@ -328,12 +343,12 @@ Route::middleware('auth')->group(function () {
             ->name('blocks.destroy');
 
 
-            Route::get('/messages/users/{user}', [MessageController::class, 'showUser'])
+        Route::get('/messages/users/{user}', [MessageController::class, 'showUser'])
             ->name('messages.users.show');
-    
+
         Route::post('/messages/users/{user}', [MessageController::class, 'storeUser'])
             ->name('messages.users.store');
-    
+
         Route::get('/messages/users/{user}/latest', [MessageController::class, 'latestUser'])
             ->name('messages.users.latest');
 
@@ -343,10 +358,9 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/users/{user}/block', [BlockController::class, 'store'])
             ->name('users.block');
-    
+
         Route::delete('/users/{user}/block', [BlockController::class, 'destroy'])
             ->name('users.unblock');
-        
     });
 });
 
@@ -374,10 +388,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/concretization/{training}', [TrainingController::class, 'storeConcretization'])->name('concretization.store');
 
         Route::get('/{type}/{id}', [TrainingController::class, 'show'])->name('show');
-
     });
-
-
 });
 
 
