@@ -26,7 +26,7 @@
     $isSummaryTraining = str_contains($typeLabel ?? '', '要約');
     $isVerbalizationTraining = str_contains($typeLabel ?? '', '言語化');
 
-    $answerMaxLength = $isVerbalizationTraining ? 300 : 120;
+    $answerMaxLength = $isVerbalizationTraining ? 300 : 150;
 
     $trainingThemeLabel = $isSummaryTraining ? '要約力を高めるコツ' : '言語化力を高めるコツ';
 
