@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\AccessLog;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -108,6 +109,11 @@ class LogAccess
      */
     private function shouldSaveAccessLog(Request $request, Response $response): bool
     {
+        // 管理者操作はDBアクセスログに保存しない
+        if ($this->isAdminRequest($request)) {
+            return false;
+        }
+
         // 指定IPは保存しない
         if (in_array($request->ip(), $this->excludedIpAddresses, true)) {
             return false;
@@ -115,11 +121,6 @@ class LogAccess
 
         // IP直アクセスは保存しない
         if (in_array($request->getHost(), $this->excludedHosts, true)) {
-            return false;
-        }
-
-        // 管理画面は保存しない
-        if ($request->is('admin') || $request->is('admin/*')) {
             return false;
         }
 
@@ -169,6 +170,42 @@ class LogAccess
             ->where('path', $request->path())
             ->where('user_agent', $request->userAgent())
             ->exists();
+    }
+
+    /**
+     * 管理者操作か判定する
+     *
+     * 以下はDBアクセスログに保存しない。
+     * ・管理画面へのアクセス
+     * ・admin guardでログイン中のアクセス
+     * ・管理者代理ログイン中のアクセス
+     * ・web guard側でrole=2のユーザーアクセス
+     */
+    private function isAdminRequest(Request $request): bool
+    {
+        // 管理画面URLは保存しない
+        if ($request->is('admin') || $request->is('admin/*')) {
+            return true;
+        }
+
+        // admin guardでログイン中なら保存しない
+        if (Auth::guard('admin')->check()) {
+            return true;
+        }
+
+        // 管理者代理ログイン中のユーザー画面操作も保存しない
+        if (($request->session()->get('admin_impersonation.active') ?? false) === true) {
+            return true;
+        }
+
+        // 念のため、web guard側で管理者roleの場合も保存しない
+        $user = $request->user();
+
+        if ($user && (int) ($user->role ?? 0) === 2) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -250,13 +287,17 @@ class LogAccess
      */
     private function getUserType(Request $request): string
     {
+        if (Auth::guard('admin')->check()) {
+            return 'admin';
+        }
+
         $user = $request->user();
 
         if (! $user) {
             return 'guest';
         }
 
-        if ((int) $user->role === 2) {
+        if ((int) ($user->role ?? 0) === 2) {
             return 'admin';
         }
 
