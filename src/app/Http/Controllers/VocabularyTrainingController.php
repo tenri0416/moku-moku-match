@@ -254,7 +254,7 @@ class VocabularyTrainingController extends Controller
   public function storeReview(Request $request): RedirectResponse
   {
     $this->abortUnlessVocabularyAllowed();
-
+  
     $validated = $request->validate([
       'vocabulary_word_id' => ['required', 'integer', 'exists:vocabulary_words,id'],
       'question_type' => ['required', 'string', 'max:50'],
@@ -264,11 +264,11 @@ class VocabularyTrainingController extends Controller
       'answer_body.required' => '回答を入力してください。',
       'answer_body.min' => '回答は5文字以上で入力してください。',
     ]);
-
+  
     $word = VocabularyWord::where('id', $validated['vocabulary_word_id'])
       ->where('user_id', Auth::id())
       ->firstOrFail();
-
+  
     return DB::transaction(function () use ($validated, $word) {
       $score = $this->vocabularyAiTrainingService->score(
         word: $word,
@@ -276,9 +276,10 @@ class VocabularyTrainingController extends Controller
         questionBody: $validated['question_body'],
         answerBody: $validated['answer_body']
       );
-
-      $earnedPoints = $this->calculateEarnedPoints((int) $score['total_score']);
-
+  
+      // ボキャブラリートレーニングはポイント付与対象外
+      $earnedPoints = 0;
+  
       $review = VocabularyReview::create([
         'user_id' => Auth::id(),
         'vocabulary_word_id' => $word->id,
@@ -303,10 +304,9 @@ class VocabularyTrainingController extends Controller
         'ai_attempts' => $score['ai_attempts'] ?? 1,
         'reviewed_at' => now(),
       ]);
-
+  
       $this->updateWordReviewStatus($word, (int) $score['total_score']);
-      $this->storePoint($review, $earnedPoints);
-
+  
       return redirect()
         ->route('trainings.vocabulary.reviews.show', $review)
         ->with('success', 'ボキャブラリー復習を保存しました。');
