@@ -133,11 +133,11 @@ class ImaginationTrainingController extends Controller
             ->where('user_id', $userId)
             ->sum('points');
 
-        return match (true) {
-            $totalPoints >= 800 => '上級',
-            $totalPoints >= 300 => '中級',
-            default => '初級',
-        };
+            return match (true) {
+                $totalPoints >= 2000 => '上級',
+                $totalPoints >= 1000 => '中級',
+                default => '初級',
+            };
     }
 
     private function usedQuestionKeys(int $userId): array

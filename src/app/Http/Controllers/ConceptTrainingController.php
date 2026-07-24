@@ -121,8 +121,8 @@ class ConceptTrainingController extends Controller
         $totalPoints = $this->totalTrainingPoints($userId);
 
         return match (true) {
-            $totalPoints >= 800 => '上級',
-            $totalPoints >= 300 => '中級',
+            $totalPoints >= 2000 => '上級',
+            $totalPoints >= 1000 => '中級',
             default => '初級',
         };
     }
@@ -319,17 +319,17 @@ class ConceptTrainingController extends Controller
     private function calculateTrainingDifficulty(int $totalPoints): int|string
     {
         return match (true) {
-            $totalPoints < 100 => 0,
-            $totalPoints < 200 => 1,
-            $totalPoints < 300 => 2,
-            $totalPoints < 400 => 3,
-            $totalPoints < 500 => 4,
-            $totalPoints < 600 => 5,
-            $totalPoints < 800 => 6,
-            $totalPoints < 1000 => 7,
-            $totalPoints < 1100 => 8,
-            $totalPoints < 1200 => 9,
-            $totalPoints < 1300 => 10,
+            $totalPoints < 200 => 0,
+            $totalPoints < 400 => 1,
+            $totalPoints < 600 => 2,
+            $totalPoints < 800 => 3,
+            $totalPoints < 1000 => 4,
+            $totalPoints < 1500 => 5,
+            $totalPoints < 2000 => 6,
+            $totalPoints < 2500 => 7,
+            $totalPoints < 3000 => 8,
+            $totalPoints < 4000 => 9,
+            $totalPoints < 5000 => 10,
             default => 'Max',
         };
     }
