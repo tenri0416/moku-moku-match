@@ -102,5 +102,11 @@ return [
         'yuki.fujimoto.free@gmail.com',
         'ramen.like.tonkotu@gmail.com',
     ],
-],
+
+
+    ],
+    'notion' => [
+        'token' => env('NOTION_TOKEN'),
+        'data_source_id' => env('NOTION_DATA_SOURCE_ID'),
+        ],
 ];
