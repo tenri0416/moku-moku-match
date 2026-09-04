@@ -78,7 +78,8 @@ class HomeController extends Controller
             })
             ->when($request->prefecture_id, function ($query, $prefectureId) {
                 $query->where('prefecture_id', $prefectureId);
-            });
+            })
+            ->where('status', '!=', WorkPost::STATUS_PRIVATE);
 
         $homeWorkPosts = $homeWorkPostsQuery
             ->latest()

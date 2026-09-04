@@ -11,31 +11,6 @@ use Illuminate\Http\Request;
 
 class WorkPostController extends Controller
 {
-    public function index(Request $request)
-    {
-        $workPosts = WorkPost::query()
-            ->with(['user.profile.prefecture', 'prefecture'])
-            ->when($request->keyword, function ($query, $keyword) {
-                $query->where(function ($query) use ($keyword) {
-                    $query->where('title', 'like', "%{$keyword}%")
-                        ->orWhere('body', 'like', "%{$keyword}%");
-                });
-            })
-            ->when($request->purpose, fn ($query, $purpose) => $query->where('purpose', $purpose))
-            ->when($request->location_type, fn ($query, $locationType) => $query->where('location_type', $locationType))
-            ->when($request->prefecture_id, fn ($query, $prefectureId) => $query->where('prefecture_id', $prefectureId))
-            ->when($request->time_zone, fn ($query, $timeZone) => $query->where('time_zone', $timeZone))
-            ->when($request->status, fn ($query, $status) => $query->where('status', $status))
-            ->where('status', '!=', WorkPost::STATUS_PRIVATE)
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        $prefectures = Prefecture::orderBy('id')->get();
-
-        return view('work-posts.index', compact('workPosts', 'prefectures'));
-    }
-
     /**
      * 募集作成画面を表示する。
      * タイトルと募集内容の入力の手間を解消するために、既に一度募集作成済みの場合は前回の募集内容を引き継ぐ。
