@@ -35,6 +35,7 @@ class WorkPost extends Model
         'time_zone',
         'max_participants',
         'status',
+        'meeting_url',
     ];
 
     protected $casts = [

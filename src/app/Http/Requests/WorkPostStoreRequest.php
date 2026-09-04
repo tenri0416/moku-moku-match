@@ -28,8 +28,9 @@ class WorkPostStoreRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:100'],
             'body' => ['required', 'string', 'max:5000'],
-            'purpose' => ['required', 'string', 'max:50'],
-            'location_type' => ['required', Rule::in([
+            'purpose' => ['nullable', 'string', 'max:50'],
+            'meeting_url' => ['nullable', 'string', 'max:255'],
+            'location_type' => ['nullable', Rule::in([
                 WorkPost::LOCATION_ONLINE,
                 WorkPost::LOCATION_OFFLINE,
                 WorkPost::LOCATION_BOTH,

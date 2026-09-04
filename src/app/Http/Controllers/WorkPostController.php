@@ -13,20 +13,6 @@ class WorkPostController extends Controller
 {
     public function index(Request $request)
     {
-        ApiActionLogger::info(
-            'WorkPostController::index',
-            '募集一覧画面にアクセス',
-            [
-                'user_id' => auth()->id(),
-                'keyword' => $request->keyword,
-                'purpose' => $request->purpose,
-                'location_type' => $request->location_type,
-                'prefecture_id' => $request->prefecture_id,
-                'time_zone' => $request->time_zone,
-                'status' => $request->status,
-            ]
-        );
-
         $workPosts = WorkPost::query()
             ->with(['user.profile.prefecture', 'prefecture'])
             ->when($request->keyword, function ($query, $keyword) {
@@ -50,16 +36,12 @@ class WorkPostController extends Controller
         return view('work-posts.index', compact('workPosts', 'prefectures'));
     }
 
+    /**
+     * 募集作成画面を表示する。
+     * タイトルと募集内容の入力の手間を解消するために、既に一度募集作成済みの場合は前回の募集内容を引き継ぐ。
+     */
     public function create()
     {
-        ApiActionLogger::info(
-            'WorkPostController::create',
-            '募集作成画面にアクセス',
-            [
-                'user_id' => auth()->id(),
-            ]
-        );
-
         if (! auth()->user()->profile) {
             ApiActionLogger::info(
                 'WorkPostController::create',
@@ -68,30 +50,19 @@ class WorkPostController extends Controller
                     'user_id' => auth()->id(),
                 ]
             );
-
             return redirect()->route('profile.edit')->with('error', '募集を作成する前にプロフィールを登録してください。');
         }
 
         $prefectures = Prefecture::orderBy('id')->get();
 
-        return view('work-posts.create', compact('prefectures'));
+        // 前回の募集内容を引き継ぐ
+        $previousWorkPost = auth()->user()->workPosts()->latest()->first();
+
+        return view('work-posts.create', compact('prefectures', 'previousWorkPost'));
     }
 
     public function store(WorkPostStoreRequest $request)
     {
-        ApiActionLogger::info(
-            'WorkPostController::store',
-            '募集作成処理開始',
-            [
-                'user_id' => auth()->id(),
-                'title' => $request->title,
-                'purpose' => $request->purpose,
-                'location_type' => $request->location_type,
-                'prefecture_id' => $request->prefecture_id,
-                'time_zone' => $request->time_zone,
-            ]
-        );
-
         if (! auth()->user()->profile) {
             ApiActionLogger::info(
                 'WorkPostController::store',
@@ -110,32 +81,11 @@ class WorkPostController extends Controller
             'status' => WorkPost::STATUS_OPEN,
         ]);
 
-        ApiActionLogger::info(
-            'WorkPostController::store',
-            '募集作成成功',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'status' => $workPost->status,
-            ]
-        );
-
         return redirect()->route('work-posts.show', $workPost)->with('success', '募集を作成しました。');
     }
 
     public function show(WorkPost $workPost)
     {
-        ApiActionLogger::info(
-            'WorkPostController::show',
-            '募集詳細画面にアクセス',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'work_post_owner_id' => $workPost->user_id,
-                'status' => $workPost->status,
-            ]
-        );
-
         abort_if($workPost->status === WorkPost::STATUS_PRIVATE, 404);
 
         $workPost->load(['user.profile.prefecture', 'prefecture']);
@@ -149,82 +99,27 @@ class WorkPostController extends Controller
 
     public function edit(WorkPost $workPost)
     {
-        ApiActionLogger::info(
-            'WorkPostController::edit',
-            '募集編集画面にアクセス',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'work_post_owner_id' => $workPost->user_id,
-            ]
-        );
-
         $this->authorize('update', $workPost);
-
         $prefectures = Prefecture::orderBy('id')->get();
-
         return view('work-posts.edit', compact('workPost', 'prefectures'));
     }
 
     public function update(WorkPostUpdateRequest $request, WorkPost $workPost)
     {
-        ApiActionLogger::info(
-            'WorkPostController::update',
-            '募集更新処理開始',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'title' => $request->title,
-                'purpose' => $request->purpose,
-                'location_type' => $request->location_type,
-                'prefecture_id' => $request->prefecture_id,
-                'time_zone' => $request->time_zone,
-            ]
-        );
 
         $this->authorize('update', $workPost);
-
         $workPost->update($request->validated());
-
-        ApiActionLogger::info(
-            'WorkPostController::update',
-            '募集更新成功',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-            ]
-        );
 
         return redirect()->route('work-posts.show', $workPost)->with('success', '募集を更新しました。');
     }
 
     public function close(WorkPost $workPost)
     {
-        ApiActionLogger::info(
-            'WorkPostController::close',
-            '募集終了処理開始',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'current_status' => $workPost->status,
-            ]
-        );
-
         $this->authorize('close', $workPost);
 
         $workPost->update([
             'status' => WorkPost::STATUS_CLOSED,
         ]);
-
-        ApiActionLogger::info(
-            'WorkPostController::close',
-            '募集終了成功',
-            [
-                'user_id' => auth()->id(),
-                'work_post_id' => $workPost->id,
-                'status' => WorkPost::STATUS_CLOSED,
-            ]
-        );
 
         return redirect()->route('work-posts.show', $workPost)->with('success', '募集を終了しました。');
     }

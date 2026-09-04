@@ -284,5 +284,9 @@ return [
         'winner'                   => '受賞者',
         'work'                     => '仕事',
         'year'                     => '年',
+        'start_at'                 => '開始日時',
+        'end_at'                   => '終了日時',
+        'purpose'                  => '目的',
+        'meeting_tool'             => '使用ツール',
     ],
 ];

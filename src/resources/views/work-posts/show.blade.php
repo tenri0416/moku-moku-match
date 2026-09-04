@@ -87,6 +87,10 @@
                     <div class="mt-4 leading-8 text-slate-700">
                         {!! nl2br(e($workPost->body)) !!}
                     </div>
+                    <div>
+                        <dt class="text-xl font-bold text-slate-90">URL</dt>
+                        <a href="{{ $workPost->meeting_url }}" class="mt-1 text-blue-700" >{{ $workPost->meeting_url }}</a>
+                    </div>
                 </section>
 
                 {{-- Owner Profile --}}
