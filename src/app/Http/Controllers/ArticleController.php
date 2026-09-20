@@ -217,6 +217,38 @@ class ArticleController extends Controller
 
         return $this->show($article);
     }
+
+    /**
+     * 記事カテゴリー別の記事一覧。
+     */
+    public function category(string $categorySlug): View
+    {
+        $articles = Article::query()
+            ->with(['category', 'prefecture', 'tags', 'authorUser.profile'])
+            ->where('status', Article::STATUS_PUBLIC)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->whereHas('category', function ($query) use ($categorySlug) {
+                $query->where('slug', $categorySlug);
+            })
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->paginate(12)
+            ->withQueryString();
+
+        $keyword = '';
+        $sort = 'new';
+        $pageTitle = 'カテゴリー「' . $categorySlug . '」の記事一覧';
+        $pageDescription = 'カテゴリー「' . $categorySlug . '」に関連する記事を表示しています。';
+
+        return view('articles.index', compact(
+            'articles',
+            'keyword',
+            'sort',
+            'pageTitle',
+            'pageDescription'
+        ));
+    }
 }
 
 

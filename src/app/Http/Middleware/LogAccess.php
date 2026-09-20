@@ -193,11 +193,6 @@ class LogAccess
             return true;
         }
 
-        // 管理者代理ログイン中のユーザー画面操作も保存しない
-        if (($request->session()->get('admin_impersonation.active') ?? false) === true) {
-            return true;
-        }
-
         // 念のため、web guard側で管理者roleの場合も保存しない
         $user = $request->user();
 
@@ -218,7 +213,6 @@ class LogAccess
             || $request->routeIs('articles.index')
             || $request->routeIs('articles.show')
             || $request->routeIs('articles.short-show')
-            || $request->routeIs('articles.category')
             || $request->routeIs('articles.tag')
             || $request->is('articles')
             || $request->is('articles/*');
