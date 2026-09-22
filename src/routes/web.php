@@ -482,3 +482,4 @@ require __DIR__ . '/admin_articles.php';
 */
 
 require __DIR__ . '/admin.php';
+require __DIR__.'/stock_alert.php';

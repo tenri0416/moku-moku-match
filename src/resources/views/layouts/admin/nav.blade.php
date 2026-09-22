@@ -138,4 +138,13 @@
         <span>Laravelログ</span>
         <span class="text-slate-400">›</span>
     </a>
+
+    <a
+    href="{{ route('admin.stocks.index') }}"
+    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition
+    {{ request()->routeIs('admin.stocks.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+>
+    <span>株式監視</span>
+    <span class="text-slate-400">›</span>
+</a>
 </nav>

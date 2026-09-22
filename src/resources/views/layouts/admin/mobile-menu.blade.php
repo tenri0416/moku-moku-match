@@ -144,7 +144,13 @@
             >
                 Laravelログ
             </a>
-
+            <a
+            href="{{ route('admin.stocks.index') }}"
+            class="block rounded-xl px-4 py-3 text-sm font-bold
+            {{ request()->routeIs('admin.stocks.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100' }}"
+            >
+            株式監視
+            </a>
             <div class="my-2 border-t border-slate-100"></div>
 
             <a
