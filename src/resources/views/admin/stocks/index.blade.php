@@ -75,11 +75,147 @@
                             <li><span class="font-bold text-slate-800">4.</span> LINE通知を有効にすると、条件を満たした重要情報や朝レポートを受け取れます。</li>
                         </ol>
 
-                        <div class="mt-3 rounded-xl bg-slate-50 p-3">
-                            <p><span class="font-bold text-slate-800">監視ON：</span>ニュース取得・AI分析の対象。</p>
-                            <p><span class="font-bold text-slate-800">即時通知対象：</span>重要な新着情報をLINEへ即時通知する対象。</p>
-                            <p><span class="font-bold text-slate-800">HIGH：</span>AIが重要度を高いと判断した情報。</p>
-                            <p><span class="font-bold text-slate-800">信頼度：</span>AI判定の確からしさを示す内部指標。</p>
+                        {{-- Current specification --}}
+                        <div class="mt-4 border-t border-slate-200 pt-4">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-black text-white">5</span>
+                                <p class="font-bold text-slate-900">現在の機能仕様</p>
+                            </div>
+
+                            <div class="mt-3 rounded-xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
+                                <p class="font-bold">最初に知っておくこと</p>
+                                <p class="mt-1 leading-5">
+                                    現在は「株価そのもの」を監視する機能ではありません。
+                                    登録銘柄に関するGoogle Newsの新着情報を定期取得し、AIが重要度や材料方向を分析する機能です。
+                                </p>
+                            </div>
+
+                            <div class="mt-3 space-y-2">
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>監視対象・情報源</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <ul class="list-disc space-y-1.5 pl-5">
+                                            <li>「監視ON」の銘柄だけを定期確認します。</li>
+                                            <li>現在の情報源は <span class="font-bold text-slate-800">Google News RSS</span> です。</li>
+                                            <li>証券コードと会社名を使ってニュースを検索し、原則として直近7日以内・1回最大20件を確認します。</li>
+                                            <li>購入価格・保有株数は管理用で、現在のAI分析や通知判定には使用しません。</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>いつ監視する？</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <ul class="list-disc space-y-1.5 pl-5">
+                                            <li>平日 <span class="font-bold text-slate-800">08:00〜16:00の1時間ごと</span> に新着ニュースを確認します。</li>
+                                            <li>平日 <span class="font-bold text-slate-800">07:15</span> に直近24時間の朝レポートをLINEへ送信します。</li>
+                                            <li>現在、土日・祝日を個別判定する市場カレンダー連携はなく、Scheduler上は平日のみ動作します。</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>AIは何を判断する？</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <ul class="list-disc space-y-1.5 pl-5">
+                                            <li>新しく見つかったニュースだけをGroqのAIで分析します。</li>
+                                            <li>重要度：<span class="font-bold text-slate-800">HIGH / MEDIUM / LOW</span></li>
+                                            <li>材料方向：<span class="font-bold text-slate-800">プラス材料候補 / マイナス材料候補 / 中立 / 判断困難</span></li>
+                                            <li>信頼度、影響スコア、要約、理由、注意点も保存します。</li>
+                                            <li>AIが追加でWeb検索・IR・EDINET・株価を調査する機能は現在ありません。</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>LINEはいつ届く？</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <p class="font-bold text-slate-800">即時通知は、次の条件をすべて満たした場合だけ送信します。</p>
+                                        <ul class="mt-2 list-disc space-y-1.5 pl-5">
+                                            <li>初回スキャンではない新着ニュース</li>
+                                            <li>AI重要度が <span class="font-bold text-rose-700">HIGH</span></li>
+                                            <li>AI信頼度が <span class="font-bold text-slate-800">60%以上</span></li>
+                                            <li>銘柄の「即時通知対象」がON</li>
+                                            <li>全体のLINE送信・HIGH即時通知がON</li>
+                                        </ul>
+                                        <p class="mt-2">MEDIUM / LOWは即時通知せず、朝レポートで確認できます。</p>
+                                    </div>
+                                </details>
+
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>初回・重複・エラー時の動き</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <ul class="list-disc space-y-1.5 pl-5">
+                                            <li>初回は既存ニュースを最大5件登録しますが、過去ニュースの大量通知を防ぐため即時LINEは送りません。</li>
+                                            <li>同じニュースは重複判定し、原則として再登録・再分析・再通知しません。</li>
+                                            <li>AI分析に失敗した場合は「判断困難 / LOW / 信頼度0%」として保存し、他の処理を継続します。</li>
+                                            <li>1銘柄のニュース取得に失敗しても、他の銘柄の監視は継続します。</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <details class="group rounded-xl border border-slate-200 bg-white">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                                        <span>現在できないこと</span>
+                                        <span class="text-slate-400 transition group-open:rotate-180">⌄</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-3 py-3 leading-5 text-slate-600">
+                                        <p>現時点では次の情報は取得・判定していません。</p>
+                                        <p class="mt-2 font-semibold text-slate-700">
+                                            リアルタイム株価 / 現在値 / 前日比 / 騰落率 / 出来高 / PER・PBR / 板情報 / TDnet / EDINET / 企業公式IR / J-Quants / SNS
+                                        </p>
+                                        <p class="mt-2">そのため「プラス材料候補」「マイナス材料候補」は、現在取得できたニュースを基にしたAI分析です。</p>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="mt-4 rounded-xl bg-slate-50 p-3">
+                                <p class="font-bold text-slate-900">よくある疑問</p>
+                                <dl class="mt-2 space-y-3 leading-5">
+                                    <div>
+                                        <dt class="font-bold text-slate-800">Q. 株価が下がったら通知される？</dt>
+                                        <dd class="mt-0.5 text-slate-600">A. 現在はされません。株価データ自体を取得していないため、価格変動ではなくニュースを監視しています。</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="font-bold text-slate-800">Q. HIGHなら株価が上がる・下がるという意味？</dt>
+                                        <dd class="mt-0.5 text-slate-600">A. いいえ。HIGHは「重要度」です。上昇・下落方向は「材料方向」で別に表示します。</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="font-bold text-slate-800">Q. 購入価格や保有株数はAIが見ている？</dt>
+                                        <dd class="mt-0.5 text-slate-600">A. 現在は見ていません。保有状況を管理するための入力項目です。</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="font-bold text-slate-800">Q. 同じニュースが毎時間LINEに来る？</dt>
+                                        <dd class="mt-0.5 text-slate-600">A. 原則来ません。同一ニュースを重複判定して再分析・再通知を防止しています。</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="font-bold text-slate-800">Q. n8nやAI Agentは必要？</dt>
+                                        <dd class="mt-0.5 text-slate-600">A. 現在は不要です。Laravel Schedulerが定期実行し、LaravelからGroqを直接呼び出しています。</dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            <div class="mt-3 rounded-xl bg-rose-50 p-3 text-rose-800 ring-1 ring-rose-200">
+                                <p class="font-bold">AI分析について</p>
+                                <p class="mt-1 leading-5">
+                                    AIは将来の株価や売買成果を保証するものではありません。ニュース材料を整理する補助情報として利用してください。
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </details>
