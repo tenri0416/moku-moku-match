@@ -40,9 +40,6 @@ Route::get('/', [HomeController::class, 'index'])
 Route::view('/privacy-policy', 'legal.privacy-policy')->name('privacy-policy');
 Route::view('/terms', 'legal.terms')->name('terms');
 
-Route::get('/work-posts', [WorkPostController::class, 'index'])
-    ->name('work-posts.index');
-
 Route::get('/trainings/ranking', [TrainingController::class, 'ranking'])
     ->name('trainings.ranking');
 

@@ -18,11 +18,6 @@
                 ホーム
             </a>
 
-            <a href="{{ route('work-posts.index') }}"
-                class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
-                募集一覧
-            </a>
-
             @if (Route::has('articles.index'))
             <a href="{{ route('articles.index') }}"
                 class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
@@ -104,11 +99,6 @@
                     <a href="{{ route('home') }}"
                         class="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
                         ホーム
-                    </a>
-
-                    <a href="{{ route('work-posts.index') }}"
-                        class="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                        募集一覧
                     </a>
 
                     @if (Route::has('articles.index'))

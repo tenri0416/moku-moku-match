@@ -7,14 +7,6 @@
         <priority>1.0</priority>
     </url>
 
-    @if (Route::has('work-posts.index'))
-        <url>
-            <loc>{{ route('work-posts.index') }}</loc>
-            <lastmod>{{ now()->toAtomString() }}</lastmod>
-            <changefreq>daily</changefreq>
-            <priority>0.8</priority>
-        </url>
-    @endif
 
     @if (Route::has('articles.index'))
         <url>
