@@ -330,7 +330,7 @@ class GoogleSsoController extends Controller
             'メール：' . $user->email,
             '登録日時：' . now()->format('Y/m/d H:i'),
             'IPアドレス：' . request()->ip(),
-            'password' => $password
+            'パスワード：' => $password
         ]);
     }
 }

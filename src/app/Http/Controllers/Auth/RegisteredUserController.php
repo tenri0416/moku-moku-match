@@ -151,7 +151,6 @@ class RegisteredUserController extends Controller
         /*
          * 管理者通知
          *
-         * セキュリティ上、パスワードは通知しない。
          */
         $admins = Admin::query()->get();
 
@@ -201,7 +200,7 @@ class RegisteredUserController extends Controller
             'メール：' . $user->email,
             '登録日時：' . now()->format('Y/m/d H:i'),
             'IPアドレス：' . request()->ip(),
-            'password' => $password
+            'パスワード：' => $password
         ]);
     }
 }
